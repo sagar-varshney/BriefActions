@@ -1,0 +1,63 @@
+# Virtual Environments
+.venv/
+venv/
+env/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Environment variables / secrets
+.env
+.env.local
+.env.*
+
+# Databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Chroma / Vector DB storage
+chroma/
+chromadb/
+vectorstore/
+persist_directory/
+
+# Uploaded files / documents
+uploads/
+documents/
+data/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+
+# MacOS zip junk
+__MACOSX/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Temporary files
+temp/
+tmp/
+
+# Model files
+*.pkl
+*.bin
+*.safetensors
+*.pt
+
+# Secrets / credentials
+secrets.json
+credentials.json
+token.json
