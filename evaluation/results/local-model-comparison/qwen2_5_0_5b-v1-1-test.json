@@ -1,0 +1,1458 @@
+{
+  "counts": {
+    "predicted": 28,
+    "gold": 29,
+    "matched": 20,
+    "owner_correct": 16,
+    "deadline_correct": 2,
+    "owner_known_correct": 15,
+    "owner_known_total": 25,
+    "deadline_known_correct": 2,
+    "deadline_known_total": 19,
+    "evidence_valid": 28,
+    "supported": 1,
+    "failures": 5
+  },
+  "metrics": {
+    "task_precision": 0.7142857142857143,
+    "task_recall": 0.6896551724137931,
+    "task_f1": 0.7017543859649122,
+    "owner_accuracy_on_matched": 0.8,
+    "deadline_accuracy_on_matched": 0.1,
+    "known_owner_end_to_end": 0.6,
+    "known_deadline_end_to_end": 0.10526315789473684,
+    "evidence_validity": 1.0,
+    "gold_support_proxy": 0.03571428571428571,
+    "latency_p50_ms": 1290.0523750286084,
+    "latency_p95_ms": 2423.6395829939283,
+    "cost_usd": 0.0,
+    "failure_rate": 0.16666666666666666
+  },
+  "details": [
+    {
+      "id": "test-01",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-01-a1",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": false
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "test-02",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-02-a1",
+          "owner_correct": false,
+          "deadline_correct": false,
+          "gold_support_proxy": false
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "test-03",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-03-a1",
+          "owner_correct": false,
+          "deadline_correct": false,
+          "gold_support_proxy": false
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "test-04",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-04-a1",
+          "owner_correct": true,
+          "deadline_correct": false,
+          "gold_support_proxy": false
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "test-05",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-05-a1",
+          "owner_correct": false,
+          "deadline_correct": false,
+          "gold_support_proxy": false
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "test-06",
+      "matches": [],
+      "false_positives": [
+        0,
+        1
+      ],
+      "missed_gold": []
+    },
+    {
+      "id": "test-07",
+      "matches": [],
+      "false_positives": [
+        0
+      ],
+      "missed_gold": []
+    },
+    {
+      "id": "test-08",
+      "matches": [],
+      "false_positives": [
+        0
+      ],
+      "missed_gold": []
+    },
+    {
+      "id": "test-09",
+      "matches": [],
+      "false_positives": [],
+      "missed_gold": [
+        "test-09-a1"
+      ]
+    },
+    {
+      "id": "test-10",
+      "matches": [],
+      "false_positives": [],
+      "missed_gold": [
+        "test-10-a1"
+      ]
+    },
+    {
+      "id": "test-11",
+      "matches": [],
+      "false_positives": [],
+      "missed_gold": [
+        "test-11-a1"
+      ]
+    },
+    {
+      "id": "test-12",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-12-a1",
+          "owner_correct": true,
+          "deadline_correct": false,
+          "gold_support_proxy": false
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "test-13",
+      "matches": [],
+      "false_positives": [],
+      "missed_gold": [
+        "test-13-a1"
+      ]
+    },
+    {
+      "id": "test-14",
+      "matches": [],
+      "false_positives": [],
+      "missed_gold": [
+        "test-14-a1"
+      ]
+    },
+    {
+      "id": "test-15",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-15-a1",
+          "owner_correct": true,
+          "deadline_correct": false,
+          "gold_support_proxy": false
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": [
+        "test-15-a2"
+      ]
+    },
+    {
+      "id": "test-16",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-16-a1",
+          "owner_correct": true,
+          "deadline_correct": false,
+          "gold_support_proxy": false
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "test-17",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-17-a1",
+          "owner_correct": true,
+          "deadline_correct": false,
+          "gold_support_proxy": false
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "test-18",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-18-a1",
+          "owner_correct": false,
+          "deadline_correct": false,
+          "gold_support_proxy": false
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "test-19",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-19-a1",
+          "owner_correct": true,
+          "deadline_correct": false,
+          "gold_support_proxy": false
+        },
+        {
+          "prediction": 1,
+          "gold_id": "test-19-a2",
+          "owner_correct": true,
+          "deadline_correct": false,
+          "gold_support_proxy": false
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "test-20",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-20-a1",
+          "owner_correct": true,
+          "deadline_correct": false,
+          "gold_support_proxy": false
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "test-21",
+      "matches": [],
+      "false_positives": [
+        0
+      ],
+      "missed_gold": [
+        "test-21-a1"
+      ]
+    },
+    {
+      "id": "test-22",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-22-a1",
+          "owner_correct": true,
+          "deadline_correct": false,
+          "gold_support_proxy": false
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "test-23",
+      "matches": [],
+      "false_positives": [
+        0
+      ],
+      "missed_gold": []
+    },
+    {
+      "id": "test-24",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-24-a1",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "test-25",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-25-a1",
+          "owner_correct": true,
+          "deadline_correct": false,
+          "gold_support_proxy": false
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": [
+        "test-25-a2"
+      ]
+    },
+    {
+      "id": "test-26",
+      "matches": [],
+      "false_positives": [
+        0
+      ],
+      "missed_gold": []
+    },
+    {
+      "id": "test-27",
+      "matches": [],
+      "false_positives": [
+        0
+      ],
+      "missed_gold": [
+        "test-27-a1"
+      ]
+    },
+    {
+      "id": "test-28",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-28-a1",
+          "owner_correct": true,
+          "deadline_correct": false,
+          "gold_support_proxy": false
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "test-29",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-29-a1",
+          "owner_correct": true,
+          "deadline_correct": false,
+          "gold_support_proxy": false
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "test-30",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-30-a1",
+          "owner_correct": true,
+          "deadline_correct": false,
+          "gold_support_proxy": false
+        },
+        {
+          "prediction": 1,
+          "gold_id": "test-30-a2",
+          "owner_correct": true,
+          "deadline_correct": false,
+          "gold_support_proxy": false
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    }
+  ],
+  "schema_version": 1,
+  "created_at": "2026-10-10T11:24:59.928420+00:00",
+  "evaluator_sha256": "b618d7dcab9afd791d816694e3cb456bbddd2051457a1b45c8f593ead7c34585",
+  "label": "qwen2_5_0_5b-v1-1",
+  "extractor": "llm",
+  "dataset_sha256": "ee4c5b170c5acda3473c062451620a3ca76ec203f586795a3862ee8d538d7bf5",
+  "dataset": "test.jsonl",
+  "splits": [
+    "test"
+  ],
+  "extractor_sha256": null,
+  "prompt_version": "v1",
+  "prompt_sha256": "4687bf98f0a4652e8af2ebc35d513df47b17a386bc86cdc5ebc4c64b8a4ac28e",
+  "pricing": {
+    "input_usd_per_million": null,
+    "output_usd_per_million": null
+  },
+  "runs": [
+    {
+      "items": [
+        {
+          "task": "reconcile supplier invoices",
+          "owner": "Meera",
+          "deadline": "2026-09-22",
+          "evidence": [
+            {
+              "text": "The budget was approved.",
+              "start": 58,
+              "end": 82
+            }
+          ]
+        }
+      ],
+      "model": "qwen2.5:0.5b",
+      "usage": {
+        "input_tokens": 429,
+        "output_tokens": 52
+      },
+      "provider_duration_ns": 26600413750,
+      "raw_model_response": "{\"items\": [{\"task\": \"reconcile supplier invoices\", \"owner\": \"Meera\", \"deadline\": \"2026-09-22\", \"evidence\": [{\"text\": \"The budget was approved.\"}]}]}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 26775.60216697748,
+      "id": "test-01"
+    },
+    {
+      "items": [
+        {
+          "task": "replace expired certificate",
+          "owner": "Unknown",
+          "deadline": "2026-09-15",
+          "evidence": [
+            {
+              "text": "I will replace the expired certificate by tomorrow.",
+              "start": 7,
+              "end": 58
+            }
+          ]
+        }
+      ],
+      "model": "qwen2.5:0.5b",
+      "usage": {
+        "input_tokens": 416,
+        "output_tokens": 53
+      },
+      "provider_duration_ns": 659653625,
+      "raw_model_response": "{\"items\": [{\"task\": \"replace expired certificate\", \"owner\": \"Unknown\", \"deadline\": \"2026-09-15\", \"evidence\": [{\"text\": \"I will replace the expired certificate by tomorrow.\"}]}]}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 841.6044159966987,
+      "id": "test-02"
+    },
+    {
+      "items": [
+        {
+          "task": "collect pilot feedback",
+          "owner": "Lina",
+          "deadline": "2026-09-15",
+          "evidence": [
+            {
+              "text": "Lina: We must collect the pilot feedback next month.",
+              "start": 0,
+              "end": 52
+            }
+          ]
+        }
+      ],
+      "model": "qwen2.5:0.5b",
+      "usage": {
+        "input_tokens": 416,
+        "output_tokens": 57
+      },
+      "provider_duration_ns": 740871500,
+      "raw_model_response": "{\"items\": [{\"task\": \"collect pilot feedback\", \"owner\": \"Lina\", \"deadline\": \"2026-09-15\", \"evidence\": [{\"text\": \"Lina: We must collect the pilot feedback next month.\"}]}]}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 857.6830000092741,
+      "id": "test-03"
+    },
+    {
+      "items": [
+        {
+          "task": "book the training room",
+          "owner": "Unknown",
+          "deadline": "2026-09-15",
+          "evidence": [
+            {
+              "text": "Please book the training room by Wednesday.",
+              "start": 0,
+              "end": 43
+            }
+          ]
+        }
+      ],
+      "model": "qwen2.5:0.5b",
+      "usage": {
+        "input_tokens": 412,
+        "output_tokens": 53
+      },
+      "provider_duration_ns": 1040027459,
+      "raw_model_response": "{\"items\": [{\"task\": \"book the training room\", \"owner\": \"Unknown\", \"deadline\": \"2026-09-15\", \"evidence\": [{\"text\": \"Please book the training room by Wednesday.\"}]}]}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 1177.9618339787703,
+      "id": "test-04"
+    },
+    {
+      "items": [
+        {
+          "task": "archive old incident reports",
+          "owner": "Unknown",
+          "deadline": "2026-09-15",
+          "evidence": [
+            {
+              "text": "Ivan will archive the old incident reports.",
+              "start": 0,
+              "end": 43
+            },
+            {
+              "text": "Ivan will archive the old incident reports.",
+              "start": 44,
+              "end": 87
+            }
+          ]
+        }
+      ],
+      "model": "qwen2.5:0.5b",
+      "usage": {
+        "input_tokens": 423,
+        "output_tokens": 54
+      },
+      "provider_duration_ns": 846023333,
+      "raw_model_response": "{\"items\": [{\"task\": \"archive old incident reports\", \"owner\": \"Unknown\", \"deadline\": \"2026-09-15\", \"evidence\": [{\"text\": \"Ivan will archive the old incident reports.\"}]}]}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 1025.8312079822645,
+      "id": "test-05"
+    },
+    {
+      "items": [
+        {
+          "task": "We used to publish weekly newsletters.",
+          "owner": "We",
+          "deadline": "2026-09-15",
+          "evidence": [
+            {
+              "text": "We used to publish weekly newsletters.",
+              "start": 0,
+              "end": 38
+            }
+          ]
+        },
+        {
+          "task": "The design should reduce confusion.",
+          "owner": "We",
+          "deadline": "2026-09-15",
+          "evidence": [
+            {
+              "text": "The design should reduce confusion.",
+              "start": 39,
+              "end": 74
+            }
+          ]
+        }
+      ],
+      "model": "qwen2.5:0.5b",
+      "usage": {
+        "input_tokens": 424,
+        "output_tokens": 134
+      },
+      "provider_duration_ns": 1965708333,
+      "raw_model_response": "{\n  \"items\": [\n    {\n      \"task\": \"We used to publish weekly newsletters.\",\n      \"owner\": \"We\",\n      \"deadline\": \"2026-09-15\",\n      \"evidence\": [\n        {\n          \"text\": \"We used to publish weekly newsletters.\"\n        }\n      ]\n    },\n    {\n      \"task\": \"The design should reduce confusion.\",\n      \"owner\": \"We\",\n      \"deadline\": \"2026-09-15\",\n      \"evidence\": [\n        {\n          \"text\": \"The design should reduce confusion.\"\n        }\n      ]\n    }\n  ]\n}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 2120.3435829957016,
+      "id": "test-06"
+    },
+    {
+      "items": [
+        {
+          "task": "Noah won't remove the legacy endpoint.",
+          "owner": "Noah",
+          "deadline": "2026-09-15",
+          "evidence": [
+            {
+              "text": "Noah won't remove the legacy endpoint.",
+              "start": 0,
+              "end": 38
+            }
+          ]
+        }
+      ],
+      "model": "qwen2.5:0.5b",
+      "usage": {
+        "input_tokens": 420,
+        "output_tokens": 78
+      },
+      "provider_duration_ns": 1299354667,
+      "raw_model_response": "{\n  \"items\": [\n    {\n      \"task\": \"Noah won't remove the legacy endpoint.\",\n      \"owner\": \"Noah\",\n      \"deadline\": \"2026-09-15\",\n      \"evidence\": [\n        {\n          \"text\": \"Noah won't remove the legacy endpoint.\"\n        }\n      ]\n    }\n  ]\n}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 1453.5350830119569,
+      "id": "test-07"
+    },
+    {
+      "items": [
+        {
+          "task": "Maybe we should migrate the analytics store.",
+          "owner": "Unknown",
+          "deadline": "2026-09-15",
+          "evidence": [
+            {
+              "text": "If the traffic spikes, I will test the fallback.",
+              "start": 45,
+              "end": 93
+            }
+          ]
+        }
+      ],
+      "model": "qwen2.5:0.5b",
+      "usage": {
+        "input_tokens": 424,
+        "output_tokens": 59
+      },
+      "provider_duration_ns": 1004185958,
+      "raw_model_response": "{\"items\": [{\"task\": \"Maybe we should migrate the analytics store.\", \"owner\": \"Unknown\", \"deadline\": \"2026-09-15\", \"evidence\": [{\"text\": \"If the traffic spikes, I will test the fallback.\"}]}]}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 1144.3860830040649,
+      "id": "test-08"
+    },
+    {
+      "model": "qwen2.5:0.5b",
+      "usage": {
+        "input_tokens": null,
+        "output_tokens": null
+      },
+      "provider_duration_ns": null,
+      "raw_model_response": "{\"items\": [{\"task\": \"export attendance list\", \"owner\": \"Unknown\", \"deadline\": \"2026-09-15\", \"evidence\": [{\"text\": \"export attendance list\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "items": [],
+      "error": "Incomplete generation",
+      "latency_ms": 1290.0523750286084,
+      "id": "test-09"
+    },
+    {
+      "items": [],
+      "grounding_error": "Model quote is not in the transcript",
+      "model": "qwen2.5:0.5b",
+      "usage": {
+        "input_tokens": 417,
+        "output_tokens": 55
+      },
+      "provider_duration_ns": 919207209,
+      "raw_model_response": "{\"items\": [{\"task\": \"submit expense report\", \"owner\": \"Zoe\", \"deadline\": \"2026-10-02\", \"evidence\": [{\"text\": \"Please submit the expense report by October 2.\"}]}]}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "invalid_items": [
+        {
+          "task": "submit expense report",
+          "owner": "Zoe",
+          "deadline": "2026-10-02",
+          "evidence": [
+            {
+              "text": "Please submit the expense report by October 2.",
+              "start": -1,
+              "end": -1
+            }
+          ]
+        }
+      ],
+      "error": "Invalid runner response: ValueError",
+      "latency_ms": 1030.638333002571,
+      "id": "test-10"
+    },
+    {
+      "items": [],
+      "grounding_error": "Model quote is not in the transcript",
+      "model": "qwen2.5:0.5b",
+      "usage": {
+        "input_tokens": 417,
+        "output_tokens": 56
+      },
+      "provider_duration_ns": 1124821291,
+      "raw_model_response": "{\"items\": [{\"task\": \"validate the inventory counts\", \"owner\": \"Fatima\", \"deadline\": \"2026-09-15\", \"evidence\": [{\"text\": \"The inventory counts are accurate and up-to-date.\"}]}]}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "invalid_items": [
+        {
+          "task": "validate the inventory counts",
+          "owner": "Fatima",
+          "deadline": "2026-09-15",
+          "evidence": [
+            {
+              "text": "The inventory counts are accurate and up-to-date.",
+              "start": -1,
+              "end": -1
+            }
+          ]
+        }
+      ],
+      "error": "Invalid runner response: ValueError",
+      "latency_ms": 1229.2031660035718,
+      "id": "test-11"
+    },
+    {
+      "items": [
+        {
+          "task": "Wei will present the quarterly metrics this week.",
+          "owner": "Wei",
+          "deadline": "2026-09-15",
+          "evidence": [
+            {
+              "text": "Wei will present the quarterly metrics this week.",
+              "start": 0,
+              "end": 49
+            }
+          ]
+        }
+      ],
+      "model": "qwen2.5:0.5b",
+      "usage": {
+        "input_tokens": 413,
+        "output_tokens": 77
+      },
+      "provider_duration_ns": 1236371208,
+      "raw_model_response": "{\n  \"items\": [\n    {\n      \"task\": \"Wei will present the quarterly metrics this week.\",\n      \"owner\": \"Wei\",\n      \"deadline\": \"2026-09-15\",\n      \"evidence\": [\n        {\n          \"text\": \"Wei will present the quarterly metrics this week.\"\n        }\n      ]\n    }\n  ]\n}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 1375.8851669845171,
+      "id": "test-12"
+    },
+    {
+      "items": [],
+      "model": "qwen2.5:0.5b",
+      "usage": {
+        "input_tokens": 425,
+        "output_tokens": 85
+      },
+      "provider_duration_ns": 1317812084,
+      "raw_model_response": "{\n  \"items\": [\n    {\n      \"task\": \"check the backup restore\",\n      \"owner\": \"Unknown\",\n      \"deadline\": \"2026-13-05\",\n      \"evidence\": [\n        {\n          \"text\": \"Sofia will check the backup restore by 2026-13-05.\"\n        }\n      ]\n    }\n  ]\n}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "invalid_items": [
+        {
+          "task": "check the backup restore",
+          "owner": "Unknown",
+          "deadline": "2026-13-05",
+          "evidence": [
+            {
+              "text": "Sofia will check the backup restore by 2026-13-05.",
+              "start": 0,
+              "end": 50
+            }
+          ]
+        }
+      ],
+      "error": "Invalid runner response: ValueError",
+      "latency_ms": 1452.395375003107,
+      "id": "test-13"
+    },
+    {
+      "items": [],
+      "grounding_error": "Model quote is not in the transcript",
+      "model": "qwen2.5:0.5b",
+      "usage": {
+        "input_tokens": 413,
+        "output_tokens": 76
+      },
+      "provider_duration_ns": 1221666083,
+      "raw_model_response": "{\n  \"items\": [\n    {\n      \"task\": \"deliver the signed contract\",\n      \"owner\": \"Ethan\",\n      \"deadline\": \"2026-09-15\",\n      \"evidence\": [\n        {\n          \"text\": \"The contract has been signed and is ready for delivery.\"\n        }\n      ]\n    }\n  ]\n}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "invalid_items": [
+        {
+          "task": "deliver the signed contract",
+          "owner": "Ethan",
+          "deadline": "2026-09-15",
+          "evidence": [
+            {
+              "text": "The contract has been signed and is ready for delivery.",
+              "start": -1,
+              "end": -1
+            }
+          ]
+        }
+      ],
+      "error": "Invalid runner response: ValueError",
+      "latency_ms": 1352.062541001942,
+      "id": "test-14"
+    },
+    {
+      "items": [
+        {
+          "task": "implement the retry policy",
+          "owner": "Nora",
+          "deadline": "2026-09-15",
+          "evidence": [
+            {
+              "text": "I will implement the retry policy. I will document the rollout by Saturday.",
+              "start": 6,
+              "end": 81
+            }
+          ]
+        }
+      ],
+      "model": "qwen2.5:0.5b",
+      "usage": {
+        "input_tokens": 422,
+        "output_tokens": 61
+      },
+      "provider_duration_ns": 1048376125,
+      "raw_model_response": "{\"items\": [{\"task\": \"implement the retry policy\", \"owner\": \"Nora\", \"deadline\": \"2026-09-15\", \"evidence\": [{\"text\": \"I will implement the retry policy. I will document the rollout by Saturday.\"}]}]}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 1172.3865839885548,
+      "id": "test-15"
+    },
+    {
+      "items": [
+        {
+          "task": "Akash will audit the billing permissions by next Tuesday.",
+          "owner": "Akash",
+          "deadline": "2026-09-15",
+          "evidence": [
+            {
+              "text": "Akash will audit the billing permissions by next Tuesday.",
+              "start": 0,
+              "end": 57
+            }
+          ]
+        }
+      ],
+      "model": "qwen2.5:0.5b",
+      "usage": {
+        "input_tokens": 415,
+        "output_tokens": 63
+      },
+      "provider_duration_ns": 1044883458,
+      "raw_model_response": "{\"items\": [{\"task\": \"Akash will audit the billing permissions by next Tuesday.\", \"owner\": \"Akash\", \"deadline\": \"2026-09-15\", \"evidence\": [{\"text\": \"Akash will audit the billing permissions by next Tuesday.\"}]}]}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 1172.5577079923823,
+      "id": "test-16"
+    },
+    {
+      "items": [
+        {
+          "task": "Isha will investigate the queue backlog.",
+          "owner": "Isha",
+          "deadline": "2026-09-15",
+          "evidence": [
+            {
+              "text": "Today the dashboard showed a spike.\nIsha will investigate the queue backlog.",
+              "start": 0,
+              "end": 76
+            }
+          ]
+        }
+      ],
+      "model": "qwen2.5:0.5b",
+      "usage": {
+        "input_tokens": 420,
+        "output_tokens": 66
+      },
+      "provider_duration_ns": 1082189250,
+      "raw_model_response": "{\"items\": [{\"task\": \"Isha will investigate the queue backlog.\", \"owner\": \"Isha\", \"deadline\": \"2026-09-15\", \"evidence\": [{\"text\": \"Today the dashboard showed a spike.\\nIsha will investigate the queue backlog.\"}]}]}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 1188.6486670118757,
+      "id": "test-17"
+    },
+    {
+      "items": [
+        {
+          "task": "Update the support handbook",
+          "owner": "Support team",
+          "deadline": "2026-09-15",
+          "evidence": [
+            {
+              "text": "Update the support handbook by tomorrow.",
+              "start": 0,
+              "end": 40
+            }
+          ]
+        }
+      ],
+      "model": "qwen2.5:0.5b",
+      "usage": {
+        "input_tokens": 411,
+        "output_tokens": 53
+      },
+      "provider_duration_ns": 910213250,
+      "raw_model_response": "{\"items\": [{\"task\": \"Update the support handbook\", \"owner\": \"Support team\", \"deadline\": \"2026-09-15\", \"evidence\": [{\"text\": \"Update the support handbook by tomorrow.\"}]}]}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 1018.9444580173586,
+      "id": "test-18"
+    },
+    {
+      "items": [
+        {
+          "task": "review the pricing proposal by Thursday",
+          "owner": "Luis",
+          "deadline": "2026-09-15",
+          "evidence": [
+            {
+              "text": "Luis will review the pricing proposal by Thursday.",
+              "start": 0,
+              "end": 50
+            },
+            {
+              "text": "Luis will review the pricing proposal by Thursday.",
+              "start": 51,
+              "end": 101
+            }
+          ]
+        },
+        {
+          "task": "review the pricing proposal by Thursday",
+          "owner": "Hana",
+          "deadline": "2026-09-15",
+          "evidence": [
+            {
+              "text": "Hana will review the pricing proposal by Thursday.",
+              "start": 102,
+              "end": 152
+            }
+          ]
+        }
+      ],
+      "model": "qwen2.5:0.5b",
+      "usage": {
+        "input_tokens": 436,
+        "output_tokens": 144
+      },
+      "provider_duration_ns": 2113109417,
+      "raw_model_response": "{\n  \"items\": [\n    {\n      \"task\": \"review the pricing proposal by Thursday\",\n      \"owner\": \"Luis\",\n      \"deadline\": \"2026-09-15\",\n      \"evidence\": [\n        {\n          \"text\": \"Luis will review the pricing proposal by Thursday.\"\n        }\n      ]\n    },\n    {\n      \"task\": \"review the pricing proposal by Thursday\",\n      \"owner\": \"Hana\",\n      \"deadline\": \"2026-09-15\",\n      \"evidence\": [\n        {\n          \"text\": \"Hana will review the pricing proposal by Thursday.\"\n        }\n      ]\n    }\n  ]\n}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 2233.9225410250947,
+      "id": "test-19"
+    },
+    {
+      "items": [
+        {
+          "task": "Milan will resolve the payment dispute in 2 days.",
+          "owner": "Milan",
+          "deadline": "2026-09-15",
+          "evidence": [
+            {
+              "text": "We already sent the receipt.",
+              "start": 50,
+              "end": 78
+            }
+          ]
+        }
+      ],
+      "model": "qwen2.5:0.5b",
+      "usage": {
+        "input_tokens": 423,
+        "output_tokens": 78
+      },
+      "provider_duration_ns": 1272832958,
+      "raw_model_response": "{\n  \"items\": [\n    {\n      \"task\": \"Milan will resolve the payment dispute in 2 days.\",\n      \"owner\": \"Milan\",\n      \"deadline\": \"2026-09-15\",\n      \"evidence\": [\n        {\n          \"text\": \"We already sent the receipt.\"\n        }\n      ]\n    }\n  ]\n}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 1394.3482909817249,
+      "id": "test-20"
+    },
+    {
+      "items": [
+        {
+          "task": "The renewal account needs attention.",
+          "owner": "Sanjay",
+          "deadline": "2026-09-15",
+          "evidence": [
+            {
+              "text": "Manager: The renewal account needs attention.\nSanjay: I can take ownership of the renewal checklist.\nManager: Please finish it by Friday.\nSanjay: Agreed.",
+              "start": 0,
+              "end": 153
+            }
+          ]
+        }
+      ],
+      "model": "qwen2.5:0.5b",
+      "usage": {
+        "input_tokens": 441,
+        "output_tokens": 84
+      },
+      "provider_duration_ns": 1338162291,
+      "raw_model_response": "{\"items\": [{\"task\": \"The renewal account needs attention.\", \"owner\": \"Sanjay\", \"deadline\": \"2026-09-15\", \"evidence\": [{\"text\": \"Manager: The renewal account needs attention.\\nSanjay: I can take ownership of the renewal checklist.\\nManager: Please finish it by Friday.\\nSanjay: Agreed.\"}]}]}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 1451.6883750038687,
+      "id": "test-21"
+    },
+    {
+      "items": [
+        {
+          "task": "publish outage summary",
+          "owner": "Helen",
+          "deadline": "2026-09-15",
+          "evidence": [
+            {
+              "text": "Helen will publish the outage summary by Thursday.",
+              "start": 0,
+              "end": 50
+            }
+          ]
+        }
+      ],
+      "model": "qwen2.5:0.5b",
+      "usage": {
+        "input_tokens": 428,
+        "output_tokens": 74
+      },
+      "provider_duration_ns": 1178855083,
+      "raw_model_response": "{\n  \"items\": [\n    {\n      \"task\": \"publish outage summary\",\n      \"owner\": \"Helen\",\n      \"deadline\": \"2026-09-15\",\n      \"evidence\": [\n        {\n          \"text\": \"Helen will publish the outage summary by Thursday.\"\n        }\n      ]\n    }\n  ]\n}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 1292.3468750086613,
+      "id": "test-22"
+    },
+    {
+      "items": [
+        {
+          "task": "Anil will migrate the reporting database by Tuesday",
+          "owner": "Anil",
+          "deadline": "2026-09-15",
+          "evidence": [
+            {
+              "text": "Anil: Cancel my database migration task; the vendor is handling it.",
+              "start": 53,
+              "end": 120
+            }
+          ]
+        }
+      ],
+      "model": "qwen2.5:0.5b",
+      "usage": {
+        "input_tokens": 430,
+        "output_tokens": 85
+      },
+      "provider_duration_ns": 1354280417,
+      "raw_model_response": "{\n  \"items\": [\n    {\n      \"task\": \"Anil will migrate the reporting database by Tuesday\",\n      \"owner\": \"Anil\",\n      \"deadline\": \"2026-09-15\",\n      \"evidence\": [\n        {\n          \"text\": \"Anil: Cancel my database migration task; the vendor is handling it.\"\n        }\n      ]\n    }\n  ]\n}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 1463.359749992378,
+      "id": "test-23"
+    },
+    {
+      "items": [
+        {
+          "task": "Grace will update the customer FAQ by October 1.",
+          "owner": "Grace",
+          "deadline": "2026-10-01",
+          "evidence": [
+            {
+              "text": "Grace: I will refresh the customer frequently asked questions by October 1.",
+              "start": 49,
+              "end": 124
+            }
+          ]
+        }
+      ],
+      "model": "qwen2.5:0.5b",
+      "usage": {
+        "input_tokens": 431,
+        "output_tokens": 66
+      },
+      "provider_duration_ns": 1109782875,
+      "raw_model_response": "{\"items\": [{\"task\": \"Grace will update the customer FAQ by October 1.\", \"owner\": \"Grace\", \"deadline\": \"2026-10-01\", \"evidence\": [{\"text\": \"Grace: I will refresh the customer frequently asked questions by October 1.\"}]}]}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 1220.360208011698,
+      "id": "test-24"
+    },
+    {
+      "items": [
+        {
+          "task": "Jules will send the security questionnaire.",
+          "owner": "Jules",
+          "deadline": "2026-09-15",
+          "evidence": [
+            {
+              "text": "Jules will send the security questionnaire.",
+              "start": 0,
+              "end": 43
+            }
+          ]
+        }
+      ],
+      "model": "qwen2.5:0.5b",
+      "usage": {
+        "input_tokens": 427,
+        "output_tokens": 57
+      },
+      "provider_duration_ns": 964820291,
+      "raw_model_response": "{\"items\": [{\"task\": \"Jules will send the security questionnaire.\", \"owner\": \"Jules\", \"deadline\": \"2026-09-15\", \"evidence\": [{\"text\": \"Jules will send the security questionnaire.\"}]}]}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 1073.591624997789,
+      "id": "test-25"
+    },
+    {
+      "items": [
+        {
+          "task": "Raj will deploy the service tomorrow.",
+          "owner": "Unknown",
+          "deadline": "2026-09-15",
+          "evidence": [
+            {
+              "text": "Raj will deploy the service tomorrow.",
+              "start": 33,
+              "end": 70
+            }
+          ]
+        }
+      ],
+      "model": "qwen2.5:0.5b",
+      "usage": {
+        "input_tokens": 431,
+        "output_tokens": 75
+      },
+      "provider_duration_ns": 1197552458,
+      "raw_model_response": "{\n  \"items\": [\n    {\n      \"task\": \"Raj will deploy the service tomorrow.\",\n      \"owner\": \"Unknown\",\n      \"deadline\": \"2026-09-15\",\n      \"evidence\": [\n        {\n          \"text\": \"Raj will deploy the service tomorrow.\"\n        }\n      ]\n    }\n  ]\n}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 1306.9852909829933,
+      "id": "test-26"
+    },
+    {
+      "items": [
+        {
+          "task": "deploy the patch",
+          "owner": "Unknown",
+          "deadline": "2026-09-15",
+          "evidence": [
+            {
+              "text": "I will not deploy the patch, but I will review its test results today.",
+              "start": 7,
+              "end": 77
+            }
+          ]
+        }
+      ],
+      "model": "qwen2.5:0.5b",
+      "usage": {
+        "input_tokens": 423,
+        "output_tokens": 60
+      },
+      "provider_duration_ns": 1012713709,
+      "raw_model_response": "{\"items\": [{\"task\": \"deploy the patch\", \"owner\": \"Unknown\", \"deadline\": \"2026-09-15\", \"evidence\": [{\"text\": \"I will not deploy the patch, but I will review its test results today.\"}]}]}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 1120.4720419773366,
+      "id": "test-27"
+    },
+    {
+      "items": [
+        {
+          "task": "Kunal and Mira will coordinate the audit meeting by Friday.",
+          "owner": "Kunal and Mira",
+          "deadline": "2026-09-15",
+          "evidence": [
+            {
+              "text": "Kunal and Mira will coordinate the audit meeting by Friday.",
+              "start": 0,
+              "end": 59
+            }
+          ]
+        }
+      ],
+      "model": "qwen2.5:0.5b",
+      "usage": {
+        "input_tokens": 425,
+        "output_tokens": 70
+      },
+      "provider_duration_ns": 1131818458,
+      "raw_model_response": "{\"items\": [{\"task\": \"Kunal and Mira will coordinate the audit meeting by Friday.\", \"owner\": \"Kunal and Mira\", \"deadline\": \"2026-09-15\", \"evidence\": [{\"text\": \"Kunal and Mira will coordinate the audit meeting by Friday.\"}]}]}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 1239.5836249925196,
+      "id": "test-28"
+    },
+    {
+      "items": [
+        {
+          "task": "Oscar: I'll add a retention chart to the monthly report by Thursday.",
+          "owner": "Oscar",
+          "deadline": "2026-09-15",
+          "evidence": [
+            {
+              "text": "Oscar: I'll add a retention chart to the monthly report by Thursday.",
+              "start": 0,
+              "end": 68
+            }
+          ]
+        }
+      ],
+      "model": "qwen2.5:0.5b",
+      "usage": {
+        "input_tokens": 427,
+        "output_tokens": 92
+      },
+      "provider_duration_ns": 1438939000,
+      "raw_model_response": "{\n  \"items\": [\n    {\n      \"task\": \"Oscar: I'll add a retention chart to the monthly report by Thursday.\",\n      \"owner\": \"Oscar\",\n      \"deadline\": \"2026-09-15\",\n      \"evidence\": [\n        {\n          \"text\": \"Oscar: I'll add a retention chart to the monthly report by Thursday.\"\n        }\n      ]\n    }\n  ]\n}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 1549.2739170149434,
+      "id": "test-29"
+    },
+    {
+      "items": [
+        {
+          "task": "Daria will fix the export bug by tomorrow.",
+          "owner": "Daria",
+          "deadline": "2026-09-15",
+          "evidence": [
+            {
+              "text": "Daria will fix the export bug by tomorrow.",
+              "start": 0,
+              "end": 42
+            }
+          ]
+        },
+        {
+          "task": "Daria will fix the export bug by next Friday.",
+          "owner": "Daria",
+          "deadline": "2026-09-15",
+          "evidence": [
+            {
+              "text": "Daria will fix the export bug by next Friday.",
+              "start": 43,
+              "end": 88
+            }
+          ]
+        }
+      ],
+      "model": "qwen2.5:0.5b",
+      "usage": {
+        "input_tokens": 443,
+        "output_tokens": 152
+      },
+      "provider_duration_ns": 2299588791,
+      "raw_model_response": "{\n  \"items\": [\n    {\n      \"task\": \"Daria will fix the export bug by tomorrow.\",\n      \"owner\": \"Daria\",\n      \"deadline\": \"2026-09-15\",\n      \"evidence\": [\n        {\n          \"text\": \"Daria will fix the export bug by tomorrow.\"\n        }\n      ]\n    },\n    {\n      \"task\": \"Daria will fix the export bug by next Friday.\",\n      \"owner\": \"Daria\",\n      \"deadline\": \"2026-09-15\",\n      \"evidence\": [\n        {\n          \"text\": \"Daria will fix the export bug by next Friday.\"\n        }\n      ]\n    }\n  ]\n}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 2423.6395829939283,
+      "id": "test-30"
+    }
+  ]
+}

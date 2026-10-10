@@ -1,0 +1,22 @@
+{
+  "models": [
+    {
+      "label": "llama3_2_3b",
+      "command": "python3 ollama_runner.py --model llama3.2:3b"
+    },
+    {
+      "label": "qwen2_5_1_5b",
+      "command": "python3 ollama_runner.py --model qwen2.5:1.5b"
+    },
+    {
+      "label": "qwen2_5_0_5b",
+      "command": "python3 ollama_runner.py --model qwen2.5:0.5b"
+    }
+  ],
+  "prompts": [
+    "v1",
+    "v2"
+  ],
+  "repeats": 1,
+  "timeout_seconds": 60
+}

@@ -1,0 +1,2 @@
+label,dataset_sha256,actual_models,task_precision,task_recall,task_f1,owner_accuracy_on_matched,deadline_accuracy_on_matched,known_owner_end_to_end,known_deadline_end_to_end,evidence_validity,gold_support_proxy,latency_p50_ms,latency_p95_ms,cost_usd,failure_rate
+qwen2_5_1_5b-v1-1,ee4c5b170c5acda3473c062451620a3ca76ec203f586795a3862ee8d538d7bf5,qwen2.5:1.5b,0.625,0.5172413793103449,0.5660377358490567,0.7333333333333333,0.6666666666666666,0.4,0.21052631578947367,1.0,0.25,1601.871291990392,2900.4295420018025,,0.3333333333333333

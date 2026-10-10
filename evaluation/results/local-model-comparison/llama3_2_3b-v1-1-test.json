@@ -1,0 +1,1631 @@
+{
+  "counts": {
+    "predicted": 38,
+    "gold": 29,
+    "matched": 24,
+    "owner_correct": 20,
+    "deadline_correct": 7,
+    "owner_known_correct": 17,
+    "owner_known_total": 25,
+    "deadline_known_correct": 7,
+    "deadline_known_total": 19,
+    "evidence_valid": 38,
+    "supported": 6,
+    "failures": 3
+  },
+  "metrics": {
+    "task_precision": 0.631578947368421,
+    "task_recall": 0.8275862068965517,
+    "task_f1": 0.716417910447761,
+    "owner_accuracy_on_matched": 0.8333333333333334,
+    "deadline_accuracy_on_matched": 0.2916666666666667,
+    "known_owner_end_to_end": 0.68,
+    "known_deadline_end_to_end": 0.3684210526315789,
+    "evidence_validity": 1.0,
+    "gold_support_proxy": 0.15789473684210525,
+    "latency_p50_ms": 6126.3081670040265,
+    "latency_p95_ms": 18307.78441700386,
+    "cost_usd": 0.0,
+    "failure_rate": 0.1
+  },
+  "details": [
+    {
+      "id": "test-01",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-01-a1",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        }
+      ],
+      "false_positives": [
+        1
+      ],
+      "missed_gold": []
+    },
+    {
+      "id": "test-02",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-02-a1",
+          "owner_correct": true,
+          "deadline_correct": false,
+          "gold_support_proxy": false
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "test-03",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-03-a1",
+          "owner_correct": false,
+          "deadline_correct": false,
+          "gold_support_proxy": false
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "test-04",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-04-a1",
+          "owner_correct": true,
+          "deadline_correct": false,
+          "gold_support_proxy": false
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "test-05",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-05-a1",
+          "owner_correct": true,
+          "deadline_correct": false,
+          "gold_support_proxy": false
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "test-06",
+      "matches": [],
+      "false_positives": [
+        0,
+        1
+      ],
+      "missed_gold": []
+    },
+    {
+      "id": "test-07",
+      "matches": [],
+      "false_positives": [
+        0
+      ],
+      "missed_gold": []
+    },
+    {
+      "id": "test-08",
+      "matches": [],
+      "false_positives": [
+        0,
+        1
+      ],
+      "missed_gold": []
+    },
+    {
+      "id": "test-09",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-09-a1",
+          "owner_correct": true,
+          "deadline_correct": false,
+          "gold_support_proxy": false
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "test-10",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-10-a1",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "test-11",
+      "matches": [],
+      "false_positives": [],
+      "missed_gold": [
+        "test-11-a1"
+      ]
+    },
+    {
+      "id": "test-12",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-12-a1",
+          "owner_correct": false,
+          "deadline_correct": false,
+          "gold_support_proxy": false
+        }
+      ],
+      "false_positives": [
+        1
+      ],
+      "missed_gold": []
+    },
+    {
+      "id": "test-13",
+      "matches": [],
+      "false_positives": [],
+      "missed_gold": [
+        "test-13-a1"
+      ]
+    },
+    {
+      "id": "test-14",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-14-a1",
+          "owner_correct": false,
+          "deadline_correct": true,
+          "gold_support_proxy": false
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "test-15",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-15-a1",
+          "owner_correct": true,
+          "deadline_correct": false,
+          "gold_support_proxy": false
+        },
+        {
+          "prediction": 1,
+          "gold_id": "test-15-a2",
+          "owner_correct": true,
+          "deadline_correct": false,
+          "gold_support_proxy": false
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "test-16",
+      "matches": [],
+      "false_positives": [],
+      "missed_gold": [
+        "test-16-a1"
+      ]
+    },
+    {
+      "id": "test-17",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-17-a1",
+          "owner_correct": true,
+          "deadline_correct": false,
+          "gold_support_proxy": false
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "test-18",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-18-a1",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "test-19",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-19-a1",
+          "owner_correct": true,
+          "deadline_correct": false,
+          "gold_support_proxy": false
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": [
+        "test-19-a2"
+      ]
+    },
+    {
+      "id": "test-20",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-20-a1",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        }
+      ],
+      "false_positives": [
+        1
+      ],
+      "missed_gold": []
+    },
+    {
+      "id": "test-21",
+      "matches": [
+        {
+          "prediction": 1,
+          "gold_id": "test-21-a1",
+          "owner_correct": false,
+          "deadline_correct": false,
+          "gold_support_proxy": false
+        }
+      ],
+      "false_positives": [
+        0
+      ],
+      "missed_gold": []
+    },
+    {
+      "id": "test-22",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-22-a1",
+          "owner_correct": true,
+          "deadline_correct": false,
+          "gold_support_proxy": false
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "test-23",
+      "matches": [],
+      "false_positives": [
+        0
+      ],
+      "missed_gold": []
+    },
+    {
+      "id": "test-24",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-24-a1",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "test-25",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-25-a1",
+          "owner_correct": true,
+          "deadline_correct": false,
+          "gold_support_proxy": false
+        },
+        {
+          "prediction": 1,
+          "gold_id": "test-25-a2",
+          "owner_correct": true,
+          "deadline_correct": false,
+          "gold_support_proxy": false
+        }
+      ],
+      "false_positives": [
+        2
+      ],
+      "missed_gold": []
+    },
+    {
+      "id": "test-26",
+      "matches": [],
+      "false_positives": [
+        0,
+        1
+      ],
+      "missed_gold": []
+    },
+    {
+      "id": "test-27",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-27-a1",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "test-28",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-28-a1",
+          "owner_correct": true,
+          "deadline_correct": false,
+          "gold_support_proxy": false
+        }
+      ],
+      "false_positives": [
+        1
+      ],
+      "missed_gold": []
+    },
+    {
+      "id": "test-29",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-29-a1",
+          "owner_correct": true,
+          "deadline_correct": false,
+          "gold_support_proxy": false
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "test-30",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-30-a1",
+          "owner_correct": true,
+          "deadline_correct": false,
+          "gold_support_proxy": false
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": [
+        "test-30-a2"
+      ]
+    }
+  ],
+  "schema_version": 1,
+  "created_at": "2026-10-10T11:17:13.433552+00:00",
+  "evaluator_sha256": "b618d7dcab9afd791d816694e3cb456bbddd2051457a1b45c8f593ead7c34585",
+  "label": "llama3_2_3b-v1-1",
+  "extractor": "llm",
+  "dataset_sha256": "ee4c5b170c5acda3473c062451620a3ca76ec203f586795a3862ee8d538d7bf5",
+  "dataset": "test.jsonl",
+  "splits": [
+    "test"
+  ],
+  "extractor_sha256": null,
+  "prompt_version": "v1",
+  "prompt_sha256": "4687bf98f0a4652e8af2ebc35d513df47b17a386bc86cdc5ebc4c64b8a4ac28e",
+  "pricing": {
+    "input_usd_per_million": null,
+    "output_usd_per_million": null
+  },
+  "runs": [
+    {
+      "items": [
+        {
+          "task": "Reconcile supplier invoices",
+          "owner": "Meera",
+          "deadline": "2026-09-22",
+          "evidence": [
+            {
+              "text": "Meera will reconcile the supplier invoices by 2026-09-22.",
+              "start": 0,
+              "end": 57
+            }
+          ]
+        },
+        {
+          "task": "Budget approval",
+          "owner": "Unknown",
+          "deadline": "2026-09-22",
+          "evidence": [
+            {
+              "text": "The budget was approved.",
+              "start": 58,
+              "end": 82
+            }
+          ]
+        }
+      ],
+      "model": "llama3.2:3b",
+      "usage": {
+        "input_tokens": 433,
+        "output_tokens": 131
+      },
+      "provider_duration_ns": 8116995333,
+      "raw_model_response": "{\n  \"items\": [\n    {\n      \"task\": \"Reconcile supplier invoices\",\n      \"owner\": \"Meera\",\n      \"deadline\": \"2026-09-22\",\n      \"evidence\": [\n        {\n          \"text\": \"Meera will reconcile the supplier invoices by 2026-09-22.\"\n        }\n      ]\n    },\n    {\n      \"task\": \"Budget approval\",\n      \"owner\": \"Unknown\",\n      \"deadline\": \"2026-09-22\",\n      \"evidence\": [\n        {\n          \"text\": \"The budget was approved.\"\n        }\n      ]\n    }\n  ]\n}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 8286.060500016902,
+      "id": "test-01"
+    },
+    {
+      "items": [
+        {
+          "task": "Replace expired certificate by tomorrow.",
+          "owner": "Tomas",
+          "deadline": "2026-09-15",
+          "evidence": [
+            {
+              "text": "I will replace the expired certificate by tomorrow.",
+              "start": 7,
+              "end": 58
+            }
+          ]
+        }
+      ],
+      "model": "llama3.2:3b",
+      "usage": {
+        "input_tokens": 424,
+        "output_tokens": 71
+      },
+      "provider_duration_ns": 2835751708,
+      "raw_model_response": "{\n  \"items\": [\n    {\n      \"task\": \"Replace expired certificate by tomorrow.\",\n      \"owner\": \"Tomas\",\n      \"deadline\": \"2026-09-15\",\n      \"evidence\": [\n        {\n          \"text\": \"I will replace the expired certificate by tomorrow.\"\n        }\n      ]\n    }\n  ]\n}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 3079.6478340053,
+      "id": "test-02"
+    },
+    {
+      "items": [
+        {
+          "task": "Collect pilot feedback next month",
+          "owner": "Lina",
+          "deadline": "2026-09-15",
+          "evidence": [
+            {
+              "text": "We must collect the pilot feedback next month.",
+              "start": 6,
+              "end": 52
+            }
+          ]
+        }
+      ],
+      "model": "llama3.2:3b",
+      "usage": {
+        "input_tokens": 424,
+        "output_tokens": 71
+      },
+      "provider_duration_ns": 2856513959,
+      "raw_model_response": "{\n  \"items\": [\n    {\n      \"task\": \"Collect pilot feedback next month\",\n      \"owner\": \"Lina\",\n      \"deadline\": \"2026-09-15\",\n      \"evidence\": [\n        {\n          \"text\": \"We must collect the pilot feedback next month.\"\n        }\n      ]\n    }\n  ]\n}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 2952.0534170151222,
+      "id": "test-03"
+    },
+    {
+      "items": [
+        {
+          "task": "Book the training room",
+          "owner": "Unknown",
+          "deadline": "2026-09-15",
+          "evidence": [
+            {
+              "text": "Please book the training room by Wednesday.",
+              "start": 0,
+              "end": 43
+            }
+          ]
+        }
+      ],
+      "model": "llama3.2:3b",
+      "usage": {
+        "input_tokens": 420,
+        "output_tokens": 68
+      },
+      "provider_duration_ns": 2613655417,
+      "raw_model_response": "{\n  \"items\": [\n    {\n      \"task\": \"Book the training room\",\n      \"owner\": \"Unknown\",\n      \"deadline\": \"2026-09-15\",\n      \"evidence\": [\n        {\n          \"text\": \"Please book the training room by Wednesday.\"\n        }\n      ]\n    }\n  ]\n}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 2719.213874981506,
+      "id": "test-04"
+    },
+    {
+      "items": [
+        {
+          "task": "Ivan will archive the old incident reports.",
+          "owner": "Ivan",
+          "deadline": "2026-09-15",
+          "evidence": [
+            {
+              "text": "Ivan will archive the old incident reports.",
+              "start": 0,
+              "end": 43
+            },
+            {
+              "text": "Ivan will archive the old incident reports.",
+              "start": 44,
+              "end": 87
+            }
+          ]
+        }
+      ],
+      "model": "llama3.2:3b",
+      "usage": {
+        "input_tokens": 431,
+        "output_tokens": 74
+      },
+      "provider_duration_ns": 2913345666,
+      "raw_model_response": "{\n  \"items\": [\n    {\n      \"task\": \"Ivan will archive the old incident reports.\",\n      \"owner\": \"Ivan\",\n      \"deadline\": \"2026-09-15\",\n      \"evidence\": [\n        {\n          \"text\": \"Ivan will archive the old incident reports.\"\n        }\n      ]\n    }\n  ]\n}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 3016.0829999949783,
+      "id": "test-05"
+    },
+    {
+      "items": [
+        {
+          "task": "Reduce design to reduce confusion",
+          "owner": "Unknown",
+          "deadline": "2026-09-15",
+          "evidence": [
+            {
+              "text": "The design should reduce confusion.",
+              "start": 39,
+              "end": 74
+            }
+          ]
+        },
+        {
+          "task": "Schedule webinar",
+          "owner": "Unknown",
+          "deadline": "2026-09-15",
+          "evidence": [
+            {
+              "text": "Yesterday we scheduled the webinar.",
+              "start": 75,
+              "end": 110
+            }
+          ]
+        }
+      ],
+      "model": "llama3.2:3b",
+      "usage": {
+        "input_tokens": 432,
+        "output_tokens": 121
+      },
+      "provider_duration_ns": 4233467292,
+      "raw_model_response": "{\n  \"items\": [\n    {\n      \"task\": \"Reduce design to reduce confusion\",\n      \"owner\": \"Unknown\",\n      \"deadline\": \"2026-09-15\",\n      \"evidence\": [\n        {\n          \"text\": \"The design should reduce confusion.\"\n        }\n      ]\n    },\n    {\n      \"task\": \"Schedule webinar\",\n      \"owner\": \"Unknown\",\n      \"deadline\": \"2026-09-15\",\n      \"evidence\": [\n        {\n          \"text\": \"Yesterday we scheduled the webinar.\"\n        }\n      ]\n    }\n  ]\n}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 4350.642292003613,
+      "id": "test-06"
+    },
+    {
+      "items": [
+        {
+          "task": "Remove legacy endpoint",
+          "owner": "Noah",
+          "deadline": "2026-09-15",
+          "evidence": [
+            {
+              "text": "Noah won't remove the legacy endpoint.\nThe migration is no longer required.",
+              "start": 0,
+              "end": 75
+            }
+          ]
+        }
+      ],
+      "model": "llama3.2:3b",
+      "usage": {
+        "input_tokens": 428,
+        "output_tokens": 76
+      },
+      "provider_duration_ns": 2949714667,
+      "raw_model_response": "{\n  \"items\": [\n    {\n      \"task\": \"Remove legacy endpoint\",\n      \"owner\": \"Noah\",\n      \"deadline\": \"2026-09-15\",\n      \"evidence\": [\n        {\n          \"text\": \"Noah won't remove the legacy endpoint.\\nThe migration is no longer required.\"\n        }\n      ]\n    }\n  ]\n}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 3070.717208000133,
+      "id": "test-07"
+    },
+    {
+      "items": [
+        {
+          "task": "Migrate the analytics store",
+          "owner": "Unknown",
+          "deadline": "2026-09-15",
+          "evidence": [
+            {
+              "text": "Maybe we should migrate the analytics store.",
+              "start": 0,
+              "end": 44
+            }
+          ]
+        },
+        {
+          "task": "Test the fallback",
+          "owner": "Unknown",
+          "deadline": "2026-09-15",
+          "evidence": [
+            {
+              "text": "If the traffic spikes, I will test the fallback.",
+              "start": 45,
+              "end": 93
+            }
+          ]
+        }
+      ],
+      "model": "llama3.2:3b",
+      "usage": {
+        "input_tokens": 432,
+        "output_tokens": 129
+      },
+      "provider_duration_ns": 4422283250,
+      "raw_model_response": "{\n  \"items\": [\n    {\n      \"task\": \"Migrate the analytics store\",\n      \"owner\": \"Unknown\",\n      \"deadline\": \"2026-09-15\",\n      \"evidence\": [\n        {\n          \"text\": \"Maybe we should migrate the analytics store.\"\n        }\n      ]\n    },\n    {\n      \"task\": \"Test the fallback\",\n      \"owner\": \"Unknown\",\n      \"deadline\": \"2026-09-15\",\n      \"evidence\": [\n        {\n          \"text\": \"If the traffic spikes, I will test the fallback.\"\n        }\n      ]\n    }\n  ]\n}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 4544.49395800475,
+      "id": "test-08"
+    },
+    {
+      "items": [
+        {
+          "task": "export attendance list",
+          "owner": "Unknown",
+          "deadline": "2026-09-15",
+          "evidence": [
+            {
+              "text": "Can you export the attendance list?",
+              "start": 0,
+              "end": 35
+            }
+          ]
+        }
+      ],
+      "model": "llama3.2:3b",
+      "usage": {
+        "input_tokens": 419,
+        "output_tokens": 66
+      },
+      "provider_duration_ns": 2618853500,
+      "raw_model_response": "{\n  \"items\": [\n    {\n      \"task\": \"export attendance list\",\n      \"owner\": \"Unknown\",\n      \"deadline\": \"2026-09-15\",\n      \"evidence\": [\n        {\n          \"text\": \"Can you export the attendance list?\"\n        }\n      ]\n    }\n  ]\n}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 2745.2196670055855,
+      "id": "test-09"
+    },
+    {
+      "items": [
+        {
+          "task": "Submit expense report",
+          "owner": "Zoe",
+          "deadline": "2026-10-02",
+          "evidence": [
+            {
+              "text": "Zoe, please submit the expense report by October 2.",
+              "start": 0,
+              "end": 51
+            }
+          ]
+        }
+      ],
+      "model": "llama3.2:3b",
+      "usage": {
+        "input_tokens": 425,
+        "output_tokens": 73
+      },
+      "provider_duration_ns": 2899615917,
+      "raw_model_response": "{\n  \"items\": [\n    {\n      \"task\": \"Submit expense report\",\n      \"owner\": \"Zoe\",\n      \"deadline\": \"2026-10-02\",\n      \"evidence\": [\n        {\n          \"text\": \"Zoe, please submit the expense report by October 2.\"\n        }\n      ]\n    }\n  ]\n}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 3086.144000000786,
+      "id": "test-10"
+    },
+    {
+      "items": [],
+      "grounding_error": "Model quote is not in the transcript",
+      "model": "llama3.2:3b",
+      "usage": {
+        "input_tokens": 425,
+        "output_tokens": 140
+      },
+      "provider_duration_ns": 4910222291,
+      "raw_model_response": "{\n  \"items\": [\n    {\n      \"task\": \"validate the inventory counts\",\n      \"owner\": \"Fatima\",\n      \"deadline\": \"2026-09-15\",\n      \"evidence\": [\n        {\n          \"text\": \"Action item: validate the inventory counts; assigned to Fatima\"\n        }\n      ]\n    },\n    {\n      \"task\": \"Unknown\",\n      \"owner\": \"Unknown\",\n      \"deadline\": \"Unknown\",\n      \"evidence\": [\n        {\n          \"text\": \"output_schema: ...properties: ...items: ...task: ...owner: ...deadline: ...evidence: ...\"\n        }\n      ]\n    }\n  ]\n}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "invalid_items": [
+        {
+          "task": "validate the inventory counts",
+          "owner": "Fatima",
+          "deadline": "2026-09-15",
+          "evidence": [
+            {
+              "text": "Action item: validate the inventory counts; assigned to Fatima",
+              "start": 0,
+              "end": 62
+            }
+          ]
+        },
+        {
+          "task": "Unknown",
+          "owner": "Unknown",
+          "deadline": "Unknown",
+          "evidence": [
+            {
+              "text": "output_schema: ...properties: ...items: ...task: ...owner: ...deadline: ...evidence: ...",
+              "start": -1,
+              "end": -1
+            }
+          ]
+        }
+      ],
+      "error": "Invalid runner response: ValueError",
+      "latency_ms": 5051.842874992872,
+      "id": "test-11"
+    },
+    {
+      "items": [
+        {
+          "task": "Wei will present the quarterly metrics this week.",
+          "owner": "Unknown",
+          "deadline": "2026-09-15",
+          "evidence": [
+            {
+              "text": "Wei will present the quarterly metrics this week.",
+              "start": 0,
+              "end": 49
+            }
+          ]
+        },
+        {
+          "task": "Unknown",
+          "owner": "Unknown",
+          "deadline": "Unknown",
+          "evidence": [
+            {
+              "text": "Wei will present the quarterly metrics this week.",
+              "start": 0,
+              "end": 49
+            }
+          ]
+        }
+      ],
+      "model": "llama3.2:3b",
+      "usage": {
+        "input_tokens": 421,
+        "output_tokens": 124
+      },
+      "provider_duration_ns": 4439899709,
+      "raw_model_response": "{\n  \"items\": [\n    {\n      \"task\": \"Wei will present the quarterly metrics this week.\",\n      \"owner\": \"Unknown\",\n      \"deadline\": \"2026-09-15\",\n      \"evidence\": [\n        {\n          \"text\": \"Wei will present the quarterly metrics this week.\"\n        }\n      ]\n    },\n    {\n      \"task\": \"Unknown\",\n      \"owner\": \"Unknown\",\n      \"deadline\": \"Unknown\",\n      \"evidence\": [\n        {\n          \"text\": \"Wei will present the quarterly metrics this week.\"\n        }\n      ]\n    }\n  ]\n}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 4580.999083002098,
+      "id": "test-12"
+    },
+    {
+      "items": [],
+      "model": "llama3.2:3b",
+      "usage": {
+        "input_tokens": 429,
+        "output_tokens": 83
+      },
+      "provider_duration_ns": 3350516792,
+      "raw_model_response": "{\n  \"items\": [\n    {\n      \"task\": \"Sofia will check the backup restore\",\n      \"owner\": \"Sofia\",\n      \"deadline\": \"2026-13-05\",\n      \"evidence\": [\n        {\n          \"text\": \"Sofia will check the backup restore by 2026-13-05.\"\n        }\n      ]\n    }\n  ]\n}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "invalid_items": [
+        {
+          "task": "Sofia will check the backup restore",
+          "owner": "Sofia",
+          "deadline": "2026-13-05",
+          "evidence": [
+            {
+              "text": "Sofia will check the backup restore by 2026-13-05.",
+              "start": 0,
+              "end": 50
+            }
+          ]
+        }
+      ],
+      "error": "Invalid runner response: ValueError",
+      "latency_ms": 3468.2257090171333,
+      "id": "test-13"
+    },
+    {
+      "items": [
+        {
+          "task": "Ethan will deliver the signed contract today.",
+          "owner": "Unknown",
+          "deadline": "2026-09-15",
+          "evidence": [
+            {
+              "text": "today.",
+              "start": 40,
+              "end": 46
+            }
+          ]
+        }
+      ],
+      "model": "llama3.2:3b",
+      "usage": {
+        "input_tokens": 421,
+        "output_tokens": 66
+      },
+      "provider_duration_ns": 3091182792,
+      "raw_model_response": "{\n  \"items\": [\n    {\n      \"task\": \"Ethan will deliver the signed contract today.\",\n      \"owner\": \"Unknown\",\n      \"deadline\": \"2026-09-15\",\n      \"evidence\": [\n        {\n          \"text\": \"today.\"\n        }\n      ]\n    }\n  ]\n}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 3303.056208998896,
+      "id": "test-14"
+    },
+    {
+      "items": [
+        {
+          "task": "Implement retry policy",
+          "owner": "Nora",
+          "deadline": "2026-09-15",
+          "evidence": [
+            {
+              "text": "I will implement the retry policy.",
+              "start": 6,
+              "end": 40
+            }
+          ]
+        },
+        {
+          "task": "Document rollout by Saturday",
+          "owner": "Nora",
+          "deadline": "2026-09-15",
+          "evidence": [
+            {
+              "text": "I will document the rollout by Saturday.",
+              "start": 41,
+              "end": 81
+            }
+          ]
+        }
+      ],
+      "model": "llama3.2:3b",
+      "usage": {
+        "input_tokens": 430,
+        "output_tokens": 126
+      },
+      "provider_duration_ns": 5668635958,
+      "raw_model_response": "{\n  \"items\": [\n    {\n      \"task\": \"Implement retry policy\",\n      \"owner\": \"Nora\",\n      \"deadline\": \"2026-09-15\",\n      \"evidence\": [\n        {\n          \"text\": \"I will implement the retry policy.\"\n        }\n      ]\n    },\n    {\n      \"task\": \"Document rollout by Saturday\",\n      \"owner\": \"Nora\",\n      \"deadline\": \"2026-09-15\",\n      \"evidence\": [\n        {\n          \"text\": \"I will document the rollout by Saturday.\"\n        }\n      ]\n    }\n  ]\n}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 5884.0642500144895,
+      "id": "test-15"
+    },
+    {
+      "items": [],
+      "grounding_error": "Model quote is not in the transcript",
+      "model": "llama3.2:3b",
+      "usage": {
+        "input_tokens": 423,
+        "output_tokens": 137
+      },
+      "provider_duration_ns": 8079313750,
+      "raw_model_response": "{\n  \"items\": [\n    {\n      \"task\": \"Akash will audit the billing permissions\",\n      \"owner\": \"Akash\",\n      \"deadline\": \"2026-09-20\",\n      \"evidence\": [\n        {\n          \"text\": \"Akash will audit the billing permissions by next Tuesday.\"\n        }\n      ]\n    },\n    {\n      \"task\": \"Runner-specific evidence contract\",\n      \"owner\": \"Unknown\",\n      \"deadline\": \"Unknown\",\n      \"evidence\": [\n        {\n          \"text\": \"output exact quote text only. A deterministic adapter calculates start/end offsets from these quotes;\"\n        }\n      ]\n    }\n  ]\n}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "invalid_items": [
+        {
+          "task": "Akash will audit the billing permissions",
+          "owner": "Akash",
+          "deadline": "2026-09-20",
+          "evidence": [
+            {
+              "text": "Akash will audit the billing permissions by next Tuesday.",
+              "start": 0,
+              "end": 57
+            }
+          ]
+        },
+        {
+          "task": "Runner-specific evidence contract",
+          "owner": "Unknown",
+          "deadline": "Unknown",
+          "evidence": [
+            {
+              "text": "output exact quote text only. A deterministic adapter calculates start/end offsets from these quotes;",
+              "start": -1,
+              "end": -1
+            }
+          ]
+        }
+      ],
+      "error": "Invalid runner response: ValueError",
+      "latency_ms": 8321.968000003835,
+      "id": "test-16"
+    },
+    {
+      "items": [
+        {
+          "task": "Isha will investigate the queue backlog.",
+          "owner": "Isha",
+          "deadline": "2026-09-15",
+          "evidence": [
+            {
+              "text": "queue backlog",
+              "start": 62,
+              "end": 75
+            }
+          ]
+        }
+      ],
+      "model": "llama3.2:3b",
+      "usage": {
+        "input_tokens": 428,
+        "output_tokens": 67
+      },
+      "provider_duration_ns": 6057871084,
+      "raw_model_response": "{\n  \"items\": [\n    {\n      \"task\": \"Isha will investigate the queue backlog.\",\n      \"owner\": \"Isha\",\n      \"deadline\": \"2026-09-15\",\n      \"evidence\": [\n        {\n          \"text\": \"queue backlog\"\n        }\n      ]\n    }\n  ]\n}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 6274.103500007186,
+      "id": "test-17"
+    },
+    {
+      "items": [
+        {
+          "task": "Update the support handbook",
+          "owner": "Unknown",
+          "deadline": "2026-09-16",
+          "evidence": [
+            {
+              "text": "Update the support handbook by tomorrow.",
+              "start": 0,
+              "end": 40
+            }
+          ]
+        }
+      ],
+      "model": "llama3.2:3b",
+      "usage": {
+        "input_tokens": 419,
+        "output_tokens": 67
+      },
+      "provider_duration_ns": 7323606167,
+      "raw_model_response": "{\n  \"items\": [\n    {\n      \"task\": \"Update the support handbook\",\n      \"owner\": \"Unknown\",\n      \"deadline\": \"2026-09-16\",\n      \"evidence\": [\n        {\n          \"text\": \"Update the support handbook by tomorrow.\"\n        }\n      ]\n    }\n  ]\n}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 7551.646624982823,
+      "id": "test-18"
+    },
+    {
+      "items": [
+        {
+          "task": "Luis will review the pricing proposal",
+          "owner": "Luis",
+          "deadline": "2026-09-15",
+          "evidence": [
+            {
+              "text": "Luis will review the pricing proposal by Thursday.",
+              "start": 0,
+              "end": 50
+            },
+            {
+              "text": "Luis will review the pricing proposal by Thursday.",
+              "start": 51,
+              "end": 101
+            },
+            {
+              "text": "Hana will review the pricing proposal by Thursday.",
+              "start": 102,
+              "end": 152
+            }
+          ]
+        }
+      ],
+      "model": "llama3.2:3b",
+      "usage": {
+        "input_tokens": 444,
+        "output_tokens": 112
+      },
+      "provider_duration_ns": 18076314625,
+      "raw_model_response": "{\n  \"items\": [\n    {\n      \"task\": \"Luis will review the pricing proposal\",\n      \"owner\": \"Luis\",\n      \"deadline\": \"2026-09-15\",\n      \"evidence\": [\n        {\n          \"text\": \"Luis will review the pricing proposal by Thursday.\"\n        },\n        {\n          \"text\": \"Luis will review the pricing proposal by Thursday.\"\n        },\n        {\n          \"text\": \"Hana will review the pricing proposal by Thursday.\"\n        }\n      ]\n    }\n  ]\n}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 18307.78441700386,
+      "id": "test-19"
+    },
+    {
+      "items": [
+        {
+          "task": "Milan will resolve the payment dispute",
+          "owner": "Milan",
+          "deadline": "2026-09-17",
+          "evidence": [
+            {
+              "text": "Milan will resolve the payment dispute in 2 days.",
+              "start": 0,
+              "end": 49
+            }
+          ]
+        },
+        {
+          "task": "We already sent the receipt",
+          "owner": "Unknown",
+          "deadline": "Unknown",
+          "evidence": [
+            {
+              "text": "We already sent the receipt.",
+              "start": 50,
+              "end": 78
+            }
+          ]
+        }
+      ],
+      "model": "llama3.2:3b",
+      "usage": {
+        "input_tokens": 431,
+        "output_tokens": 128
+      },
+      "provider_duration_ns": 22840108917,
+      "raw_model_response": "{\n  \"items\": [\n    {\n      \"task\": \"Milan will resolve the payment dispute\",\n      \"owner\": \"Milan\",\n      \"deadline\": \"2026-09-17\",\n      \"evidence\": [\n        {\n          \"text\": \"Milan will resolve the payment dispute in 2 days.\"\n        }\n      ]\n    },\n    {\n      \"task\": \"We already sent the receipt\",\n      \"owner\": \"Unknown\",\n      \"deadline\": \"Unknown\",\n      \"evidence\": [\n        {\n          \"text\": \"We already sent the receipt.\"\n        }\n      ]\n    }\n  ]\n}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 23138.95016600145,
+      "id": "test-20"
+    },
+    {
+      "items": [
+        {
+          "task": "Renewal checklist",
+          "owner": "Sanjay",
+          "deadline": "2026-09-17",
+          "evidence": [
+            {
+              "text": "I can take ownership of the renewal checklist.",
+              "start": 54,
+              "end": 100
+            }
+          ]
+        },
+        {
+          "task": "Finish the renewal checklist by Friday",
+          "owner": "Manager",
+          "deadline": "2026-09-17",
+          "evidence": [
+            {
+              "text": "Please finish it by Friday.",
+              "start": 110,
+              "end": 137
+            }
+          ]
+        }
+      ],
+      "model": "llama3.2:3b",
+      "usage": {
+        "input_tokens": 449,
+        "output_tokens": 128
+      },
+      "provider_duration_ns": 15791143292,
+      "raw_model_response": "{\n  \"items\": [\n    {\n      \"task\": \"Renewal checklist\",\n      \"owner\": \"Sanjay\",\n      \"deadline\": \"2026-09-17\",\n      \"evidence\": [\n        {\n          \"text\": \"I can take ownership of the renewal checklist.\"\n        }\n      ]\n    },\n    {\n      \"task\": \"Finish the renewal checklist by Friday\",\n      \"owner\": \"Manager\",\n      \"deadline\": \"2026-09-17\",\n      \"evidence\": [\n        {\n          \"text\": \"Please finish it by Friday.\"\n        }\n      ]\n    }\n  ]\n}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 15948.77083398751,
+      "id": "test-21"
+    },
+    {
+      "items": [
+        {
+          "task": "Publish outage summary",
+          "owner": "Helen",
+          "deadline": "2026-09-17",
+          "evidence": [
+            {
+              "text": "Helen: Actually, make that Friday for the outage summary.",
+              "start": 51,
+              "end": 108
+            }
+          ]
+        }
+      ],
+      "model": "llama3.2:3b",
+      "usage": {
+        "input_tokens": 436,
+        "output_tokens": 73
+      },
+      "provider_duration_ns": 8393981792,
+      "raw_model_response": "{\n  \"items\": [\n    {\n      \"task\": \"Publish outage summary\",\n      \"owner\": \"Helen\",\n      \"deadline\": \"2026-09-17\",\n      \"evidence\": [\n        {\n          \"text\": \"Helen: Actually, make that Friday for the outage summary.\"\n        }\n      ]\n    }\n  ]\n}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 8512.882707989775,
+      "id": "test-22"
+    },
+    {
+      "items": [
+        {
+          "task": "Anil will migrate the reporting database",
+          "owner": "Anil",
+          "deadline": "2026-09-15",
+          "evidence": [
+            {
+              "text": "Anil: Cancel my database migration task; the vendor is handling it.",
+              "start": 53,
+              "end": 120
+            }
+          ]
+        }
+      ],
+      "model": "llama3.2:3b",
+      "usage": {
+        "input_tokens": 438,
+        "output_tokens": 79
+      },
+      "provider_duration_ns": 8423390584,
+      "raw_model_response": "{\n  \"items\": [\n    {\n      \"task\": \"Anil will migrate the reporting database\",\n      \"owner\": \"Anil\",\n      \"deadline\": \"2026-09-15\",\n      \"evidence\": [\n        {\n          \"text\": \"Anil: Cancel my database migration task; the vendor is handling it.\"\n        }\n      ]\n    }\n  ]\n}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 8545.052875007968,
+      "id": "test-23"
+    },
+    {
+      "items": [
+        {
+          "task": "Update customer FAQ",
+          "owner": "Grace",
+          "deadline": "2026-10-01",
+          "evidence": [
+            {
+              "text": "I will refresh the customer frequently asked questions by October 1.",
+              "start": 56,
+              "end": 124
+            }
+          ]
+        }
+      ],
+      "model": "llama3.2:3b",
+      "usage": {
+        "input_tokens": 439,
+        "output_tokens": 72
+      },
+      "provider_duration_ns": 7665439625,
+      "raw_model_response": "{\n  \"items\": [\n    {\n      \"task\": \"Update customer FAQ\",\n      \"owner\": \"Grace\",\n      \"deadline\": \"2026-10-01\",\n      \"evidence\": [\n        {\n          \"text\": \"I will refresh the customer frequently asked questions by October 1.\"\n        }\n      ]\n    }\n  ]\n}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 7782.263624976622,
+      "id": "test-24"
+    },
+    {
+      "items": [
+        {
+          "task": "Jules will send the security questionnaire.",
+          "owner": "Jules",
+          "deadline": "2026-09-15",
+          "evidence": [
+            {
+              "text": "Jules will send the security questionnaire.",
+              "start": 0,
+              "end": 43
+            }
+          ]
+        },
+        {
+          "task": "Sam will send the security questionnaire.",
+          "owner": "Sam",
+          "deadline": "2026-09-15",
+          "evidence": [
+            {
+              "text": "Sam will send the security questionnaire.",
+              "start": 44,
+              "end": 85
+            }
+          ]
+        },
+        {
+          "task": "They own different supplier accounts.",
+          "owner": "Unknown",
+          "deadline": "Unknown",
+          "evidence": [
+            {
+              "text": "They own different supplier accounts.",
+              "start": 86,
+              "end": 123
+            }
+          ]
+        }
+      ],
+      "model": "llama3.2:3b",
+      "usage": {
+        "input_tokens": 435,
+        "output_tokens": 183
+      },
+      "provider_duration_ns": 16126050083,
+      "raw_model_response": "{\n  \"items\": [\n    {\n      \"task\": \"Jules will send the security questionnaire.\",\n      \"owner\": \"Jules\",\n      \"deadline\": \"2026-09-15\",\n      \"evidence\": [\n        {\n          \"text\": \"Jules will send the security questionnaire.\"\n        }\n      ]\n    },\n    {\n      \"task\": \"Sam will send the security questionnaire.\",\n      \"owner\": \"Sam\",\n      \"deadline\": \"2026-09-15\",\n      \"evidence\": [\n        {\n          \"text\": \"Sam will send the security questionnaire.\"\n        }\n      ]\n    },\n    {\n      \"task\": \"They own different supplier accounts.\",\n      \"owner\": \"Unknown\",\n      \"deadline\": \"Unknown\",\n      \"evidence\": [\n        {\n          \"text\": \"They own different supplier accounts.\"\n        }\n      ]\n    }\n  ]\n}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 16261.794459016528,
+      "id": "test-25"
+    },
+    {
+      "items": [
+        {
+          "task": "Review the sample sentence for accuracy",
+          "owner": "Unknown",
+          "deadline": "2026-09-15",
+          "evidence": [
+            {
+              "text": "Raj will deploy the service tomorrow.",
+              "start": 33,
+              "end": 70
+            }
+          ]
+        },
+        {
+          "task": "Verify the training example is not an assignment",
+          "owner": "Unknown",
+          "deadline": "2026-09-15",
+          "evidence": [
+            {
+              "text": "This was a training example, not an assignment.",
+              "start": 72,
+              "end": 119
+            }
+          ]
+        }
+      ],
+      "model": "llama3.2:3b",
+      "usage": {
+        "input_tokens": 439,
+        "output_tokens": 134
+      },
+      "provider_duration_ns": 11629186125,
+      "raw_model_response": "{\n  \"items\": [\n    {\n      \"task\": \"Review the sample sentence for accuracy\",\n      \"owner\": \"Unknown\",\n      \"deadline\": \"2026-09-15\",\n      \"evidence\": [\n        {\n          \"text\": \"Raj will deploy the service tomorrow.\"\n        }\n      ]\n    },\n    {\n      \"task\": \"Verify the training example is not an assignment\",\n      \"owner\": \"Unknown\",\n      \"deadline\": \"2026-09-15\",\n      \"evidence\": [\n        {\n          \"text\": \"This was a training example, not an assignment.\"\n        }\n      ]\n    }\n  ]\n}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 11778.140499984147,
+      "id": "test-26"
+    },
+    {
+      "items": [
+        {
+          "task": "Review patch test results",
+          "owner": "Farah",
+          "deadline": "2026-09-15",
+          "evidence": [
+            {
+              "text": "I will review its test results today.",
+              "start": 40,
+              "end": 77
+            }
+          ]
+        }
+      ],
+      "model": "llama3.2:3b",
+      "usage": {
+        "input_tokens": 431,
+        "output_tokens": 69
+      },
+      "provider_duration_ns": 5981265750,
+      "raw_model_response": "{\n  \"items\": [\n    {\n      \"task\": \"Review patch test results\",\n      \"owner\": \"Farah\",\n      \"deadline\": \"2026-09-15\",\n      \"evidence\": [\n        {\n          \"text\": \"I will review its test results today.\"\n        }\n      ]\n    }\n  ]\n}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 6110.701708996203,
+      "id": "test-27"
+    },
+    {
+      "items": [
+        {
+          "task": "Coordinate the audit meeting",
+          "owner": "Kunal and Mira",
+          "deadline": "2026-09-17",
+          "evidence": [
+            {
+              "text": "Kunal and Mira will coordinate the audit meeting by Friday.",
+              "start": 0,
+              "end": 59
+            }
+          ]
+        },
+        {
+          "task": "Customer did not request additional attendees",
+          "owner": "Unknown",
+          "deadline": "Unknown",
+          "evidence": [
+            {
+              "text": "The customer did not request additional attendees.",
+              "start": 60,
+              "end": 110
+            }
+          ]
+        }
+      ],
+      "model": "llama3.2:3b",
+      "usage": {
+        "input_tokens": 433,
+        "output_tokens": 132
+      },
+      "provider_duration_ns": 9507582333,
+      "raw_model_response": "{\n  \"items\": [\n    {\n      \"task\": \"Coordinate the audit meeting\",\n      \"owner\": \"Kunal and Mira\",\n      \"deadline\": \"2026-09-17\",\n      \"evidence\": [\n        {\n          \"text\": \"Kunal and Mira will coordinate the audit meeting by Friday.\"\n        }\n      ]\n    },\n    {\n      \"task\": \"Customer did not request additional attendees\",\n      \"owner\": \"Unknown\",\n      \"deadline\": \"Unknown\",\n      \"evidence\": [\n        {\n          \"text\": \"The customer did not request additional attendees.\"\n        }\n      ]\n    }\n  ]\n}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 9614.284624985885,
+      "id": "test-28"
+    },
+    {
+      "items": [
+        {
+          "task": "Add a retention chart to the monthly report",
+          "owner": "Oscar",
+          "deadline": "2026-09-15",
+          "evidence": [
+            {
+              "text": "I'll add a retention chart to the monthly report by Thursday.",
+              "start": 7,
+              "end": 68
+            }
+          ]
+        }
+      ],
+      "model": "llama3.2:3b",
+      "usage": {
+        "input_tokens": 435,
+        "output_tokens": 78
+      },
+      "provider_duration_ns": 6025422959,
+      "raw_model_response": "{\n  \"items\": [\n    {\n      \"task\": \"Add a retention chart to the monthly report\",\n      \"owner\": \"Oscar\",\n      \"deadline\": \"2026-09-15\",\n      \"evidence\": [\n        {\n          \"text\": \"I'll add a retention chart to the monthly report by Thursday.\"\n        }\n      ]\n    }\n  ]\n}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 6126.3081670040265,
+      "id": "test-29"
+    },
+    {
+      "items": [
+        {
+          "task": "Daria will fix the export bug",
+          "owner": "Daria",
+          "deadline": "2026-09-15",
+          "evidence": [
+            {
+              "text": "Daria will fix the export bug by tomorrow.",
+              "start": 0,
+              "end": 42
+            },
+            {
+              "text": "Daria will fix the export bug by next Friday.",
+              "start": 43,
+              "end": 88
+            }
+          ]
+        }
+      ],
+      "model": "llama3.2:3b",
+      "usage": {
+        "input_tokens": 451,
+        "output_tokens": 94
+      },
+      "provider_duration_ns": 7938949292,
+      "raw_model_response": "{\n  \"items\": [\n    {\n      \"task\": \"Daria will fix the export bug\",\n      \"owner\": \"Daria\",\n      \"deadline\": \"2026-09-15\",\n      \"evidence\": [\n        {\n          \"text\": \"Daria will fix the export bug by tomorrow.\"\n        },\n        {\n          \"text\": \"Daria will fix the export bug by next Friday.\"\n        }\n      ]\n    }\n  ]\n}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 8161.7363749828655,
+      "id": "test-30"
+    }
+  ]
+}

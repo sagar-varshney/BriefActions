@@ -1,0 +1,1168 @@
+{
+  "counts": {
+    "predicted": 28,
+    "gold": 29,
+    "matched": 27,
+    "owner_correct": 27,
+    "deadline_correct": 26,
+    "owner_known_correct": 23,
+    "owner_known_total": 25,
+    "deadline_known_correct": 16,
+    "deadline_known_total": 19,
+    "evidence_valid": 28,
+    "supported": 26,
+    "failures": 0
+  },
+  "metrics": {
+    "task_precision": 0.9642857142857143,
+    "task_recall": 0.9310344827586207,
+    "task_f1": 0.9473684210526316,
+    "owner_accuracy_on_matched": 1.0,
+    "deadline_accuracy_on_matched": 0.9629629629629629,
+    "known_owner_end_to_end": 0.92,
+    "known_deadline_end_to_end": 0.8421052631578947,
+    "evidence_validity": 1.0,
+    "gold_support_proxy": 0.9285714285714286,
+    "latency_p50_ms": 0.036124984035268426,
+    "latency_p95_ms": 0.19483300275169313,
+    "cost_usd": 0.0,
+    "failure_rate": 0.0
+  },
+  "details": [
+    {
+      "id": "test-01",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-01-a1",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "test-02",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-02-a1",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "test-03",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-03-a1",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "test-04",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-04-a1",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "test-05",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-05-a1",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "test-06",
+      "matches": [],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "test-07",
+      "matches": [],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "test-08",
+      "matches": [],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "test-09",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-09-a1",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "test-10",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-10-a1",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "test-11",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-11-a1",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "test-12",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-12-a1",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "test-13",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-13-a1",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "test-14",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-14-a1",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "test-15",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-15-a1",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        },
+        {
+          "prediction": 1,
+          "gold_id": "test-15-a2",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "test-16",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-16-a1",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "test-17",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-17-a1",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "test-18",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-18-a1",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "test-19",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-19-a1",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        },
+        {
+          "prediction": 1,
+          "gold_id": "test-19-a2",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "test-20",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-20-a1",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "test-21",
+      "matches": [],
+      "false_positives": [],
+      "missed_gold": [
+        "test-21-a1"
+      ]
+    },
+    {
+      "id": "test-22",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-22-a1",
+          "owner_correct": true,
+          "deadline_correct": false,
+          "gold_support_proxy": false
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "test-23",
+      "matches": [],
+      "false_positives": [
+        0
+      ],
+      "missed_gold": []
+    },
+    {
+      "id": "test-24",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-24-a1",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "test-25",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-25-a1",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        },
+        {
+          "prediction": 1,
+          "gold_id": "test-25-a2",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "test-26",
+      "matches": [],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "test-27",
+      "matches": [],
+      "false_positives": [],
+      "missed_gold": [
+        "test-27-a1"
+      ]
+    },
+    {
+      "id": "test-28",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-28-a1",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "test-29",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-29-a1",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "test-30",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "test-30-a1",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        },
+        {
+          "prediction": 1,
+          "gold_id": "test-30-a2",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    }
+  ],
+  "schema_version": 1,
+  "label": "rules",
+  "extractor": "rules",
+  "dataset_sha256": "ee4c5b170c5acda3473c062451620a3ca76ec203f586795a3862ee8d538d7bf5",
+  "dataset": "test.jsonl",
+  "splits": [
+    "test"
+  ],
+  "extractor_sha256": "1ea7cb275cba20fc9d0a13229ebb352965a10ccafad9c8878fed623d735b5538",
+  "prompt_version": null,
+  "prompt_sha256": null,
+  "pricing": {
+    "input_usd_per_million": null,
+    "output_usd_per_million": null
+  },
+  "runs": [
+    {
+      "items": [
+        {
+          "task": "reconcile the supplier invoices",
+          "owner": "Meera",
+          "deadline": "2026-09-22",
+          "priority": "Medium",
+          "evidence": [
+            {
+              "text": "Meera will reconcile the supplier invoices by 2026-09-22.",
+              "start": 0,
+              "end": 57
+            }
+          ],
+          "proposal_id": "e29d5fa99c8a189d",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        }
+      ],
+      "cost_usd": 0.0,
+      "latency_ms": 3.67745800758712,
+      "id": "test-01"
+    },
+    {
+      "items": [
+        {
+          "task": "replace the expired certificate",
+          "owner": "Tomas",
+          "deadline": "2026-09-16",
+          "priority": "High",
+          "evidence": [
+            {
+              "text": "Tomas: I will replace the expired certificate by tomorrow.",
+              "start": 0,
+              "end": 58
+            }
+          ],
+          "proposal_id": "9b93bd1c2ac2d930",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        }
+      ],
+      "cost_usd": 0.0,
+      "latency_ms": 0.12854201486334205,
+      "id": "test-02"
+    },
+    {
+      "items": [
+        {
+          "task": "collect the pilot feedback next month",
+          "owner": "Unknown",
+          "deadline": "Unknown",
+          "priority": "Low",
+          "evidence": [
+            {
+              "text": "Lina: We must collect the pilot feedback next month.",
+              "start": 0,
+              "end": 52
+            }
+          ],
+          "proposal_id": "7576a8f92171018e",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        }
+      ],
+      "cost_usd": 0.0,
+      "latency_ms": 0.034249998861923814,
+      "id": "test-03"
+    },
+    {
+      "items": [
+        {
+          "task": "book the training room",
+          "owner": "Unknown",
+          "deadline": "2026-09-16",
+          "priority": "High",
+          "evidence": [
+            {
+              "text": "Please book the training room by Wednesday.",
+              "start": 0,
+              "end": 43
+            }
+          ],
+          "proposal_id": "55d041121b9413d4",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        }
+      ],
+      "cost_usd": 0.0,
+      "latency_ms": 0.19483300275169313,
+      "id": "test-04"
+    },
+    {
+      "items": [
+        {
+          "task": "archive the old incident reports",
+          "owner": "Ivan",
+          "deadline": "Unknown",
+          "priority": "Low",
+          "evidence": [
+            {
+              "text": "Ivan will archive the old incident reports.",
+              "start": 0,
+              "end": 43
+            },
+            {
+              "text": "Ivan will archive the old incident reports.",
+              "start": 44,
+              "end": 87
+            }
+          ],
+          "proposal_id": "f70b2b2e6c3d0283",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        }
+      ],
+      "cost_usd": 0.0,
+      "latency_ms": 0.06137500167824328,
+      "id": "test-05"
+    },
+    {
+      "items": [],
+      "cost_usd": 0.0,
+      "latency_ms": 0.046999979531392455,
+      "id": "test-06"
+    },
+    {
+      "items": [],
+      "cost_usd": 0.0,
+      "latency_ms": 0.01120797242037952,
+      "id": "test-07"
+    },
+    {
+      "items": [],
+      "cost_usd": 0.0,
+      "latency_ms": 0.010791001841425896,
+      "id": "test-08"
+    },
+    {
+      "items": [
+        {
+          "task": "export the attendance list",
+          "owner": "Unknown",
+          "deadline": "Unknown",
+          "priority": "Low",
+          "evidence": [
+            {
+              "text": "Can you export the attendance list?",
+              "start": 0,
+              "end": 35
+            }
+          ],
+          "proposal_id": "5813f82d21a9b2b4",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        }
+      ],
+      "cost_usd": 0.0,
+      "latency_ms": 0.03704099799506366,
+      "id": "test-09"
+    },
+    {
+      "items": [
+        {
+          "task": "submit the expense report",
+          "owner": "Zoe",
+          "deadline": "2026-10-02",
+          "priority": "Low",
+          "evidence": [
+            {
+              "text": "Zoe, please submit the expense report by October 2.",
+              "start": 0,
+              "end": 51
+            }
+          ],
+          "proposal_id": "77f05d58a13dad6c",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        }
+      ],
+      "cost_usd": 0.0,
+      "latency_ms": 0.13662499259226024,
+      "id": "test-10"
+    },
+    {
+      "items": [
+        {
+          "task": "validate the inventory counts",
+          "owner": "Fatima",
+          "deadline": "Unknown",
+          "priority": "Low",
+          "evidence": [
+            {
+              "text": "Action item: validate the inventory counts; assigned to Fatima",
+              "start": 0,
+              "end": 62
+            }
+          ],
+          "proposal_id": "e7166ae2ed325478",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        }
+      ],
+      "cost_usd": 0.0,
+      "latency_ms": 0.03462500171735883,
+      "id": "test-11"
+    },
+    {
+      "items": [
+        {
+          "task": "present the quarterly metrics this week",
+          "owner": "Wei",
+          "deadline": "Unknown",
+          "priority": "Medium",
+          "evidence": [
+            {
+              "text": "Wei will present the quarterly metrics this week.",
+              "start": 0,
+              "end": 49
+            }
+          ],
+          "proposal_id": "04a3c0c04b823ddd",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        }
+      ],
+      "cost_usd": 0.0,
+      "latency_ms": 0.026291992980986834,
+      "id": "test-12"
+    },
+    {
+      "items": [
+        {
+          "task": "check the backup restore",
+          "owner": "Sofia",
+          "deadline": "Unknown",
+          "priority": "Low",
+          "evidence": [
+            {
+              "text": "Sofia will check the backup restore by 2026-13-05.",
+              "start": 0,
+              "end": 50
+            }
+          ],
+          "proposal_id": "3720a61708a48a74",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        }
+      ],
+      "cost_usd": 0.0,
+      "latency_ms": 0.02745899837464094,
+      "id": "test-13"
+    },
+    {
+      "items": [
+        {
+          "task": "deliver the signed contract",
+          "owner": "Ethan",
+          "deadline": "2026-09-15",
+          "priority": "High",
+          "evidence": [
+            {
+              "text": "@Ethan will deliver the signed contract today.",
+              "start": 0,
+              "end": 46
+            }
+          ],
+          "proposal_id": "c2e08f84c246cc60",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        }
+      ],
+      "cost_usd": 0.0,
+      "latency_ms": 0.02379098441451788,
+      "id": "test-14"
+    },
+    {
+      "items": [
+        {
+          "task": "implement the retry policy",
+          "owner": "Nora",
+          "deadline": "Unknown",
+          "priority": "Low",
+          "evidence": [
+            {
+              "text": "Nora: I will implement the retry policy.",
+              "start": 0,
+              "end": 40
+            }
+          ],
+          "proposal_id": "938d37517233c51c",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        },
+        {
+          "task": "document the rollout",
+          "owner": "Nora",
+          "deadline": "2026-09-19",
+          "priority": "Medium",
+          "evidence": [
+            {
+              "text": "I will document the rollout by Saturday.",
+              "start": 41,
+              "end": 81
+            }
+          ],
+          "proposal_id": "6bfb94c35278fe38",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        }
+      ],
+      "cost_usd": 0.0,
+      "latency_ms": 0.0508330122102052,
+      "id": "test-15"
+    },
+    {
+      "items": [
+        {
+          "task": "audit the billing permissions",
+          "owner": "Akash",
+          "deadline": "2026-09-22",
+          "priority": "Medium",
+          "evidence": [
+            {
+              "text": "Akash will audit the billing permissions by next Tuesday.",
+              "start": 0,
+              "end": 57
+            }
+          ],
+          "proposal_id": "ce947b0c94acf2c3",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        }
+      ],
+      "cost_usd": 0.0,
+      "latency_ms": 0.029333983547985554,
+      "id": "test-16"
+    },
+    {
+      "items": [
+        {
+          "task": "investigate the queue backlog",
+          "owner": "Isha",
+          "deadline": "Unknown",
+          "priority": "Low",
+          "evidence": [
+            {
+              "text": "Isha will investigate the queue backlog.",
+              "start": 36,
+              "end": 76
+            }
+          ],
+          "proposal_id": "72148e1f827aff31",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        }
+      ],
+      "cost_usd": 0.0,
+      "latency_ms": 0.029916991479694843,
+      "id": "test-17"
+    },
+    {
+      "items": [
+        {
+          "task": "Update the support handbook",
+          "owner": "Unknown",
+          "deadline": "2026-09-16",
+          "priority": "High",
+          "evidence": [
+            {
+              "text": "Update the support handbook by tomorrow.",
+              "start": 0,
+              "end": 40
+            }
+          ],
+          "proposal_id": "ebb215b108f261e3",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        }
+      ],
+      "cost_usd": 0.0,
+      "latency_ms": 0.025957997422665358,
+      "id": "test-18"
+    },
+    {
+      "items": [
+        {
+          "task": "review the pricing proposal",
+          "owner": "Luis",
+          "deadline": "2026-09-17",
+          "priority": "High",
+          "evidence": [
+            {
+              "text": "Luis will review the pricing proposal by Thursday.",
+              "start": 0,
+              "end": 50
+            },
+            {
+              "text": "Luis will review the pricing proposal by Thursday.",
+              "start": 51,
+              "end": 101
+            }
+          ],
+          "proposal_id": "629ddb9028ca5c04",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        },
+        {
+          "task": "review the pricing proposal",
+          "owner": "Hana",
+          "deadline": "2026-09-17",
+          "priority": "High",
+          "evidence": [
+            {
+              "text": "Hana will review the pricing proposal by Thursday.",
+              "start": 102,
+              "end": 152
+            }
+          ],
+          "proposal_id": "89e3acd5d6fdb13c",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        }
+      ],
+      "cost_usd": 0.0,
+      "latency_ms": 0.07270899368450046,
+      "id": "test-19"
+    },
+    {
+      "items": [
+        {
+          "task": "resolve the payment dispute",
+          "owner": "Milan",
+          "deadline": "2026-09-17",
+          "priority": "High",
+          "evidence": [
+            {
+              "text": "Milan will resolve the payment dispute in 2 days.",
+              "start": 0,
+              "end": 49
+            }
+          ],
+          "proposal_id": "b019579f0be2d1c4",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        }
+      ],
+      "cost_usd": 0.0,
+      "latency_ms": 0.03037499845959246,
+      "id": "test-20"
+    },
+    {
+      "items": [],
+      "cost_usd": 0.0,
+      "latency_ms": 0.037084013456478715,
+      "id": "test-21"
+    },
+    {
+      "items": [
+        {
+          "task": "publish the outage summary",
+          "owner": "Helen",
+          "deadline": "2026-09-17",
+          "priority": "High",
+          "evidence": [
+            {
+              "text": "Helen will publish the outage summary by Thursday.",
+              "start": 0,
+              "end": 50
+            }
+          ],
+          "proposal_id": "a58d315e53aa2194",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        }
+      ],
+      "cost_usd": 0.0,
+      "latency_ms": 0.03420902066864073,
+      "id": "test-22"
+    },
+    {
+      "items": [
+        {
+          "task": "migrate the reporting database",
+          "owner": "Anil",
+          "deadline": "2026-09-15",
+          "priority": "High",
+          "evidence": [
+            {
+              "text": "Anil will migrate the reporting database by Tuesday.",
+              "start": 0,
+              "end": 52
+            }
+          ],
+          "proposal_id": "3c2aaa6c8a2da4a7",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        }
+      ],
+      "cost_usd": 0.0,
+      "latency_ms": 0.03362499410286546,
+      "id": "test-23"
+    },
+    {
+      "items": [
+        {
+          "task": "update the customer FAQ",
+          "owner": "Grace",
+          "deadline": "2026-10-01",
+          "priority": "Low",
+          "evidence": [
+            {
+              "text": "Grace will update the customer FAQ by October 1.",
+              "start": 0,
+              "end": 48
+            }
+          ],
+          "proposal_id": "63a6256a2b0bdede",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        }
+      ],
+      "cost_usd": 0.0,
+      "latency_ms": 0.037707999581471086,
+      "id": "test-24"
+    },
+    {
+      "items": [
+        {
+          "task": "send the security questionnaire",
+          "owner": "Jules",
+          "deadline": "Unknown",
+          "priority": "Low",
+          "evidence": [
+            {
+              "text": "Jules will send the security questionnaire.",
+              "start": 0,
+              "end": 43
+            }
+          ],
+          "proposal_id": "3661e94a277e8130",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        },
+        {
+          "task": "send the security questionnaire",
+          "owner": "Sam",
+          "deadline": "Unknown",
+          "priority": "Low",
+          "evidence": [
+            {
+              "text": "Sam will send the security questionnaire.",
+              "start": 44,
+              "end": 85
+            }
+          ],
+          "proposal_id": "af1a10655606c017",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        }
+      ],
+      "cost_usd": 0.0,
+      "latency_ms": 0.04904202069155872,
+      "id": "test-25"
+    },
+    {
+      "items": [],
+      "cost_usd": 0.0,
+      "latency_ms": 0.02170799416489899,
+      "id": "test-26"
+    },
+    {
+      "items": [],
+      "cost_usd": 0.0,
+      "latency_ms": 0.006082991603761911,
+      "id": "test-27"
+    },
+    {
+      "items": [
+        {
+          "task": "coordinate the audit meeting",
+          "owner": "Kunal and Mira",
+          "deadline": "2026-09-18",
+          "priority": "Medium",
+          "evidence": [
+            {
+              "text": "Kunal and Mira will coordinate the audit meeting by Friday.",
+              "start": 0,
+              "end": 59
+            }
+          ],
+          "proposal_id": "d9eb89f42c6544c3",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        }
+      ],
+      "cost_usd": 0.0,
+      "latency_ms": 0.03616602043621242,
+      "id": "test-28"
+    },
+    {
+      "items": [
+        {
+          "task": "add a retention chart to the monthly report",
+          "owner": "Oscar",
+          "deadline": "2026-09-17",
+          "priority": "High",
+          "evidence": [
+            {
+              "text": "Oscar: I'll add a retention chart to the monthly report by Thursday.",
+              "start": 0,
+              "end": 68
+            }
+          ],
+          "proposal_id": "024fb9122bc1df2a",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        }
+      ],
+      "cost_usd": 0.0,
+      "latency_ms": 0.036124984035268426,
+      "id": "test-29"
+    },
+    {
+      "items": [
+        {
+          "task": "fix the export bug",
+          "owner": "Daria",
+          "deadline": "2026-09-16",
+          "priority": "High",
+          "evidence": [
+            {
+              "text": "Daria will fix the export bug by tomorrow.",
+              "start": 0,
+              "end": 42
+            }
+          ],
+          "proposal_id": "a199d08c73fa0621",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        },
+        {
+          "task": "fix the export bug",
+          "owner": "Daria",
+          "deadline": "2026-09-25",
+          "priority": "Low",
+          "evidence": [
+            {
+              "text": "Daria will fix the export bug by next Friday.",
+              "start": 43,
+              "end": 88
+            }
+          ],
+          "proposal_id": "0e3b588e90d6bd9a",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        }
+      ],
+      "cost_usd": 0.0,
+      "latency_ms": 0.057375000324100256,
+      "id": "test-30"
+    }
+  ],
+  "created_at": "2026-10-10T10:56:48.563703+00:00",
+  "evaluator_sha256": "b618d7dcab9afd791d816694e3cb456bbddd2051457a1b45c8f593ead7c34585"
+}

@@ -1,0 +1,21 @@
+{
+  "captured_at": "2026-10-10T11:14:30.400317+00:00",
+  "source": "ollama list; short local model manifest IDs",
+  "models": [
+    {
+      "model": "llama3.2:3b",
+      "local_id": "a80c4f17acd5",
+      "disk_size": "2.0 GB"
+    },
+    {
+      "model": "qwen2.5:1.5b",
+      "local_id": "65ec06548149",
+      "disk_size": "986 MB"
+    },
+    {
+      "model": "qwen2.5:0.5b",
+      "local_id": "a8b0c5157701",
+      "disk_size": "397 MB"
+    }
+  ]
+}

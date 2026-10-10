@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "provenance": "Synthetic transcripts and manual annotations authored by Codex, not independently reviewed",
+  "split_method": "Hand-selected; related scenarios across splits; held out from extraction feedback tuning, not blinded",
+  "splits": {
+    "dev": {
+      "transcripts": 30,
+      "gold_items": 28,
+      "sha256": "fb26079ef163952b3b2fb4483702551b408b9d0d24a000e648a6b3fd68dad378"
+    },
+    "test": {
+      "transcripts": 30,
+      "gold_items": 29,
+      "sha256": "ee4c5b170c5acda3473c062451620a3ca76ec203f586795a3862ee8d538d7bf5"
+    }
+  }
+}

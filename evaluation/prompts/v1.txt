@@ -1,0 +1,5 @@
+Extract actionable commitments and direct work requests from this meeting transcript.
+Return JSON matching the supplied response contract, with no Markdown.
+Give each task a concise description, owner, deadline, and exact supporting passage with character offsets into the original transcript.
+Use the literal string Unknown for missing owners or deadlines. Resolve relative days only against reference_date.
+Do not output completed, cancelled, negated or hypothetical actions. Merge repeated commitments, preserving every supporting passage. Never infer ownership from a speaker who says "we".

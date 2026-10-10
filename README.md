@@ -1,332 +1,205 @@
-# RAG Client Center
+# Productivity Flow Engine
 
-A backend-first productivity and client-document management system built with **FastAPI**, **ChromaDB**, **LangChain**, **Sentence Transformers**, and **Ollama/Llama 3.2**. The project provides a workspace-based Retrieval-Augmented Generation (RAG) backend where users can upload documents, index them into a vector database, query them through a client-scoped chat endpoint, and receive answers grounded in uploaded documents.
+A React + Node.js local application that turns meeting transcripts into evidence-backed action
+proposals, lets users correct or confirm them, and preserves the complete review
+history. Extraction improvements are measured against a retained annotated corpus.
 
-> Current status: the backend is functional. The final UI is being developed separately, while this repository contains the working RAG API backend and a standard development interface through FastAPI Swagger docs.
+## Run locally
 
----
+Use **Node.js 22.12+** and **pnpm 11+**, plus Python 3.10+ for the retained
+extraction engine. React handles the interface; a Node HTTP API calls the Python
+engine through a bounded JSON subprocess protocol. The extractor, annotated
+evaluation set, prompts, measured reports, and SQLite event schema are unchanged.
 
-## Features
-
-- **Client/workspace management**
-  - Create and manage separate client workspaces.
-  - Keep documents and RAG searches scoped to a specific client.
-
-- **Document upload and management**
-  - Upload documents for individual clients.
-  - Track metadata such as title, document type, upload time, and indexing status.
-  - Supports text extraction from `.txt`, `.pdf`, and `.docx` files.
-
-- **RAG document indexing**
-  - Splits uploaded documents into smaller chunks.
-  - Generates embeddings using `sentence-transformers/all-MiniLM-L6-v2`.
-  - Stores embeddings in a persistent ChromaDB vector store.
-
-- **Client-scoped semantic search**
-  - Searches only within the selected client workspace.
-  - Returns the most relevant chunks along with source metadata.
-
-- **LLM-powered grounded answers**
-  - Uses Ollama with `llama3.2:3b` to generate answers from retrieved context.
-  - Prompting is designed to reduce hallucination by instructing the model to answer only from retrieved documents.
-
-- **Access control for restricted documents**
-  - Documents can be marked as restricted.
-  - Restricted documents can be excluded from RAG context unless manually unlocked.
-
-- **User authentication and roles**
-  - User registration and login.
-  - JWT-based authentication.
-  - Password hashing using Passlib.
-  - Role-based workspace membership model: owner, admin, editor, viewer.
-
-- **Analytics and activity tracking**
-  - Tracks document uploads, indexing, deletions, RAG queries, user logins, and access grants.
-  - Provides workspace analytics such as storage usage, document count, query count, upload count, login count, and recent activities.
-
----
-
-## Tech Stack
-
-| Layer | Technology |
-|---|---|
-| Backend API | FastAPI |
-| Database | SQLite + SQLAlchemy |
-| Vector Database | ChromaDB |
-| RAG Framework | LangChain |
-| Embeddings | Sentence Transformers (`all-MiniLM-L6-v2`) |
-| LLM Runtime | Ollama |
-| LLM Model | Llama 3.2 3B |
-| Document Parsing | PyPDF2, python-docx |
-| Authentication | JWT, Passlib |
-| Server | Uvicorn |
-
----
-
-## Project Structure
-
-```text
-rag-client-center/
-└── backend/
-    ├── app/
-    │   ├── main.py                 # FastAPI app and main API routes
-    │   ├── database.py             # SQLAlchemy database setup
-    │   ├── models.py               # Database models
-    │   ├── schemas.py              # Pydantic request/response schemas
-    │   ├── auth.py                 # JWT and password hashing logic
-    │   ├── rag_service.py          # Text extraction, chunking, embeddings, vector search
-    │   ├── llm_service.py          # Ollama/Llama answer generation
-    │   ├── analytics.py            # Activity logging and usage metrics
-    │   └── routers/
-    │       ├── auth.py             # Authentication routes
-    │       └── analytics_router.py # Analytics routes
-    ├── requirements.txt
-    └── storage/                    # Runtime storage, ignored in Git
-```
-
----
-
-## How It Works
-
-1. A client/workspace is created.
-2. Documents are uploaded under that client.
-3. Documents are indexed into ChromaDB.
-4. A user asks a question through the client chat endpoint.
-5. The backend embeds the query and retrieves the most relevant document chunks.
-6. Retrieved chunks are passed to the local LLM through Ollama.
-7. The API returns a grounded answer with source metadata.
-
----
-
-## API Overview
-
-### Health Check
-
-```http
-GET /health
-```
-
-Returns the API status.
-
-### Client Management
-
-```http
-POST /clients
-GET /clients
-GET /clients/{client_id}
-```
-
-Create and retrieve client workspaces.
-
-### Document Management
-
-```http
-POST /clients/{client_id}/documents
-GET /clients/{client_id}/documents
-GET /documents/{document_id}
-```
-
-Upload and view documents for a client.
-
-### Document Indexing
-
-```http
-POST /documents/{document_id}/index
-DELETE /documents/{document_id}/index
-```
-
-Index documents into the vector database or remove them from the index.
-
-### RAG Chat
-
-```http
-POST /clients/{client_id}/chat
-```
-
-Example request:
-
-```json
-{
-  "query": "What are the key action items from this document?",
-  "top_k": 5
-}
-```
-
-Example response:
-
-```json
-{
-  "query": "What are the key action items from this document?",
-  "answer": "The key action items are...",
-  "sources": [
-    {
-      "document_id": 1,
-      "title": "sample_file.txt",
-      "text": "Relevant retrieved chunk..."
-    }
-  ],
-  "documents_searched": 3,
-  "restricted_docs_excluded": 0
-}
-```
-
-### Authentication
-
-```http
-POST /auth/register
-POST /auth/login
-GET /auth/me
-GET /auth/me/workspaces
-```
-
-Provides user registration, login, JWT authentication, and workspace membership retrieval.
-
-### Analytics
-
-```http
-GET /analytics/clients/{client_id}/overview
-GET /analytics/clients/{client_id}/activity-log
-GET /analytics/clients/{client_id}/stats/storage
-GET /analytics/clients/{client_id}/stats/queries
-GET /analytics/clients/{client_id}/stats/users
-```
-
-Provides workspace-level analytics and usage statistics.
-
----
-
-## Setup Instructions
-
-### 1. Clone the repository
-
-```bash
-git clone https://github.com/YOUR_USERNAME/YOUR_REPOSITORY_NAME.git
-cd YOUR_REPOSITORY_NAME/backend
-```
-
-### 2. Create and activate a virtual environment
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-```
-
-### 3. Install dependencies
-
-```bash
 pip install -r requirements.txt
+pnpm install
+pnpm dev
 ```
 
-### 4. Install and run Ollama
+Open **http://127.0.0.1:5173**. The development API runs on port 3001;
+Vite proxies `/api` requests to it. `pnpm dev` starts and stops both processes.
+The loaded example uses its original meeting date (2026-09-15); set the actual
+meeting date when pasting a new transcript.
 
-Install Ollama from the official website, then pull the model used by this project:
+For a built local app, run `pnpm build` then `pnpm start` and open
+**http://127.0.0.1:3001**. `PORT=8765 pnpm start` changes the API/app port.
+`PYTHON_BIN=/absolute/path/to/python3 pnpm dev` selects another interpreter;
+otherwise `.venv/bin/python3` is preferred, with `python3` as fallback.
+The macOS `run_local_4h.sh` helper now builds and serves this React application.
+On this machine, **`./run_local.sh`** also starts development without adding tools
+to your shell profile: the launchers reuse Codex's bundled Node/pnpm if installed
+commands are unavailable. Python requirements must still be installed.
+
+Paste a transcript, set its meeting date, and select **Analyze transcript**.
+Inspect the exact supporting passages, edit tasks/owners/deadlines, select the
+items to keep, and choose **Confirm selected tasks**. CSV export becomes available
+for the confirmed plan. Confirmation saves a local plan; external task-system
+integration is not implemented.
+
+Missing owners and exact deadlines are explicitly `Unknown`. Vague timing stays
+in the task wording. Every proposal includes character spans into the saved
+transcript. Repeated tasks with compatible metadata are merged conservatively;
+conflicting owners/dates remain separate for review. Broad semantic paraphrase
+merging and multi-turn revisions remain limitations.
+
+## Evaluation comes first
+
+The retained starter corpus has **60 manually annotated synthetic transcripts**,
+with 30 development and 30 held-out examples. Annotations are authored by Codex
+and have not been independently reviewed. Related scenarios occur in both splits;
+these measurements do not establish real-meeting or production accuracy.
+
+Rules were improved on development cases, then frozen before held-out scoring.
+On the held-out synthetic set:
+
+| Metric | Original rules | Improved rules |
+| --- | ---: | ---: |
+| Task precision | 74.2% | 96.4% |
+| Task recall | 79.3% | 93.1% |
+| Task F1 | 76.7% | 94.7% |
+| Owner accuracy on matched tasks | 87.0% | 100.0% |
+| Deadline accuracy on matched tasks | 65.2% | 96.3% |
+| Known-deadline end-to-end accuracy | 31.6% | 84.2% |
+| Gold support proxy | 45.2% | 92.9% |
+
+Task matching is lexical. Gold support checks task matching, exact gold metadata
+and annotated evidence spans; it is not an entailment judge. Full counts,
+per-transcript predictions, matches/misses, latency and reproducibility hashes
+are retained under `evaluation/results/`.
+
+Read [the retained model/rule comparison](evaluation/results/COMPARISON.md) and
+[the annotation policy, scoring definitions and LLM comparison guide](evaluation/README.md).
+The next evaluation milestone is independently annotated real meeting transcripts
+and a fresh held-out split before further tuning from current test errors.
+
+## What the pipeline implements
+
+- Evidence-grounded rule extraction for commitments and direct requests, with
+  explicit unknowns and conservative deduplication.
+- Editable review with unchecked acceptance controls and validation before the
+  final local task plan is saved.
+- SQLite history of input/reference date/settings, original proposals,
+  per-item user decisions/corrections, and final results; complete JSON export.
+  Confirmed results are immutable; analyze again to create another run.
+- A frozen original-rule baseline, annotated dev/test splits, a scoring harness,
+  two versioned LLM prompts, an Ollama adapter, and a model/prompt/repeat matrix.
+- Extractive TF-IDF summary, TF-IDF/K-Means task groups, and Logistic Regression
+  workstream classification on a small visible illustrative seed dataset.
+- Deadline/urgency priority and deterministic schedule suggestions. These are
+  heuristics, and classifier probabilities are not calibrated confidence in
+  extraction accuracy. They are shown as proposal suggestions; final exports
+  retain reviewed fields and evidence without stale derived suggestions.
+
+Local transcript/history data is saved under ignored `data/history.sqlite3`.
+History exports include the original transcript and user corrections. Existing
+Streamlit-created history is readable without a database migration; old runs may
+lack a saved summary. The last opened run is restored after a browser reload.
+Unconfirmed form edits are held in memory until confirmation; reloading restores
+the original proposal. `FLOW_HISTORY_PATH` overrides the database location.
+
+## Web architecture
+
+- `web/src/main.jsx`: React extraction/review, history, and evaluation screens.
+- `web/src/styles.css`: responsive desktop/mobile layout and accessible form states.
+- `server/index.mjs`: Node HTTP API, bounded Python workers, and built asset serving.
+- `web_bridge.py`: JSON operations over the unchanged extraction/history modules.
+- `vite.config.js`, `scripts/dev.mjs`: frontend build, dev proxy, and process lifecycle.
+
+The API binds to localhost. It accepts JSON requests up to 1 MB and transcripts
+up to 100,000 characters, with at most four concurrent Python workers and a
+60-second worker timeout. Analyze explicitly creates a saved proposal run;
+confirmation atomically records corrections/rejections and the final local plan.
+Model experiments are inspected from retained files; the UI does not silently
+run LLM calls. Python starts per API request, so cold import time affects web
+latency; benchmark timings continue to describe extraction only.
+
+| API | Purpose |
+| --- | --- |
+| `GET /api/health`, `/api/config` | Runtime readiness and sample input |
+| `POST /api/runs` | Analyze `{transcript, reference_date, clusters}` |
+| `GET /api/runs`, `/api/runs/:id` | List and inspect saved runs |
+| `POST /api/runs/:id/finalize` | Save `{decisions}` with explicit acceptance |
+| `GET /api/runs/:id/tasks.csv`, `/history.json` | Confirmed tasks and full audit exports |
+| `GET /api/benchmarks`, `/api/benchmarks/:id` | Measured reports and annotated cases |
+
+## Tests and benchmarks
 
 ```bash
-ollama pull llama3.2:3b
+python3 -m unittest discover -s tests -v
+pnpm test
+pnpm build
+# Python unittest also runs the three existing pipeline regression functions.
+# Or, with pytest installed:
+pytest -q
+
+python3 evaluate.py --extractor rules --split dev --output evaluation/results/rules-dev.json
 ```
 
-Make sure Ollama is running before using the chat endpoint.
+The tests cover extraction contracts, duplicate/conflicting tasks, date handling,
+quote grounding, scoring failures, LLM runner protocol/cost, atomic history
+transactions, Python bridge validation/legacy history, and HTTP analyze/review/
+export/benchmark workflows. They do not make real model calls.
 
-### 5. Run the backend server
+To compare local models and prompt versions, fill in the installed model names
+in `evaluation/models.example.json` and run `compare_models.py`; see the guide.
+The comparison measures `llama3.2:3b`, `qwen2.5:1.5b` and `qwen2.5:0.5b`, each
+with two unchanged prompt versions on the frozen held-out corpus. Local model
+IDs and experiment configuration are retained. Each combination has one pass;
+robust model selection still needs repeated runs and independently labeled real data.
+The app's Evaluation lab displays retained rule and measured LLM reports.
+
+Browser workflow check (after the production build):
 
 ```bash
-uvicorn app.main:app --reload
+pnpm exec playwright install chromium
+pnpm test:browser
 ```
 
-The API will run at:
+This uses a temporary SQLite database and covers explicit acceptance, deduplication,
+invalid date recovery, corrections, immutable confirmation, CSV/JSON downloads,
+reload recovery, history, benchmark case inspection, empty plans, and mobile overflow.
+`FLOW_SCREENSHOTS=/absolute/output/path` retains QA screenshots;
+`FLOW_CHROMIUM_PATH=/absolute/path/to/chromium` reuses an installed browser.
 
-```text
-http://127.0.0.1:8000
-```
+## Project files
 
-Swagger API documentation is available at:
+- `evaluation/dev.jsonl`, `test.jsonl`: transcript inputs and annotated gold items.
+- `evaluation/corpus_manifest.json`: corpus provenance and SHA-256 fingerprints.
+- `baseline_extractor.py`: frozen original extraction behavior.
+- `extraction.py`: improved structured rules and evidence/deduplication contract.
+- `evaluate.py`: task, metadata, evidence, latency, cost and failure measurement.
+- `ollama_runner.py`, `compare_models.py`: actual LLM adapter and experiment matrix.
+- `history.py`: append-only local review persistence.
+- `flow_engine.py`: existing ML classification/grouping and heuristic suggestions.
+- `web/`, `server/`, `web_bridge.py`: React UI, Node API and Python bridge.
 
-```text
-http://127.0.0.1:8000/docs
-```
+This remains an exploratory portfolio project. The workstream classifier uses
+only a tiny illustrative training set; extraction is not trained by Logistic
+Regression. Contextual handoffs, superseded commitments, paraphrases and mixed
+negation require further work against new annotated evaluation data.
 
----
+## Migration notes
 
-## Recommended Development Flow
+Streamlit and `app.py` have been removed from the active application. Python is
+still required for the tested extraction/evaluation/ML engine. No transcript
+history or retained experiment results need conversion. React/Vite versions are
+locked in `pnpm-lock.yaml`; use `pnpm install --frozen-lockfile` for repeat installs.
+Build setup follows the [React Vite guidance](https://react.dev/learn/build-a-react-app-from-scratch)
+and [Vite guide](https://vite.dev/guide/).
 
-1. Start the backend:
+## Existing document/RAG backend
 
-```bash
-uvicorn app.main:app --reload
-```
+The repository's original FastAPI backend is preserved in `app/`. Its document
+upload, client/workspace, RAG chat, authentication, and analytics code is separate
+from the transcript workflow. The React UI uses the Node API described above;
+it does not currently connect to these RAG endpoints.
 
-2. Open Swagger docs:
-
-```text
-http://127.0.0.1:8000/docs
-```
-
-3. Create a client using `POST /clients`.
-4. Upload a document using `POST /clients/{client_id}/documents`.
-5. Index the uploaded document using `POST /documents/{document_id}/index`.
-6. Ask a question using `POST /clients/{client_id}/chat`.
-
----
-
-## Example Use Cases
-
-- Internal company knowledge assistant
-- Client-specific document Q&A
-- Productivity assistant for uploaded reports and notes
-- Workspace-level document search and summarization
-- Multi-client RAG backend for organizations
-- Early prototype for reducing hallucination through context-grounded answers
-
----
-
-## Security Notes
-
-This project is currently a development prototype. Before deploying to production:
-
-- Move the JWT secret key into an environment variable.
-- Do not commit local database files.
-- Do not commit uploaded documents.
-- Do not commit ChromaDB runtime storage.
-- Add stronger role checks to protected endpoints.
-- Configure CORS based on the final frontend domain.
-- Use a production database such as PostgreSQL.
-
----
-
-## Files Ignored in Git
-
-The repository should ignore local runtime files such as:
-
-```gitignore
-.venv/
-__pycache__/
-*.pyc
-.DS_Store
-.env
-rag_client_center.db
-storage/chromadb/
-storage/uploads/
-storage/documents/
-```
-
-This keeps the GitHub repository clean and prevents large/private local files from being uploaded.
-
----
-
-## Future Improvements
-
-- Add a polished frontend dashboard.
-- Add document preview and citation highlighting.
-- Improve role-based authorization across all endpoints.
-- Add conversation history per workspace.
-- Add support for more document formats.
-- Add Docker support for easier setup.
-- Add PostgreSQL support for production deployment.
-- Add hybrid search using both semantic and keyword retrieval.
-- Add evaluation metrics for retrieval quality and answer faithfulness.
-
----
-
-## Status
-
-Backend prototype is working. Final UI integration is planned separately.
+See [the existing backend guide](docs/rag-backend.md). Its original pinned
+requirements are preserved in `requirements-rag.txt`; install those separately,
+preferably in a separate virtual environment, then run `uvicorn app.main:app --reload`
+from the repository root. The root `requirements.txt` installs only the extraction
+engine's Python dependencies. Existing backend implementation files are unchanged.

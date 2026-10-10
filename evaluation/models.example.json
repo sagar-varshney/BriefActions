@@ -1,0 +1,10 @@
+{
+  "prompts": ["v1", "v2"],
+  "repeats": 3,
+  "timeout_seconds": 60,
+  "models": [
+    {"label": "candidate_a", "command": "python3 ollama_runner.py --model REPLACE_WITH_INSTALLED_MODEL_A"},
+    {"label": "candidate_b", "command": "python3 ollama_runner.py --model REPLACE_WITH_INSTALLED_MODEL_B"},
+    {"label": "candidate_c", "command": "python3 ollama_runner.py --model REPLACE_WITH_INSTALLED_MODEL_C"}
+  ]
+}

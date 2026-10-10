@@ -1,0 +1,195 @@
+import React, {useEffect, useRef, useState} from 'react';
+import {createRoot} from 'react-dom/client';
+import './styles.css';
+
+async function api(url, options = {}) {
+  const response = await fetch(`/api${url}`, {headers:{'Content-Type':'application/json'}, ...options});
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || 'Request failed.');
+  return data;
+}
+const pct = value => value == null ? 'Unknown' : `${(value*100).toFixed(1)}%`;
+const duration = value => value == null ? 'Unknown' : value < 1000 ? `${value.toFixed(1)} ms` : `${(value/1000).toFixed(2)} s`;
+const stamp = value => new Date(value).toLocaleString(undefined,{dateStyle:'medium',timeStyle:'short'});
+function Icon({name, size = 20}) {
+  const paths = {
+    flow:<path d="m14 2-8 11h6l-2 9 8-11h-6z"/>,
+    extract:<><rect x="4" y="3" width="16" height="18" rx="3"/><path d="M8 8h8M8 12h5M8 16h8"/></>,
+    history:<><path d="M3 11a9 9 0 1 1 2.5 7M3 4v7h7"/><path d="M12 7v5l3 2"/></>,
+    chart:<><path d="M4 3v17h17M8 15v-4M13 15V7M18 15V4"/></>,
+    arrow:<path d="M5 12h14m-5-5 5 5-5 5"/>,
+    check:<path d="m5 12 4 4L19 6"/>,
+    download:<><path d="M12 3v12m-4-4 4 4 4-4M4 16v4h16v-4"/></>,
+    quote:<><path d="M5 6h5v7H5zm9 0h5v7h-5zM10 13c0 3-2 5-5 5M19 13c0 3-2 5-5 5"/></>,
+  };
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>;
+}
+function Json({value}) { return <pre className="json">{JSON.stringify(value,null,2)}</pre>; }
+function Evidence({passages = []}) {
+  return <div className="evidence"><div className="eyebrow"><Icon name="quote" size={15}/> Supporting transcript</div>{passages.map((e,i)=><div key={i}><blockquote>{e.text}</blockquote><span className="span-note">Characters {e.start}–{e.end} in the saved input</span></div>)}</div>;
+}
+function Download({href, children}) { return <a className="button secondary" href={href} download><Icon name="download" size={16}/>{children}</a>; }
+function downloadJson(value, filename) {
+  const url = URL.createObjectURL(new Blob([JSON.stringify(value,null,2)],{type:'application/json'}));
+  const link = document.createElement('a'); link.href=url; link.download=filename; link.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+const pages = [{id:'extract',name:'Extract & review',icon:'extract'},{id:'history',name:'Run history',icon:'history'},{id:'benchmark',name:'Evaluation lab',icon:'chart'}];
+
+function App() {
+  const [page,setPage] = useState('extract');
+  const [config,setConfig] = useState(null);
+  const [transcript,setTranscript] = useState('');
+  const [meetingDate,setMeetingDate] = useState('');
+  const [clusters,setClusters] = useState(3);
+  const [run,setRun] = useState(null);
+  const [drafts,setDrafts] = useState([]);
+  const [busy,setBusy] = useState(false);
+  const [error,setError] = useState('');
+  const [runs,setRuns] = useState([]);
+  const [historyLoading,setHistoryLoading] = useState(false);
+  const [bench,setBench] = useState(null);
+  const [report,setReport] = useState(null);
+  const [reportId,setReportId] = useState('');
+  const [split,setSplit] = useState('test.jsonl');
+  const [caseId,setCaseId] = useState('');
+  const reportEpoch = useRef(0);
+  const historyEpoch = useRef(0);
+
+  function adopt(snapshot) {
+    setRun(snapshot);
+    setDrafts(snapshot.proposals.map(p=>({proposal_id:p.proposal_id,task:p.task,owner:p.owner,deadline:p.deadline,accept:false})));
+    localStorage.setItem('flow.activeRun',snapshot.id);
+  }
+  useEffect(()=>{
+    let alive=true;
+    (async()=>{
+      try {
+        const value=await api('/config');
+        if(!alive)return;
+        setConfig(value);setTranscript(value.sample_transcript);setMeetingDate(value.sample_reference_date);
+        const saved=localStorage.getItem('flow.activeRun');
+        if(saved) {
+          try {
+            const snapshot=await api(`/runs/${saved}`);
+            if(alive){adopt(snapshot);setTranscript(snapshot.transcript);setMeetingDate(snapshot.reference_date);setClusters(snapshot.settings?.clusters || 3);}
+          } catch {localStorage.removeItem('flow.activeRun');}
+        }
+      } catch(e){if(alive)setError(e.message);}
+    })();
+    return ()=>{alive=false;};
+  },[]);
+  useEffect(()=>{
+    if(page==='history') {
+      const epoch=++historyEpoch.current;
+      setHistoryLoading(true);
+      api('/runs').then(value=>{if(epoch===historyEpoch.current)setRuns(value);})
+        .catch(e=>setError(e.message)).finally(()=>{if(epoch===historyEpoch.current)setHistoryLoading(false);});
+    }
+    if(page==='benchmark' && !bench) api('/benchmarks').then(setBench).catch(e=>setError(e.message));
+  },[page,bench]);
+  async function analyze(event) {
+    event.preventDefault();setError('');setBusy(true);
+    try {adopt(await api('/runs',{method:'POST',body:JSON.stringify({transcript,reference_date:meetingDate,clusters})}));}
+    catch(e){setError(e.message);}finally{setBusy(false);}
+  }
+  async function finalize(event) {
+    event.preventDefault();setError('');setBusy(true);
+    try {adopt(await api(`/runs/${run.id}/finalize`,{method:'POST',body:JSON.stringify({decisions:drafts})}));}
+    catch(e){setError(e.message);}finally{setBusy(false);}
+  }
+  async function openRun(id) {
+    setError('');setBusy(true);
+    try {
+      const value=await api(`/runs/${id}`);adopt(value);
+      setTranscript(value.transcript);setMeetingDate(value.reference_date);setClusters(value.settings?.clusters || 3);setPage('extract');
+    }catch(e){setError(e.message);}finally{setBusy(false);}
+  }
+  async function inspect(id) {
+    const epoch=++reportEpoch.current;
+    setReportId(id);setReport(null);setCaseId('');setError('');
+    if (!id) return;
+    try {const value=await api(`/benchmarks/${id}`);if(epoch===reportEpoch.current){setReport(value);setCaseId(value.report.runs[0]?.id || '');}}
+    catch(e){if(epoch===reportEpoch.current)setError(e.message);}
+  }
+  function edit(index,field,value) {setDrafts(old=>old.map((d,i)=>i===index?{...d,[field]:value}:d));}
+  const selected=drafts.filter(d=>d.accept).length;
+  const inputChanged=run && (run.transcript!==transcript || run.reference_date!==meetingDate || (run.settings?.clusters || 3)!==clusters);
+  const activeCase=report?.cases.find(c=>c.id===caseId);
+  const prediction=report?.report.runs.find(c=>c.id===caseId);
+  const caseScore=report?.report.details.find(c=>c.id===caseId);
+
+  return <div className="app-shell">
+    <aside className="sidebar">
+      <a href="#" className="brand" onClick={e=>{e.preventDefault();setPage('extract');}}><span className="brand-mark"><Icon name="flow" size={25}/></span><span>Productivity<span className="brand-sub">FLOW ENGINE</span></span></a>
+      <div className="nav-label">WORKSPACE</div>
+      <nav aria-label="Main navigation">{pages.map(p=><button key={p.id} className={`nav-item ${page===p.id?'active':''}`} aria-current={page===p.id?'page':undefined} onClick={()=>{setPage(p.id);setError('');}}><Icon name={p.icon}/>{p.name}{page===p.id&&<span className="nav-dot"/>}</button>)}</nav>
+      <div className="sidebar-bottom"><span className="engine-status"><span/> Local rules engine</span><p>Evidence-backed proposals.<br/>You make the final call.</p><div className="stack-label">React · Node.js · Python</div></div>
+    </aside>
+    <main>
+      <header className="topbar"><span>Workspace <span className="slash">/</span> {pages.find(p=>p.id===page).name}</span><span className="local-badge"><span/> Saved on this device</span></header>
+      <div className="content">
+        {error&&<div className="notice error" role="alert">{error}<button aria-label="Dismiss error" onClick={()=>setError('')}>×</button></div>}
+        {page==='extract'&&<>
+          <div className="page-intro"><div><div className="eyebrow accent">FROM CONVERSATION TO ACTION</div><h1>Make your next move clear.</h1><p>Extract action items, check the evidence, and confirm your plan.</p></div><span className="intro-icon"><Icon name="flow" size={38}/></span></div>
+          <div className="steps"><span className="current"><b>1</b> Add transcript</span><span className={run?'current':''}><b>2</b> Review proposals</span><span className={run?.status==='confirmed'?'current':''}><b>3</b> Confirm plan</span></div>
+          <form className="panel transcript-panel" onSubmit={analyze}>
+            <div className="panel-heading"><div><h2>Meeting transcript</h2><p>Paste the conversation. Keep speaker names where available.</p></div><button type="button" className="text-button" disabled={!config || busy} onClick={()=>{setTranscript(config.sample_transcript);setMeetingDate(config.sample_reference_date);}}>Load example</button></div>
+            <label className="sr-only" htmlFor="transcript">Meeting transcript</label><textarea id="transcript" className="transcript" value={transcript} onChange={e=>setTranscript(e.target.value)} maxLength={config?.max_transcript || 100000} required placeholder="Maya: I’ll send the report tomorrow…"/>
+            <div className="input-footer"><div className="settings"><label>Meeting date<input type="date" value={meetingDate} onChange={e=>setMeetingDate(e.target.value)} required/></label><label>Maximum groups<select aria-label="Maximum groups" value={clusters} onChange={e=>setClusters(Number(e.target.value))}>{[1,2,3,4,5,6].map(n=><option key={n}>{n}</option>)}</select></label></div><button className="button primary" disabled={busy || !config}>{busy?'Working…':'Analyze transcript'}{!busy&&<Icon name="arrow" size={17}/>}</button></div>
+            <div className="form-hint">Relative deadlines use the meeting date. Missing people and exact dates stay <strong>Unknown</strong>.</div>
+          </form>
+          {!run&&<div className="empty-state"><span className="empty-icon"><Icon name="extract" size={28}/></span><h3>Your action plan starts here.</h3><p>Analyze a transcript to see proposals with their supporting passages.</p></div>}
+          {run&&<section aria-label="Extraction result">
+            {inputChanged&&<div className="notice warning">These proposals belong to the saved input. Analyze your edited transcript or settings to create a new run.</div>}
+            <div className="result-meta"><span>Run <code>{run.id.slice(0,8)}</code> · Meeting {run.reference_date}</span><span className={`badge ${run.status==='confirmed'?'green':'purple'}`}>{run.status==='confirmed'?'Confirmed':'Needs your review'}</span></div>
+            {run.summary&&<div className="summary"><div className="eyebrow accent">MEETING SUMMARY</div><p>{run.summary}</p></div>}
+            <details className="disclosure"><summary>Saved input & extraction settings</summary><pre className="saved-transcript">{run.transcript}</pre><p>Extractor: {run.settings?.extractor || 'rules'} · Maximum groups: {run.settings?.clusters || 3}</p><small>Extractor fingerprint: {run.settings?.extractor_sha256 || 'Unavailable for this run'}</small></details>
+            {run.status==='confirmed'?<>
+              <div className="section-heading"><div><h2>Your confirmed plan</h2><p>{run.final_tasks.length} task{run.final_tasks.length===1?'':'s'} saved. This result is immutable.</p></div><Download href={`/api/runs/${run.id}/tasks.csv`}>Export CSV</Download></div>
+              {run.final_tasks.length===0&&<div className="notice">You confirmed a plan with no tasks. All proposals were rejected.</div>}
+              {run.final_tasks.map((task,i)=><article className="panel confirmed-card" key={task.proposal_id}><span className="check-circle"><Icon name="check" size={18}/></span><div className="confirmed-content"><h3>{task.task}</h3><div className="task-meta"><span>Owner: <strong>{task.owner}</strong></span><span>Deadline: <strong>{task.deadline}</strong></span></div><Evidence passages={task.evidence}/></div></article>)}
+            </>:<form onSubmit={finalize}>
+              <div className="section-heading"><div><h2>Review action proposals <span className="count">{run.proposals.length}</span></h2><p>Correct the fields and select each task to keep. Nothing is accepted by default.</p></div></div>
+              <div className="review-note">Supporting passages describe the original proposal. Your corrections are recorded separately.</div>
+              {run.proposals.length===0&&<div className="notice">No committed actions or direct requests detected. You can confirm an empty plan or analyze another transcript.</div>}
+              {run.proposals.map((p,i)=><article className={`panel proposal-card ${drafts[i]?.accept?'selected':''}`} key={p.proposal_id}>
+                <div className="proposal-heading"><span className="proposal-number">{String(i+1).padStart(2,'0')}</span><span className="badge neutral">{p.category || 'Action'}</span><label className="keep"><input type="checkbox" checked={drafts[i]?.accept || false} disabled={busy} onChange={e=>edit(i,'accept',e.target.checked)}/>Keep task {i+1}</label></div>
+                <label className="field-label">Task {i+1}<textarea aria-label={`Task ${i+1}`} className="task-input" required value={drafts[i]?.task || ''} disabled={busy} onChange={e=>edit(i,'task',e.target.value)}/></label>
+                <div className="field-row"><label className="field-label">Owner {i+1}<input aria-label={`Owner ${i+1}`} required value={drafts[i]?.owner || ''} disabled={busy} onChange={e=>edit(i,'owner',e.target.value)}/></label><label className="field-label">Deadline {i+1}<input aria-label={`Deadline ${i+1}`} required placeholder="YYYY-MM-DD or Unknown" value={drafts[i]?.deadline || ''} disabled={busy} onChange={e=>edit(i,'deadline',e.target.value)}/><span className="field-hint">YYYY-MM-DD or Unknown</span></label></div>
+                <Evidence passages={p.evidence}/>
+                <details className="suggestions"><summary>Proposal suggestions · {p.priority} priority · Group {p.cluster}</summary><p>Suggested slot: {p.suggested_slot || 'Unknown'}<br/>Workstream classifier probability: {p['confidence_%'] ?? 'Unknown'}%</p><p>Priority and scheduling use heuristics. Classifier probability is not extraction confidence. These suggestions are not included in the confirmed plan.</p></details>
+              </article>)}
+              <div className="confirm-bar"><div><strong>{selected} of {run.proposals.length} selected</strong><span>{run.proposals.length-selected} proposal{run.proposals.length-selected===1?'':'s'} will be rejected.</span></div><button className="button primary" disabled={busy}>{busy?'Saving…':selected?'Confirm selected tasks':'Confirm empty plan'}<Icon name="check" size={17}/></button></div>
+            </form>}
+            <HistoryEvents run={run}/>
+          </section>}
+        </>}
+        {page==='history'&&<>
+          <div className="page-intro"><div><div className="eyebrow accent">EVERY DECISION, TRACEABLE</div><h1>Your run history.</h1><p>Revisit the input, original proposals, corrections, and final results.</p></div></div>
+          <div className="notice">History is stored locally in SQLite. JSON exports include the complete transcript and review decisions.</div>
+          {historyLoading?<div className="empty-state">Loading history…</div>:runs.length===0?<div className="empty-state"><h3>No saved runs yet.</h3><p>Analyze your first transcript to start a history.</p><button className="button primary" onClick={()=>setPage('extract')}>Extract a transcript</button></div>:<div className="history-list">{runs.map(r=><article className="panel history-card" key={r.id}><div className="history-symbol"><Icon name="history"/></div><div className="history-copy"><div className="history-title"><h3>{stamp(r.created_at)}</h3><span className={`badge ${r.status==='confirmed'?'green':'purple'}`}>{r.status==='confirmed'?'Confirmed':'Awaiting review'}</span></div><p>{r.preview}</p><small>Meeting {r.reference_date} · {r.proposal_count} proposals · Run {r.id.slice(0,8)}</small></div><button className="button secondary" disabled={busy} onClick={()=>openRun(r.id)}>Open run <Icon name="arrow" size={16}/></button></article>)}</div>}
+        </>}
+        {page==='benchmark'&&<>
+          <div className="page-intro"><div><div className="eyebrow accent">QUALITY BEFORE GUESSWORK</div><h1>The evaluation lab.</h1><p>Compare retained extraction experiments and inspect individual cases.</p></div></div>
+          <div className="stat-grid"><div className="stat"><span>ANNOTATED TRANSCRIPTS</span><strong>60</strong><small>Synthetic starter corpus</small></div><div className="stat"><span>DEVELOPMENT / HELD OUT</span><strong>30 / 30</strong><small>Related scenarios across splits</small></div><div className="stat"><span>HELD-OUT RULES F1</span><strong>{pct(bench?.reports.find(r=>r.label==='rules' && r.dataset==='test.jsonl')?.metrics.task_f1)}</strong><small>Lexical task matching</small></div></div>
+          <div className="notice warning">Annotations were authored by Codex and have not been independently reviewed. Synthetic results do not establish real-meeting accuracy. Gold support is a proxy based on annotated tasks, metadata, and spans; it is not an entailment judge.</div>
+          <div className="panel benchmark-panel"><div className="panel-heading"><div><h2>Model & prompt comparison</h2><p>Measured quality, latency, API cost, and failures from retained runs.</p></div><label className="split-filter">Dataset<select aria-label="Dataset" value={split} onChange={e=>setSplit(e.target.value)}><option value="test.jsonl">Held out</option><option value="dev.jsonl">Development</option><option value="all">All reports</option></select></label></div>
+            {!bench?<p className="loading">Loading experiments…</p>:<div className="table-scroll"><table><thead><tr><th>Experiment</th><th>F1</th><th>Precision</th><th>Recall</th><th>Owner¹</th><th>Date¹</th><th>Known owner²</th><th>Known date²</th><th>Support³</th><th>Valid spans</th><th>p50</th><th>p95</th><th>API cost</th><th>Failures</th></tr></thead><tbody>{bench.reports.filter(r=>split==='all'||r.dataset===split).map(r=><tr key={r.id} className={reportId===r.id?'active-row':''}><td><button className="experiment" onClick={()=>inspect(r.id)}>{r.label}<small>{r.dataset} · {r.case_count} cases</small></button></td>{['task_f1','task_precision','task_recall','owner_accuracy_on_matched','deadline_accuracy_on_matched','known_owner_end_to_end','known_deadline_end_to_end','gold_support_proxy','evidence_validity'].map(k=><td key={k}>{pct(r.metrics[k])}</td>)}<td>{duration(r.metrics.latency_p50_ms)}</td><td>{duration(r.metrics.latency_p95_ms)}</td><td>{r.metrics.cost_usd==null?'Unknown':`$${r.metrics.cost_usd.toFixed(4)}`}</td><td>{r.counts.failures}/{r.case_count}</td></tr>)}</tbody></table></div>}
+            <p className="table-note">¹ Accuracy among matched tasks. ² End-to-end accuracy for gold items with known metadata. ³ Gold support proxy. Local model API fees are $0; compute costs are excluded. Each model/prompt has one measured pass.</p>
+          </div>
+          {reportId&&!report&&<div className="notice">Loading experiment…</div>}
+          {report&&<section className="panel case-panel"><div className="panel-heading"><div><h2>Inspect: {report.report.label}</h2><p>Compare annotations with the exact retained output.</p></div><button className="button secondary" onClick={()=>downloadJson(report.report,`${report.report.label}-${report.report.dataset}.json`)}><Icon name="download" size={16}/>Full report</button></div><label className="case-select">Transcript case<select aria-label="Transcript case" value={caseId} onChange={e=>setCaseId(e.target.value)}>{report.report.runs.map(c=><option key={c.id}>{c.id}</option>)}</select></label>
+            {activeCase&&<><div className="eyebrow">TRANSCRIPT · {activeCase.reference_date}</div><pre className="saved-transcript">{activeCase.transcript}</pre></>}
+            <div className="case-columns"><div><h3>Annotated gold items</h3><Json value={activeCase?.items || []}/></div><div><h3>Predictions, usage & failures</h3><Json value={prediction}/></div></div><details className="disclosure"><summary>Matches and missed tasks</summary><Json value={caseScore}/></details><details className="disclosure"><summary>Experiment fingerprints & configuration</summary><Json value={Object.fromEntries(Object.entries(report.report).filter(([key])=>!['runs','details','metrics','counts'].includes(key)))}/></details></section>}
+          {bench&&<><details className="disclosure"><summary>Corpus provenance</summary><Json value={bench.manifest}/></details><details className="disclosure"><summary>Illustrative workstream classifier seed data</summary><p>This small seed set trains workstream classification. It does not train action extraction.</p><Json value={bench.training_data}/></details></>}
+        </>}
+        <footer className="page-footer">Productivity Flow Engine <span>Evidence → Review → Action</span></footer>
+      </div>
+    </main>
+  </div>;
+}
+function HistoryEvents({run}) {
+  return <div className="audit"><div className="section-heading"><div><h2>Inspectable history</h2><p>Original evidence stays attached. Edits and rejected tasks are recorded.</p></div><Download href={`/api/runs/${run.id}/history.json`}>History JSON</Download></div>{run.events.map(event=><details key={event.event_id} className="disclosure"><summary><span className="event-label">{event.kind}</span><span className="event-time">{stamp(event.created_at)}</span></summary><Json value={event.payload}/></details>)}</div>;
+}
+createRoot(document.getElementById('root')).render(<App/>);

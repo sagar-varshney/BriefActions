@@ -61,3 +61,10 @@ tmp/
 secrets.json
 credentials.json
 token.json
+
+# React interface and annotated extraction workflow
+.pytest_cache/
+evaluation/private/
+evaluation/experiments/
+node_modules/
+dist/
