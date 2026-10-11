@@ -21,7 +21,7 @@ async function request(url, data, method='POST') {
 }
 test('Python readiness and sample configuration',async()=>{
   const response=await fetch(base+'/api/health');assert.equal(response.status,200);
-  assert.equal((await response.json()).engine,'rules-v2');
+  assert.equal((await response.json()).engine,'rules-v3');
   const config=await (await fetch(base+'/api/config')).json();assert.ok(config.sample_transcript.includes('Maya'));
 });
 test('Analyze validates input, saves grounded proposals and metadata',async()=>{
@@ -59,7 +59,7 @@ test('Empty extraction can be confirmed explicitly',async()=>{
   const final=await (await request(`/api/runs/${run.id}/finalize`,{decisions:[]})).json();assert.deepEqual(final.final_tasks,[]);
 });
 test('Benchmark reports include measured models and annotated cases',async()=>{
-  const listing=await (await fetch(base+'/api/benchmarks')).json();assert.equal(listing.reports.length,10);
+  const listing=await (await fetch(base+'/api/benchmarks')).json();assert.equal(listing.reports.filter(r=>Object.values(listing.manifest.splits).some(s=>s.sha256===r.dataset_sha256)).length,10);
   const report=listing.reports.find(r=>r.label==='rules'&&r.dataset==='test.jsonl');
   const full=await (await fetch(base+`/api/benchmarks/${report.id}`)).json();assert.equal(full.cases.length,30);assert.equal(full.report.runs.length,30);
   assert.equal((await fetch(base+'/api/benchmarks/0000000000000000')).status,404);
@@ -74,4 +74,23 @@ test('Missing Python returns a useful service error',async()=>{
   const original=process.env.PYTHON_BIN;
   try {process.env.PYTHON_BIN='/nonexistent/flow-python';await assert.rejects(engine({operation:'health'}),{status:503});}
   finally {if(original) process.env.PYTHON_BIN=original;else delete process.env.PYTHON_BIN;}
+});
+
+test('Annotation routes enforce permission and immutable independent reviews',async()=>{
+  const data={transcript:'Person A will send the report tomorrow.',reference_date:'2028-02-28',source:'synthetic',group:'meeting-a',permission:true,anonymized:true};
+  assert.equal((await request('/api/annotations',{...data,permission:false})).status,400);
+  const response=await request('/api/annotations',data);assert.equal(response.status,201);const c=await response.json();
+  assert.equal((await fetch(base+`/api/runs/${c.id}`)).status,404);
+  const items=[{task:'send the report',owner:'Person A',deadline:'2028-02-29',evidence:[{text:c.transcript,start:0,end:c.transcript.length}]}];
+  assert.equal((await request(`/api/annotations/${c.id}/submit`,{reviewer:'a',items,independent:true})).status,200);
+  assert.equal((await request(`/api/annotations/${c.id}/submit`,{reviewer:'a',items,independent:true})).status,400);
+  const reviewed=await (await request(`/api/annotations/${c.id}/submit`,{reviewer:'b',items,independent:true})).json();assert.equal(reviewed.status,'agreed');
+  const listing=await (await fetch(base+'/api/annotations')).json();assert.equal(listing.length,1);
+});
+test('Draft endpoint stores partial fields and rejects stale writes',async()=>{
+  const run=await (await request('/api/runs',{transcript:'Maya will send the report.',reference_date:'2026-10-11'})).json();
+  const decisions=run.proposals.map(p=>({...p,task:'unfinished',accept:true}));
+  assert.equal((await request(`/api/runs/${run.id}/draft`,{decisions,version:0})).status,200);
+  assert.equal((await request(`/api/runs/${run.id}/draft`,{decisions,version:0})).status,409);
+  const restored=await (await fetch(base+`/api/runs/${run.id}`)).json();assert.equal(restored.draft.decisions[0].task,'unfinished');
 });

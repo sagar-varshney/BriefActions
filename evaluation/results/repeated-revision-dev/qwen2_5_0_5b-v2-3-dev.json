@@ -1,0 +1,657 @@
+{
+  "counts": {
+    "predicted": 14,
+    "gold": 12,
+    "matched": 11,
+    "owner_correct": 10,
+    "deadline_correct": 2,
+    "owner_known_correct": 10,
+    "owner_known_total": 12,
+    "deadline_known_correct": 2,
+    "deadline_known_total": 10,
+    "evidence_valid": 14,
+    "supported": 1,
+    "failures": 1
+  },
+  "metrics": {
+    "task_precision": 0.7857142857142857,
+    "task_recall": 0.9166666666666666,
+    "task_f1": 0.8461538461538461,
+    "owner_accuracy_on_matched": 0.9090909090909091,
+    "deadline_accuracy_on_matched": 0.18181818181818182,
+    "known_owner_end_to_end": 0.8333333333333334,
+    "known_deadline_end_to_end": 0.2,
+    "evidence_validity": 1.0,
+    "gold_support_proxy": 0.07142857142857142,
+    "latency_p50_ms": 1240.306125022471,
+    "latency_p95_ms": 2095.571749989176,
+    "cost_usd": 0.0,
+    "failure_rate": 0.08333333333333333
+  },
+  "details": [
+    {
+      "id": "revision-dev-01",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "a1",
+          "owner_correct": true,
+          "deadline_correct": false,
+          "gold_support_proxy": false
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "revision-dev-02",
+      "matches": [],
+      "false_positives": [
+        0
+      ],
+      "missed_gold": []
+    },
+    {
+      "id": "revision-dev-03",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "a1",
+          "owner_correct": true,
+          "deadline_correct": false,
+          "gold_support_proxy": false
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "revision-dev-04",
+      "matches": [
+        {
+          "prediction": 1,
+          "gold_id": "a1",
+          "owner_correct": false,
+          "deadline_correct": true,
+          "gold_support_proxy": false
+        }
+      ],
+      "false_positives": [
+        0
+      ],
+      "missed_gold": []
+    },
+    {
+      "id": "revision-dev-05",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "a1",
+          "owner_correct": true,
+          "deadline_correct": false,
+          "gold_support_proxy": false
+        },
+        {
+          "prediction": 1,
+          "gold_id": "a2",
+          "owner_correct": true,
+          "deadline_correct": false,
+          "gold_support_proxy": false
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "revision-dev-06",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "a1",
+          "owner_correct": true,
+          "deadline_correct": false,
+          "gold_support_proxy": false
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "revision-dev-07",
+      "matches": [],
+      "false_positives": [],
+      "missed_gold": [
+        "a1"
+      ]
+    },
+    {
+      "id": "revision-dev-08",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "a1",
+          "owner_correct": true,
+          "deadline_correct": false,
+          "gold_support_proxy": false
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "revision-dev-09",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "a1",
+          "owner_correct": true,
+          "deadline_correct": false,
+          "gold_support_proxy": false
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "revision-dev-10",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "a1",
+          "owner_correct": true,
+          "deadline_correct": false,
+          "gold_support_proxy": false
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "revision-dev-11",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "a1",
+          "owner_correct": true,
+          "deadline_correct": false,
+          "gold_support_proxy": false
+        }
+      ],
+      "false_positives": [
+        1
+      ],
+      "missed_gold": []
+    },
+    {
+      "id": "revision-dev-12",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "a1",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    }
+  ],
+  "schema_version": 1,
+  "created_at": "2026-10-11T16:49:51.772718+00:00",
+  "evaluator_sha256": "b618d7dcab9afd791d816694e3cb456bbddd2051457a1b45c8f593ead7c34585",
+  "label": "qwen2_5_0_5b-v2-3",
+  "extractor": "llm",
+  "dataset_sha256": "e5b56ea1959f4c54bfeab4adaf83db85178913fd458c3f82a34742ba15c392e1",
+  "dataset": "dev.jsonl",
+  "splits": [
+    "dev"
+  ],
+  "extractor_sha256": null,
+  "prompt_version": "v2",
+  "prompt_sha256": "1224425d6587065f87af137b9b3cc50bc6efc60a737a9baf4b5d7d7f504b6fb2",
+  "pricing": {
+    "input_usd_per_million": null,
+    "output_usd_per_million": null
+  },
+  "runs": [
+    {
+      "items": [
+        {
+          "task": "send the launch report",
+          "owner": "Asha",
+          "deadline": "2026-10-01",
+          "evidence": [
+            {
+              "text": "Asha: I will send the launch report by Friday.",
+              "start": 0,
+              "end": 46
+            }
+          ]
+        }
+      ],
+      "model": "qwen2.5:0.5b",
+      "usage": {
+        "input_tokens": 647,
+        "output_tokens": 77
+      },
+      "provider_duration_ns": 1066056750,
+      "raw_model_response": "{\n  \"items\": [\n    {\n      \"task\": \"send the launch report\",\n      \"owner\": \"Asha\",\n      \"deadline\": \"2026-10-01\",\n      \"evidence\": [\n        {\n          \"text\": \"Asha: I will send the launch report by Friday.\"\n        }\n      ]\n    }\n  ]\n}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 1188.831042003585,
+      "id": "revision-dev-01"
+    },
+    {
+      "items": [
+        {
+          "task": "prepare the invoice",
+          "owner": "Ben",
+          "deadline": "2026-12-31",
+          "evidence": [
+            {
+              "text": "I will prepare the invoice tomorrow.",
+              "start": 5,
+              "end": 41
+            }
+          ]
+        }
+      ],
+      "model": "qwen2.5:0.5b",
+      "usage": {
+        "input_tokens": 641,
+        "output_tokens": 70
+      },
+      "provider_duration_ns": 893114834,
+      "raw_model_response": "{\n  \"items\": [\n    {\n      \"task\": \"prepare the invoice\",\n      \"owner\": \"Ben\",\n      \"deadline\": \"2026-12-31\",\n      \"evidence\": [\n        {\n          \"text\": \"I will prepare the invoice tomorrow.\"\n        }\n      ]\n    }\n  ]\n}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 1008.6931250116322,
+      "id": "revision-dev-02"
+    },
+    {
+      "items": [
+        {
+          "task": "Review the contract",
+          "owner": "Cy",
+          "deadline": "2027-01-07",
+          "evidence": [
+            {
+              "text": "Move the contract to Monday",
+              "start": 45,
+              "end": 72
+            }
+          ]
+        }
+      ],
+      "model": "qwen2.5:0.5b",
+      "usage": {
+        "input_tokens": 642,
+        "output_tokens": 69
+      },
+      "provider_duration_ns": 945799625,
+      "raw_model_response": "{\n  \"items\": [\n    {\n      \"task\": \"Review the contract\",\n      \"owner\": \"Cy\",\n      \"deadline\": \"2027-01-07\",\n      \"evidence\": [\n        {\n          \"text\": \"Move the contract to Monday\"\n        }\n      ]\n    }\n  ]\n}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 1065.6380000000354,
+      "id": "revision-dev-03"
+    },
+    {
+      "items": [
+        {
+          "task": "draft release notes",
+          "owner": "Unknown",
+          "deadline": "2028-02-28",
+          "evidence": [
+            {
+              "text": "Dana will draft the release notes tomorrow.",
+              "start": 0,
+              "end": 43
+            }
+          ]
+        },
+        {
+          "task": "test patch",
+          "owner": "Unknown",
+          "deadline": "2028-02-28",
+          "evidence": [
+            {
+              "text": "Eli will test the patch today.",
+              "start": 44,
+              "end": 74
+            }
+          ]
+        }
+      ],
+      "model": "qwen2.5:0.5b",
+      "usage": {
+        "input_tokens": 652,
+        "output_tokens": 132
+      },
+      "provider_duration_ns": 1826001458,
+      "raw_model_response": "{\n  \"items\": [\n    {\n      \"task\": \"draft release notes\",\n      \"owner\": \"Unknown\",\n      \"deadline\": \"2028-02-28\",\n      \"evidence\": [\n        {\n          \"text\": \"Dana will draft the release notes tomorrow.\"\n        }\n      ]\n    },\n    {\n      \"task\": \"test patch\",\n      \"owner\": \"Unknown\",\n      \"deadline\": \"2028-02-28\",\n      \"evidence\": [\n        {\n          \"text\": \"Eli will test the patch today.\"\n        }\n      ]\n    }\n  ]\n}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 1945.3065000125207,
+      "id": "revision-dev-04"
+    },
+    {
+      "items": [
+        {
+          "task": "review report 1",
+          "owner": "Finn",
+          "deadline": "2026-11-30",
+          "evidence": [
+            {
+              "text": "Finn: I will review report 1 tomorrow.",
+              "start": 0,
+              "end": 38
+            }
+          ]
+        },
+        {
+          "task": "review report 2",
+          "owner": "Finn",
+          "deadline": "2026-11-30",
+          "evidence": [
+            {
+              "text": "Finn: I will review report 2 tomorrow.",
+              "start": 39,
+              "end": 77
+            }
+          ]
+        }
+      ],
+      "model": "qwen2.5:0.5b",
+      "usage": {
+        "input_tokens": 657,
+        "output_tokens": 142
+      },
+      "provider_duration_ns": 1986852292,
+      "raw_model_response": "{\n  \"items\": [\n    {\n      \"task\": \"review report 1\",\n      \"owner\": \"Finn\",\n      \"deadline\": \"2026-11-30\",\n      \"evidence\": [\n        {\n          \"text\": \"Finn: I will review report 1 tomorrow.\"\n        }\n      ]\n    },\n    {\n      \"task\": \"review report 2\",\n      \"owner\": \"Finn\",\n      \"deadline\": \"2026-11-30\",\n      \"evidence\": [\n        {\n          \"text\": \"Finn: I will review report 2 tomorrow.\"\n        }\n      ]\n    }\n  ]\n}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 2095.571749989176,
+      "id": "revision-dev-05"
+    },
+    {
+      "items": [
+        {
+          "task": "Gia: I will share the budget by Friday.",
+          "owner": "Gia",
+          "deadline": "2027-04-01",
+          "evidence": [
+            {
+              "text": "Gia: I will share the budget by Friday.",
+              "start": 0,
+              "end": 39
+            }
+          ]
+        }
+      ],
+      "model": "qwen2.5:0.5b",
+      "usage": {
+        "input_tokens": 647,
+        "output_tokens": 82
+      },
+      "provider_duration_ns": 1228386666,
+      "raw_model_response": "{\n  \"items\": [\n    {\n      \"task\": \"Gia: I will share the budget by Friday.\",\n      \"owner\": \"Gia\",\n      \"deadline\": \"2027-04-01\",\n      \"evidence\": [\n        {\n          \"text\": \"Gia: I will share the budget by Friday.\"\n        }\n      ]\n    }\n  ]\n}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 1331.032916001277,
+      "id": "revision-dev-06"
+    },
+    {
+      "items": [],
+      "model": "qwen2.5:0.5b",
+      "usage": {
+        "input_tokens": 655,
+        "output_tokens": 74
+      },
+      "provider_duration_ns": 1145516084,
+      "raw_model_response": "{\n  \"items\": [\n    {\n      \"task\": \"submit the audit\",\n      \"owner\": \"Hari\",\n      \"deadline\": \"2026-02-30\",\n      \"evidence\": [\n        {\n          \"text\": \"Hari: I will submit the audit today.\"\n        }\n      ]\n    }\n  ]\n}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "invalid_items": [
+        {
+          "task": "submit the audit",
+          "owner": "Hari",
+          "deadline": "2026-02-30",
+          "evidence": [
+            {
+              "text": "Hari: I will submit the audit today.",
+              "start": 0,
+              "end": 36
+            }
+          ]
+        }
+      ],
+      "error": "Invalid runner response: ValueError",
+      "latency_ms": 1245.0055410154164,
+      "id": "revision-dev-07"
+    },
+    {
+      "items": [
+        {
+          "task": "deploy the fix tomorrow",
+          "owner": "Iris",
+          "deadline": "2026-06-30",
+          "evidence": [
+            {
+              "text": "Iris: I will deploy the fix tomorrow.",
+              "start": 0,
+              "end": 37
+            }
+          ]
+        }
+      ],
+      "model": "qwen2.5:0.5b",
+      "usage": {
+        "input_tokens": 652,
+        "output_tokens": 75
+      },
+      "provider_duration_ns": 1122913583,
+      "raw_model_response": "{\n  \"items\": [\n    {\n      \"task\": \"deploy the fix tomorrow\",\n      \"owner\": \"Iris\",\n      \"deadline\": \"2026-06-30\",\n      \"evidence\": [\n        {\n          \"text\": \"Iris: I will deploy the fix tomorrow.\"\n        }\n      ]\n    }\n  ]\n}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 1240.306125022471,
+      "id": "revision-dev-08"
+    },
+    {
+      "items": [
+        {
+          "task": "book the room",
+          "owner": "Jules",
+          "deadline": "2027-08-05",
+          "evidence": [
+            {
+              "text": "I will book the room by Friday.",
+              "start": 7,
+              "end": 38
+            }
+          ]
+        }
+      ],
+      "model": "qwen2.5:0.5b",
+      "usage": {
+        "input_tokens": 646,
+        "output_tokens": 72
+      },
+      "provider_duration_ns": 1079861833,
+      "raw_model_response": "{\n  \"items\": [\n    {\n      \"task\": \"book the room\",\n      \"owner\": \"Jules\",\n      \"deadline\": \"2027-08-05\",\n      \"evidence\": [\n        {\n          \"text\": \"I will book the room by Friday.\"\n        }\n      ]\n    }\n  ]\n}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 1175.946874980582,
+      "id": "revision-dev-09"
+    },
+    {
+      "items": [
+        {
+          "task": "send the agenda tomorrow",
+          "owner": "Lena",
+          "deadline": "2028-02-28",
+          "evidence": [
+            {
+              "text": "Lena: I will send the agenda tomorrow.",
+              "start": 0,
+              "end": 38
+            }
+          ]
+        }
+      ],
+      "model": "qwen2.5:0.5b",
+      "usage": {
+        "input_tokens": 645,
+        "output_tokens": 75
+      },
+      "provider_duration_ns": 1121739875,
+      "raw_model_response": "{\n  \"items\": [\n    {\n      \"task\": \"send the agenda tomorrow\",\n      \"owner\": \"Lena\",\n      \"deadline\": \"2028-02-28\",\n      \"evidence\": [\n        {\n          \"text\": \"Lena: I will send the agenda tomorrow.\"\n        }\n      ]\n    }\n  ]\n}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 1220.5379590159282,
+      "id": "revision-dev-10"
+    },
+    {
+      "items": [
+        {
+          "task": "send the agenda",
+          "owner": "Miro",
+          "deadline": "2026-09-30",
+          "evidence": [
+            {
+              "text": "I will send the agenda by Friday.",
+              "start": 6,
+              "end": 39
+            }
+          ]
+        },
+        {
+          "task": "move that to Tuesday",
+          "owner": "Miro",
+          "deadline": "2026-09-30",
+          "evidence": [
+            {
+              "text": "Move that to Tuesday.",
+              "start": 80,
+              "end": 101
+            }
+          ]
+        }
+      ],
+      "model": "qwen2.5:0.5b",
+      "usage": {
+        "input_tokens": 655,
+        "output_tokens": 132
+      },
+      "provider_duration_ns": 1838237875,
+      "raw_model_response": "{\n  \"items\": [\n    {\n      \"task\": \"send the agenda\",\n      \"owner\": \"Miro\",\n      \"deadline\": \"2026-09-30\",\n      \"evidence\": [\n        {\n          \"text\": \"I will send the agenda by Friday.\"\n        }\n      ]\n    },\n    {\n      \"task\": \"move that to Tuesday\",\n      \"owner\": \"Miro\",\n      \"deadline\": \"2026-09-30\",\n      \"evidence\": [\n        {\n          \"text\": \"Move that to Tuesday.\"\n        }\n      ]\n    }\n  ]\n}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 1933.1409999867901,
+      "id": "revision-dev-11"
+    },
+    {
+      "items": [
+        {
+          "task": "review the design",
+          "owner": "Nora",
+          "deadline": "2026-12-31",
+          "evidence": [
+            {
+              "text": "Nora will review the design by December 31.",
+              "start": 0,
+              "end": 43
+            }
+          ]
+        }
+      ],
+      "model": "qwen2.5:0.5b",
+      "usage": {
+        "input_tokens": 637,
+        "output_tokens": 76
+      },
+      "provider_duration_ns": 1132378875,
+      "raw_model_response": "{\n  \"items\": [\n    {\n      \"task\": \"review the design\",\n      \"owner\": \"Nora\",\n      \"deadline\": \"2026-12-31\",\n      \"evidence\": [\n        {\n          \"text\": \"Nora will review the design by December 31.\"\n        }\n      ]\n    }\n  ]\n}",
+      "runner_sha256": "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d",
+      "generation_options": {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 1024
+      },
+      "cost_usd": 0.0,
+      "cost_basis": "local API fee only; compute cost excluded",
+      "latency_ms": 1233.5562499938533,
+      "id": "revision-dev-12"
+    }
+  ],
+  "matrix_model": "qwen2_5_0_5b",
+  "repeat": 3,
+  "matrix_config_sha256": "424784ebb3091abb47bb251b838b688b90eeafe29039c710e656b353f3d44f0f",
+  "runner_command": "python3 ollama_runner.py --model qwen2.5:0.5b"
+}

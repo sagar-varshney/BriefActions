@@ -1,0 +1,1150 @@
+{
+  "schema_version": 1,
+  "kind": "repeat_summary",
+  "groups": [
+    {
+      "model": "llama3_2_3b",
+      "actual_models": [
+        "llama3.2:3b"
+      ],
+      "prompt": "v1",
+      "prompt_sha256": "4687bf98f0a4652e8af2ebc35d513df47b17a386bc86cdc5ebc4c64b8a4ac28e",
+      "dataset_sha256": "e5b56ea1959f4c54bfeab4adaf83db85178913fd458c3f82a34742ba15c392e1",
+      "evaluator_sha256": "b618d7dcab9afd791d816694e3cb456bbddd2051457a1b45c8f593ead7c34585",
+      "repeats": 3,
+      "run_configuration": {
+        "actual_models": [
+          "llama3.2:3b"
+        ],
+        "generation_options": [
+          "{\"num_predict\": 1024, \"seed\": 42, \"temperature\": 0}"
+        ],
+        "matrix_config_sha256": "424784ebb3091abb47bb251b838b688b90eeafe29039c710e656b353f3d44f0f",
+        "pricing": {
+          "input_usd_per_million": null,
+          "output_usd_per_million": null
+        },
+        "runner_sha256": [
+          "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d"
+        ]
+      },
+      "metrics": {
+        "task_precision": {
+          "known_runs": 3,
+          "mean": 0.5,
+          "stdev": 0.0,
+          "min": 0.5,
+          "max": 0.5
+        },
+        "task_recall": {
+          "known_runs": 3,
+          "mean": 0.9166666666666666,
+          "stdev": 0.0,
+          "min": 0.9166666666666666,
+          "max": 0.9166666666666666
+        },
+        "task_f1": {
+          "known_runs": 3,
+          "mean": 0.6470588235294118,
+          "stdev": 0.0,
+          "min": 0.6470588235294118,
+          "max": 0.6470588235294118
+        },
+        "owner_accuracy_on_matched": {
+          "known_runs": 3,
+          "mean": 1.0,
+          "stdev": 0.0,
+          "min": 1.0,
+          "max": 1.0
+        },
+        "deadline_accuracy_on_matched": {
+          "known_runs": 3,
+          "mean": 0.18181818181818182,
+          "stdev": 0.0,
+          "min": 0.18181818181818182,
+          "max": 0.18181818181818182
+        },
+        "known_owner_end_to_end": {
+          "known_runs": 3,
+          "mean": 0.9166666666666666,
+          "stdev": 0.0,
+          "min": 0.9166666666666666,
+          "max": 0.9166666666666666
+        },
+        "known_deadline_end_to_end": {
+          "known_runs": 3,
+          "mean": 0.2,
+          "stdev": 0.0,
+          "min": 0.2,
+          "max": 0.2
+        },
+        "evidence_validity": {
+          "known_runs": 3,
+          "mean": 1.0,
+          "stdev": 0.0,
+          "min": 1.0,
+          "max": 1.0
+        },
+        "gold_support_proxy": {
+          "known_runs": 3,
+          "mean": 0.09090909090909091,
+          "stdev": 0.0,
+          "min": 0.09090909090909091,
+          "max": 0.09090909090909091
+        },
+        "latency_p50_ms": {
+          "known_runs": 3,
+          "mean": 6321.9413749951245,
+          "stdev": 987.5124176270665,
+          "min": 5479.635749972658,
+          "max": 7408.730499999365
+        },
+        "latency_p95_ms": {
+          "known_runs": 3,
+          "mean": 9718.75334700841,
+          "stdev": 2346.5811589632026,
+          "min": 7272.980500012636,
+          "max": 11951.634583005216
+        },
+        "cost_usd": {
+          "known_runs": 3,
+          "mean": 0.0,
+          "stdev": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "failure_rate": {
+          "known_runs": 3,
+          "mean": 0.08333333333333333,
+          "stdev": 0.0,
+          "min": 0.08333333333333333,
+          "max": 0.08333333333333333
+        }
+      },
+      "case_failures": [
+        {
+          "id": "revision-dev-01",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-02",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-03",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-04",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-05",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-06",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-07",
+          "failed_runs": 3,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-08",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-09",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-10",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-11",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-12",
+          "failed_runs": 0,
+          "runs": 3
+        }
+      ],
+      "reports": [
+        "llama3_2_3b-v1-1",
+        "llama3_2_3b-v1-2",
+        "llama3_2_3b-v1-3"
+      ]
+    },
+    {
+      "model": "llama3_2_3b",
+      "actual_models": [
+        "llama3.2:3b"
+      ],
+      "prompt": "v2",
+      "prompt_sha256": "1224425d6587065f87af137b9b3cc50bc6efc60a737a9baf4b5d7d7f504b6fb2",
+      "dataset_sha256": "e5b56ea1959f4c54bfeab4adaf83db85178913fd458c3f82a34742ba15c392e1",
+      "evaluator_sha256": "b618d7dcab9afd791d816694e3cb456bbddd2051457a1b45c8f593ead7c34585",
+      "repeats": 3,
+      "run_configuration": {
+        "actual_models": [
+          "llama3.2:3b"
+        ],
+        "generation_options": [
+          "{\"num_predict\": 1024, \"seed\": 42, \"temperature\": 0}"
+        ],
+        "matrix_config_sha256": "424784ebb3091abb47bb251b838b688b90eeafe29039c710e656b353f3d44f0f",
+        "pricing": {
+          "input_usd_per_million": null,
+          "output_usd_per_million": null
+        },
+        "runner_sha256": [
+          "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d"
+        ]
+      },
+      "metrics": {
+        "task_precision": {
+          "known_runs": 3,
+          "mean": 0.5789473684210527,
+          "stdev": 0.0,
+          "min": 0.5789473684210527,
+          "max": 0.5789473684210527
+        },
+        "task_recall": {
+          "known_runs": 3,
+          "mean": 0.9166666666666666,
+          "stdev": 0.0,
+          "min": 0.9166666666666666,
+          "max": 0.9166666666666666
+        },
+        "task_f1": {
+          "known_runs": 3,
+          "mean": 0.7096774193548387,
+          "stdev": 0.0,
+          "min": 0.7096774193548387,
+          "max": 0.7096774193548387
+        },
+        "owner_accuracy_on_matched": {
+          "known_runs": 3,
+          "mean": 0.6363636363636364,
+          "stdev": 0.0,
+          "min": 0.6363636363636364,
+          "max": 0.6363636363636364
+        },
+        "deadline_accuracy_on_matched": {
+          "known_runs": 3,
+          "mean": 0.18181818181818182,
+          "stdev": 0.0,
+          "min": 0.18181818181818182,
+          "max": 0.18181818181818182
+        },
+        "known_owner_end_to_end": {
+          "known_runs": 3,
+          "mean": 0.5833333333333334,
+          "stdev": 0.0,
+          "min": 0.5833333333333334,
+          "max": 0.5833333333333334
+        },
+        "known_deadline_end_to_end": {
+          "known_runs": 3,
+          "mean": 0.2,
+          "stdev": 0.0,
+          "min": 0.2,
+          "max": 0.2
+        },
+        "evidence_validity": {
+          "known_runs": 3,
+          "mean": 1.0,
+          "stdev": 0.0,
+          "min": 1.0,
+          "max": 1.0
+        },
+        "gold_support_proxy": {
+          "known_runs": 3,
+          "mean": 0.0,
+          "stdev": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "latency_p50_ms": {
+          "known_runs": 3,
+          "mean": 5918.38613867488,
+          "stdev": 1541.7644840625974,
+          "min": 4239.386958011892,
+          "max": 7270.48599999398
+        },
+        "latency_p95_ms": {
+          "known_runs": 3,
+          "mean": 8371.3630833372,
+          "stdev": 2212.1442483095298,
+          "min": 6068.862582993461,
+          "max": 10480.449833004968
+        },
+        "cost_usd": {
+          "known_runs": 3,
+          "mean": 0.0,
+          "stdev": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "failure_rate": {
+          "known_runs": 3,
+          "mean": 0.08333333333333333,
+          "stdev": 0.0,
+          "min": 0.08333333333333333,
+          "max": 0.08333333333333333
+        }
+      },
+      "case_failures": [
+        {
+          "id": "revision-dev-01",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-02",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-03",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-04",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-05",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-06",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-07",
+          "failed_runs": 3,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-08",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-09",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-10",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-11",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-12",
+          "failed_runs": 0,
+          "runs": 3
+        }
+      ],
+      "reports": [
+        "llama3_2_3b-v2-1",
+        "llama3_2_3b-v2-2",
+        "llama3_2_3b-v2-3"
+      ]
+    },
+    {
+      "model": "qwen2_5_0_5b",
+      "actual_models": [
+        "qwen2.5:0.5b"
+      ],
+      "prompt": "v1",
+      "prompt_sha256": "4687bf98f0a4652e8af2ebc35d513df47b17a386bc86cdc5ebc4c64b8a4ac28e",
+      "dataset_sha256": "e5b56ea1959f4c54bfeab4adaf83db85178913fd458c3f82a34742ba15c392e1",
+      "evaluator_sha256": "b618d7dcab9afd791d816694e3cb456bbddd2051457a1b45c8f593ead7c34585",
+      "repeats": 3,
+      "run_configuration": {
+        "actual_models": [
+          "qwen2.5:0.5b"
+        ],
+        "generation_options": [
+          "{\"num_predict\": 1024, \"seed\": 42, \"temperature\": 0}"
+        ],
+        "matrix_config_sha256": "424784ebb3091abb47bb251b838b688b90eeafe29039c710e656b353f3d44f0f",
+        "pricing": {
+          "input_usd_per_million": null,
+          "output_usd_per_million": null
+        },
+        "runner_sha256": [
+          "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d"
+        ]
+      },
+      "metrics": {
+        "task_precision": {
+          "known_runs": 3,
+          "mean": 0.8461538461538461,
+          "stdev": 0.0,
+          "min": 0.8461538461538461,
+          "max": 0.8461538461538461
+        },
+        "task_recall": {
+          "known_runs": 3,
+          "mean": 0.9166666666666666,
+          "stdev": 0.0,
+          "min": 0.9166666666666666,
+          "max": 0.9166666666666666
+        },
+        "task_f1": {
+          "known_runs": 3,
+          "mean": 0.8799999999999999,
+          "stdev": 0.0,
+          "min": 0.8799999999999999,
+          "max": 0.8799999999999999
+        },
+        "owner_accuracy_on_matched": {
+          "known_runs": 3,
+          "mean": 0.8181818181818182,
+          "stdev": 0.0,
+          "min": 0.8181818181818182,
+          "max": 0.8181818181818182
+        },
+        "deadline_accuracy_on_matched": {
+          "known_runs": 3,
+          "mean": 0.18181818181818182,
+          "stdev": 0.0,
+          "min": 0.18181818181818182,
+          "max": 0.18181818181818182
+        },
+        "known_owner_end_to_end": {
+          "known_runs": 3,
+          "mean": 0.75,
+          "stdev": 0.0,
+          "min": 0.75,
+          "max": 0.75
+        },
+        "known_deadline_end_to_end": {
+          "known_runs": 3,
+          "mean": 0.2,
+          "stdev": 0.0,
+          "min": 0.2,
+          "max": 0.2
+        },
+        "evidence_validity": {
+          "known_runs": 3,
+          "mean": 1.0,
+          "stdev": 0.0,
+          "min": 1.0,
+          "max": 1.0
+        },
+        "gold_support_proxy": {
+          "known_runs": 3,
+          "mean": 0.0,
+          "stdev": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "latency_p50_ms": {
+          "known_runs": 3,
+          "mean": 1045.545416670696,
+          "stdev": 195.14250117031398,
+          "min": 827.2484169865493,
+          "max": 1203.0717080051545
+        },
+        "latency_p95_ms": {
+          "known_runs": 3,
+          "mean": 2144.6584863491203,
+          "stdev": 159.1708123851534,
+          "min": 2005.540459009353,
+          "max": 2318.2366250257473
+        },
+        "cost_usd": {
+          "known_runs": 3,
+          "mean": 0.0,
+          "stdev": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "failure_rate": {
+          "known_runs": 3,
+          "mean": 0.08333333333333333,
+          "stdev": 0.0,
+          "min": 0.08333333333333333,
+          "max": 0.08333333333333333
+        }
+      },
+      "case_failures": [
+        {
+          "id": "revision-dev-01",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-02",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-03",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-04",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-05",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-06",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-07",
+          "failed_runs": 3,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-08",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-09",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-10",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-11",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-12",
+          "failed_runs": 0,
+          "runs": 3
+        }
+      ],
+      "reports": [
+        "qwen2_5_0_5b-v1-1",
+        "qwen2_5_0_5b-v1-2",
+        "qwen2_5_0_5b-v1-3"
+      ]
+    },
+    {
+      "model": "qwen2_5_0_5b",
+      "actual_models": [
+        "qwen2.5:0.5b"
+      ],
+      "prompt": "v2",
+      "prompt_sha256": "1224425d6587065f87af137b9b3cc50bc6efc60a737a9baf4b5d7d7f504b6fb2",
+      "dataset_sha256": "e5b56ea1959f4c54bfeab4adaf83db85178913fd458c3f82a34742ba15c392e1",
+      "evaluator_sha256": "b618d7dcab9afd791d816694e3cb456bbddd2051457a1b45c8f593ead7c34585",
+      "repeats": 3,
+      "run_configuration": {
+        "actual_models": [
+          "qwen2.5:0.5b"
+        ],
+        "generation_options": [
+          "{\"num_predict\": 1024, \"seed\": 42, \"temperature\": 0}"
+        ],
+        "matrix_config_sha256": "424784ebb3091abb47bb251b838b688b90eeafe29039c710e656b353f3d44f0f",
+        "pricing": {
+          "input_usd_per_million": null,
+          "output_usd_per_million": null
+        },
+        "runner_sha256": [
+          "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d"
+        ]
+      },
+      "metrics": {
+        "task_precision": {
+          "known_runs": 3,
+          "mean": 0.7857142857142857,
+          "stdev": 0.0,
+          "min": 0.7857142857142857,
+          "max": 0.7857142857142857
+        },
+        "task_recall": {
+          "known_runs": 3,
+          "mean": 0.9166666666666666,
+          "stdev": 0.0,
+          "min": 0.9166666666666666,
+          "max": 0.9166666666666666
+        },
+        "task_f1": {
+          "known_runs": 3,
+          "mean": 0.8461538461538461,
+          "stdev": 0.0,
+          "min": 0.8461538461538461,
+          "max": 0.8461538461538461
+        },
+        "owner_accuracy_on_matched": {
+          "known_runs": 3,
+          "mean": 0.9090909090909091,
+          "stdev": 0.0,
+          "min": 0.9090909090909091,
+          "max": 0.9090909090909091
+        },
+        "deadline_accuracy_on_matched": {
+          "known_runs": 3,
+          "mean": 0.18181818181818182,
+          "stdev": 0.0,
+          "min": 0.18181818181818182,
+          "max": 0.18181818181818182
+        },
+        "known_owner_end_to_end": {
+          "known_runs": 3,
+          "mean": 0.8333333333333334,
+          "stdev": 0.0,
+          "min": 0.8333333333333334,
+          "max": 0.8333333333333334
+        },
+        "known_deadline_end_to_end": {
+          "known_runs": 3,
+          "mean": 0.2,
+          "stdev": 0.0,
+          "min": 0.2,
+          "max": 0.2
+        },
+        "evidence_validity": {
+          "known_runs": 3,
+          "mean": 1.0,
+          "stdev": 0.0,
+          "min": 1.0,
+          "max": 1.0
+        },
+        "gold_support_proxy": {
+          "known_runs": 3,
+          "mean": 0.07142857142857142,
+          "stdev": 0.0,
+          "min": 0.07142857142857142,
+          "max": 0.07142857142857142
+        },
+        "latency_p50_ms": {
+          "known_runs": 3,
+          "mean": 1356.5370140131563,
+          "stdev": 262.208197624687,
+          "min": 1172.534875018755,
+          "max": 1656.770041998243
+        },
+        "latency_p95_ms": {
+          "known_runs": 3,
+          "mean": 2015.3065973233122,
+          "stdev": 74.24130420942824,
+          "min": 1949.099124991335,
+          "max": 2095.571749989176
+        },
+        "cost_usd": {
+          "known_runs": 3,
+          "mean": 0.0,
+          "stdev": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "failure_rate": {
+          "known_runs": 3,
+          "mean": 0.08333333333333333,
+          "stdev": 0.0,
+          "min": 0.08333333333333333,
+          "max": 0.08333333333333333
+        }
+      },
+      "case_failures": [
+        {
+          "id": "revision-dev-01",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-02",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-03",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-04",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-05",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-06",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-07",
+          "failed_runs": 3,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-08",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-09",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-10",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-11",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-12",
+          "failed_runs": 0,
+          "runs": 3
+        }
+      ],
+      "reports": [
+        "qwen2_5_0_5b-v2-1",
+        "qwen2_5_0_5b-v2-2",
+        "qwen2_5_0_5b-v2-3"
+      ]
+    },
+    {
+      "model": "qwen2_5_1_5b",
+      "actual_models": [
+        "qwen2.5:1.5b"
+      ],
+      "prompt": "v1",
+      "prompt_sha256": "4687bf98f0a4652e8af2ebc35d513df47b17a386bc86cdc5ebc4c64b8a4ac28e",
+      "dataset_sha256": "e5b56ea1959f4c54bfeab4adaf83db85178913fd458c3f82a34742ba15c392e1",
+      "evaluator_sha256": "b618d7dcab9afd791d816694e3cb456bbddd2051457a1b45c8f593ead7c34585",
+      "repeats": 3,
+      "run_configuration": {
+        "actual_models": [
+          "qwen2.5:1.5b"
+        ],
+        "generation_options": [
+          "{\"num_predict\": 1024, \"seed\": 42, \"temperature\": 0}"
+        ],
+        "matrix_config_sha256": "424784ebb3091abb47bb251b838b688b90eeafe29039c710e656b353f3d44f0f",
+        "pricing": {
+          "input_usd_per_million": null,
+          "output_usd_per_million": null
+        },
+        "runner_sha256": [
+          "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d"
+        ]
+      },
+      "metrics": {
+        "task_precision": {
+          "known_runs": 3,
+          "mean": 0.5,
+          "stdev": 0.0,
+          "min": 0.5,
+          "max": 0.5
+        },
+        "task_recall": {
+          "known_runs": 3,
+          "mean": 0.8333333333333334,
+          "stdev": 0.0,
+          "min": 0.8333333333333334,
+          "max": 0.8333333333333334
+        },
+        "task_f1": {
+          "known_runs": 3,
+          "mean": 0.625,
+          "stdev": 0.0,
+          "min": 0.625,
+          "max": 0.625
+        },
+        "owner_accuracy_on_matched": {
+          "known_runs": 3,
+          "mean": 1.0,
+          "stdev": 0.0,
+          "min": 1.0,
+          "max": 1.0
+        },
+        "deadline_accuracy_on_matched": {
+          "known_runs": 3,
+          "mean": 0.1,
+          "stdev": 0.0,
+          "min": 0.1,
+          "max": 0.1
+        },
+        "known_owner_end_to_end": {
+          "known_runs": 3,
+          "mean": 0.8333333333333334,
+          "stdev": 0.0,
+          "min": 0.8333333333333334,
+          "max": 0.8333333333333334
+        },
+        "known_deadline_end_to_end": {
+          "known_runs": 3,
+          "mean": 0.1,
+          "stdev": 0.0,
+          "min": 0.1,
+          "max": 0.1
+        },
+        "evidence_validity": {
+          "known_runs": 3,
+          "mean": 1.0,
+          "stdev": 0.0,
+          "min": 1.0,
+          "max": 1.0
+        },
+        "gold_support_proxy": {
+          "known_runs": 3,
+          "mean": 0.05,
+          "stdev": 0.0,
+          "min": 0.05,
+          "max": 0.05
+        },
+        "latency_p50_ms": {
+          "known_runs": 3,
+          "mean": 3332.6750969863497,
+          "stdev": 768.7510824430832,
+          "min": 2455.2059579873458,
+          "max": 3887.66008298262
+        },
+        "latency_p95_ms": {
+          "known_runs": 3,
+          "mean": 5099.0088613374,
+          "stdev": 764.0689178941782,
+          "min": 4221.932749991538,
+          "max": 5620.338417007588
+        },
+        "cost_usd": {
+          "known_runs": 3,
+          "mean": 0.0,
+          "stdev": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "failure_rate": {
+          "known_runs": 3,
+          "mean": 0.08333333333333333,
+          "stdev": 0.0,
+          "min": 0.08333333333333333,
+          "max": 0.08333333333333333
+        }
+      },
+      "case_failures": [
+        {
+          "id": "revision-dev-01",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-02",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-03",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-04",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-05",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-06",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-07",
+          "failed_runs": 3,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-08",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-09",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-10",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-11",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-12",
+          "failed_runs": 0,
+          "runs": 3
+        }
+      ],
+      "reports": [
+        "qwen2_5_1_5b-v1-1",
+        "qwen2_5_1_5b-v1-2",
+        "qwen2_5_1_5b-v1-3"
+      ]
+    },
+    {
+      "model": "qwen2_5_1_5b",
+      "actual_models": [
+        "qwen2.5:1.5b"
+      ],
+      "prompt": "v2",
+      "prompt_sha256": "1224425d6587065f87af137b9b3cc50bc6efc60a737a9baf4b5d7d7f504b6fb2",
+      "dataset_sha256": "e5b56ea1959f4c54bfeab4adaf83db85178913fd458c3f82a34742ba15c392e1",
+      "evaluator_sha256": "b618d7dcab9afd791d816694e3cb456bbddd2051457a1b45c8f593ead7c34585",
+      "repeats": 3,
+      "run_configuration": {
+        "actual_models": [
+          "qwen2.5:1.5b"
+        ],
+        "generation_options": [
+          "{\"num_predict\": 1024, \"seed\": 42, \"temperature\": 0}"
+        ],
+        "matrix_config_sha256": "424784ebb3091abb47bb251b838b688b90eeafe29039c710e656b353f3d44f0f",
+        "pricing": {
+          "input_usd_per_million": null,
+          "output_usd_per_million": null
+        },
+        "runner_sha256": [
+          "a5a2714e8092d2af509ca9fdbe40df718d5cb63e0800880bbcffcdb68934017d"
+        ]
+      },
+      "metrics": {
+        "task_precision": {
+          "known_runs": 3,
+          "mean": 0.6153846153846154,
+          "stdev": 0.0,
+          "min": 0.6153846153846154,
+          "max": 0.6153846153846154
+        },
+        "task_recall": {
+          "known_runs": 3,
+          "mean": 0.6666666666666666,
+          "stdev": 0.0,
+          "min": 0.6666666666666666,
+          "max": 0.6666666666666666
+        },
+        "task_f1": {
+          "known_runs": 3,
+          "mean": 0.64,
+          "stdev": 0.0,
+          "min": 0.64,
+          "max": 0.64
+        },
+        "owner_accuracy_on_matched": {
+          "known_runs": 3,
+          "mean": 1.0,
+          "stdev": 0.0,
+          "min": 1.0,
+          "max": 1.0
+        },
+        "deadline_accuracy_on_matched": {
+          "known_runs": 3,
+          "mean": 0.375,
+          "stdev": 0.0,
+          "min": 0.375,
+          "max": 0.375
+        },
+        "known_owner_end_to_end": {
+          "known_runs": 3,
+          "mean": 0.6666666666666666,
+          "stdev": 0.0,
+          "min": 0.6666666666666666,
+          "max": 0.6666666666666666
+        },
+        "known_deadline_end_to_end": {
+          "known_runs": 3,
+          "mean": 0.3,
+          "stdev": 0.0,
+          "min": 0.3,
+          "max": 0.3
+        },
+        "evidence_validity": {
+          "known_runs": 3,
+          "mean": 1.0,
+          "stdev": 0.0,
+          "min": 1.0,
+          "max": 1.0
+        },
+        "gold_support_proxy": {
+          "known_runs": 3,
+          "mean": 0.15384615384615385,
+          "stdev": 0.0,
+          "min": 0.15384615384615385,
+          "max": 0.15384615384615385
+        },
+        "latency_p50_ms": {
+          "known_runs": 3,
+          "mean": 2665.3662496634447,
+          "stdev": 504.58394545245295,
+          "min": 2106.189957994502,
+          "max": 3086.716040997999
+        },
+        "latency_p95_ms": {
+          "known_runs": 3,
+          "mean": 3688.936152990209,
+          "stdev": 585.1964925549727,
+          "min": 3022.0112079987302,
+          "max": 4116.5435839793645
+        },
+        "cost_usd": {
+          "known_runs": 3,
+          "mean": 0.0,
+          "stdev": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "failure_rate": {
+          "known_runs": 3,
+          "mean": 0.08333333333333333,
+          "stdev": 0.0,
+          "min": 0.08333333333333333,
+          "max": 0.08333333333333333
+        }
+      },
+      "case_failures": [
+        {
+          "id": "revision-dev-01",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-02",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-03",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-04",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-05",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-06",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-07",
+          "failed_runs": 3,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-08",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-09",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-10",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-11",
+          "failed_runs": 0,
+          "runs": 3
+        },
+        {
+          "id": "revision-dev-12",
+          "failed_runs": 0,
+          "runs": 3
+        }
+      ],
+      "reports": [
+        "qwen2_5_1_5b-v2-1",
+        "qwen2_5_1_5b-v2-2",
+        "qwen2_5_1_5b-v2-3"
+      ]
+    }
+  ],
+  "limitations": "Sample standard deviation across runs, not a confidence interval. Local API fees exclude compute; null costs remain unknown.",
+  "aggregator_sha256": "add061288201eddd28351d63747059fd2b4d0f147324e57f2d9feca0b72df7c2",
+  "report_sha256": {
+    "llama3_2_3b-v1-1-dev.json": "8e336f47228b1ebaa3a20ee8106e039c38e316bfe016d05b1b5f21ed12409e75",
+    "llama3_2_3b-v1-2-dev.json": "fae7544d54612299cec93134e56d26618be4541754af8061d9672e20209cc4a2",
+    "llama3_2_3b-v1-3-dev.json": "24d54be41386bb714e0c683fd19e803fdf40775a0e45882a45b63d028bfd9064",
+    "llama3_2_3b-v2-1-dev.json": "b162ec84254088f0c71e6e410a28f91558df65e6b8c975c95b6be6ba474606bf",
+    "llama3_2_3b-v2-2-dev.json": "a4e1fe09b2dc420630066e8d0a1810198cf92be9cd921d3b8a6afb408461f988",
+    "llama3_2_3b-v2-3-dev.json": "bd8eaa326ca3d2a0281e9e2a8531cc67a72f2226ed7c3379130b95ebd2f1564b",
+    "qwen2_5_0_5b-v1-1-dev.json": "bf7a8d574a81e80ecd9510514c9fd67348ba2462d293f929f24f4b886864cd32",
+    "qwen2_5_0_5b-v1-2-dev.json": "6853a8a8c862072bb7638804368ef1002dd8e1a5f0a929fe12b2a5335bc744ee",
+    "qwen2_5_0_5b-v1-3-dev.json": "4342adf647124305c199b7a7df8c5a3ed0f5f9c915dae3a1b385a35c593095ba",
+    "qwen2_5_0_5b-v2-1-dev.json": "5380248a3259fbc271df2d352b71515dde306583d95c1de55bd16ad414b504d5",
+    "qwen2_5_0_5b-v2-2-dev.json": "7f4a6e9cd3adde81a97bd050c53b37add83a00c80e68761cea7404caa5d34e91",
+    "qwen2_5_0_5b-v2-3-dev.json": "34e6318c7157f4af6573a11d6da25a4351cabd122d23b3deaf27d65aed98760f",
+    "qwen2_5_1_5b-v1-1-dev.json": "7a74637674f140e5b08acd9c325541990e16317bbd77b50a3a4b440235858be4",
+    "qwen2_5_1_5b-v1-2-dev.json": "aec1200e35b86405af28cbd3def1fcbf4ab0ba3fd076696171188886efa5e66c",
+    "qwen2_5_1_5b-v1-3-dev.json": "e4b55a54041c46c07e76e4e4330949febdadb5f6686e88f165f0907aabe9b84f",
+    "qwen2_5_1_5b-v2-1-dev.json": "699c2bfd8301c01cb14fcc78251044f9c13786caccdf3b3ac28549ea943fbd56",
+    "qwen2_5_1_5b-v2-2-dev.json": "f760bc2da7a88202dc0adbf47bce928df9f001b2b9b0bf3ae0be47cc647411ce",
+    "qwen2_5_1_5b-v2-3-dev.json": "e6402fa2bf4fa387ba9c3dc2dfbca0317707b5029e88ed733aa178729e40bf12"
+  }
+}

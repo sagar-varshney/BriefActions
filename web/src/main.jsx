@@ -1,6 +1,7 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import './styles.css';
+import AnnotationReviewer from './AnnotationReviewer.jsx';
 
 async function api(url, options = {}) {
   const response = await fetch(`/api${url}`, {headers:{'Content-Type':'application/json'}, ...options});
@@ -34,7 +35,7 @@ function downloadJson(value, filename) {
   const link = document.createElement('a'); link.href=url; link.download=filename; link.click();
   setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
-const pages = [{id:'extract',name:'Extract & review',icon:'extract'},{id:'history',name:'Run history',icon:'history'},{id:'benchmark',name:'Evaluation lab',icon:'chart'}];
+const pages = [{id:'extract',name:'Extract & review',icon:'extract'},{id:'history',name:'Run history',icon:'history'},{id:'benchmark',name:'Evaluation lab',icon:'chart'},{id:'annotations',name:'Annotation reviewer',icon:'quote'}];
 
 function App() {
   const [page,setPage] = useState('extract');
@@ -55,10 +56,44 @@ function App() {
   const [caseId,setCaseId] = useState('');
   const reportEpoch = useRef(0);
   const historyEpoch = useRef(0);
+  const [saveStatus,setSaveStatus]=useState('');
+  const saveQueue=useRef(Promise.resolve()),saveTimer=useRef(null),draftVersions=useRef({}),activeRun=useRef(null);
+  const [draftClient]=useState(()=>{const value=sessionStorage.getItem('flow.draftClient')||crypto.randomUUID();sessionStorage.setItem('flow.draftClient',value);return value;});
+  const editEpoch=useRef(0);
+  const draftKey=id=>`flow.draft.${id}.${draftClient}`;
+  function cacheDraft(id,value){try{localStorage.setItem(draftKey(id),JSON.stringify(value));}catch{setSaveStatus('Browser storage unavailable; keep this page open until saved to history.');}}
+  function scheduleSave(id,decisions,edit_id=++editEpoch.current){
+    clearTimeout(saveTimer.current);
+    setSaveStatus('Draft saved in this browser; saving to history…');
+    saveTimer.current=setTimeout(()=>{
+      saveQueue.current=saveQueue.current.catch(()=>{}).then(async()=>{
+        try{
+          const result=await api(`/runs/${id}/draft`,{method:'POST',body:JSON.stringify({decisions,version:draftVersions.current[id] || 0,client_id:draftClient,edit_id})});
+          draftVersions.current[id]=result.version;
+          const cached=JSON.parse(localStorage.getItem(draftKey(id))||'null');
+          if(cached)cacheDraft(id,{...cached,version:result.version,dirty:JSON.stringify(cached.decisions)!==JSON.stringify(decisions)});
+          if(activeRun.current===id)setSaveStatus('Draft saved to local history.');
+        }catch(e){if(activeRun.current===id)setSaveStatus(`Draft kept in this browser. History save failed: ${e.message}`);throw e;}
+      });
+      saveQueue.current.catch(()=>{});
+    },400);
+  }
+
 
   function adopt(snapshot) {
     setRun(snapshot);
-    setDrafts(snapshot.proposals.map(p=>({proposal_id:p.proposal_id,task:p.task,owner:p.owner,deadline:p.deadline,accept:false})));
+    clearTimeout(saveTimer.current);activeRun.current=snapshot.id;
+    const saved=snapshot.draft;
+    draftVersions.current[snapshot.id]=saved?.version || 0;
+    let cached=null;try{cached=JSON.parse(localStorage.getItem(draftKey(snapshot.id))||'null');}catch{}
+    const compatible=cached && (cached.version===(saved?.version || 0) || saved?.client_id===draftClient && (saved?.edit_id || 0)<=(cached.edit_id || 0));
+    const restored=compatible ? cached.decisions : saved?.decisions;
+    editEpoch.current=Math.max(editEpoch.current,cached?.edit_id || 0,saved?.edit_id || 0);
+    setDrafts(restored || snapshot.proposals.map(p=>({proposal_id:p.proposal_id,task:p.task,owner:p.owner,deadline:p.deadline,accept:false})));
+    setSaveStatus(restored?'Restored unfinished review.':'');
+    if(snapshot.status==='confirmed')localStorage.removeItem(draftKey(snapshot.id));
+    else if(cached?.dirty && restored===cached.decisions)scheduleSave(snapshot.id,cached.decisions,cached.edit_id);
+    else if(cached?.dirty && !compatible)setSaveStatus('History changed in another tab. Your browser copy is preserved; use Restore browser copy to recover it.');
     localStorage.setItem('flow.activeRun',snapshot.id);
   }
   useEffect(()=>{
@@ -95,7 +130,8 @@ function App() {
   }
   async function finalize(event) {
     event.preventDefault();setError('');setBusy(true);
-    try {adopt(await api(`/runs/${run.id}/finalize`,{method:'POST',body:JSON.stringify({decisions:drafts})}));}
+    clearTimeout(saveTimer.current);
+    try {await saveQueue.current.catch(()=>{});adopt(await api(`/runs/${run.id}/finalize`,{method:'POST',body:JSON.stringify({decisions:drafts})}));}
     catch(e){setError(e.message);}finally{setBusy(false);}
   }
   async function openRun(id) {
@@ -112,7 +148,10 @@ function App() {
     try {const value=await api(`/benchmarks/${id}`);if(epoch===reportEpoch.current){setReport(value);setCaseId(value.report.runs[0]?.id || '');}}
     catch(e){if(epoch===reportEpoch.current)setError(e.message);}
   }
-  function edit(index,field,value) {setDrafts(old=>old.map((d,i)=>i===index?{...d,[field]:value}:d));}
+  function edit(index,field,value) {
+    const next=drafts.map((d,i)=>i===index?{...d,[field]:value}:d);
+    const edit_id=++editEpoch.current;setDrafts(next);cacheDraft(run.id,{version:draftVersions.current[run.id] || 0,decisions:next,dirty:true,edit_id});scheduleSave(run.id,next,edit_id);
+  }
   const selected=drafts.filter(d=>d.accept).length;
   const inputChanged=run && (run.transcript!==transcript || run.reference_date!==meetingDate || (run.settings?.clusters || 3)!==clusters);
   const activeCase=report?.cases.find(c=>c.id===caseId);
@@ -151,6 +190,7 @@ function App() {
               {run.final_tasks.map((task,i)=><article className="panel confirmed-card" key={task.proposal_id}><span className="check-circle"><Icon name="check" size={18}/></span><div className="confirmed-content"><h3>{task.task}</h3><div className="task-meta"><span>Owner: <strong>{task.owner}</strong></span><span>Deadline: <strong>{task.deadline}</strong></span></div><Evidence passages={task.evidence}/></div></article>)}
             </>:<form onSubmit={finalize}>
               <div className="section-heading"><div><h2>Review action proposals <span className="count">{run.proposals.length}</span></h2><p>Correct the fields and select each task to keep. Nothing is accepted by default.</p></div></div>
+              <p role="status" className="form-hint">{saveStatus}</p><button type="button" className="text-button" onClick={()=>{try{const cached=JSON.parse(localStorage.getItem(draftKey(run.id))||'null');if(cached){setDrafts(cached.decisions);scheduleSave(run.id,cached.decisions);}}catch{setError('Browser draft could not be restored.');}}}>Restore browser copy</button>
               <div className="review-note">Supporting passages describe the original proposal. Your corrections are recorded separately.</div>
               {run.proposals.length===0&&<div className="notice">No committed actions or direct requests detected. You can confirm an empty plan or analyze another transcript.</div>}
               {run.proposals.map((p,i)=><article className={`panel proposal-card ${drafts[i]?.accept?'selected':''}`} key={p.proposal_id}>
@@ -162,9 +202,11 @@ function App() {
               </article>)}
               <div className="confirm-bar"><div><strong>{selected} of {run.proposals.length} selected</strong><span>{run.proposals.length-selected} proposal{run.proposals.length-selected===1?'':'s'} will be rejected.</span></div><button className="button primary" disabled={busy}>{busy?'Saving…':selected?'Confirm selected tasks':'Confirm empty plan'}<Icon name="check" size={17}/></button></div>
             </form>}
+            {run.settings?.conversation_changes?.length>0&&<details className="disclosure" open><summary>Conversation revisions & cancellations</summary><Json value={run.settings.conversation_changes}/></details>}
             <HistoryEvents run={run}/>
           </section>}
         </>}
+        {page==='annotations'&&<AnnotationReviewer api={api} downloadJson={downloadJson}/>}
         {page==='history'&&<>
           <div className="page-intro"><div><div className="eyebrow accent">EVERY DECISION, TRACEABLE</div><h1>Your run history.</h1><p>Revisit the input, original proposals, corrections, and final results.</p></div></div>
           <div className="notice">History is stored locally in SQLite. JSON exports include the complete transcript and review decisions.</div>
@@ -172,12 +214,14 @@ function App() {
         </>}
         {page==='benchmark'&&<>
           <div className="page-intro"><div><div className="eyebrow accent">QUALITY BEFORE GUESSWORK</div><h1>The evaluation lab.</h1><p>Compare retained extraction experiments and inspect individual cases.</p></div></div>
-          <div className="stat-grid"><div className="stat"><span>ANNOTATED TRANSCRIPTS</span><strong>60</strong><small>Synthetic starter corpus</small></div><div className="stat"><span>DEVELOPMENT / HELD OUT</span><strong>30 / 30</strong><small>Related scenarios across splits</small></div><div className="stat"><span>HELD-OUT RULES F1</span><strong>{pct(bench?.reports.find(r=>r.label==='rules' && r.dataset==='test.jsonl')?.metrics.task_f1)}</strong><small>Lexical task matching</small></div></div>
+          <div className="stat-grid"><div className="stat"><span>ANNOTATED TRANSCRIPTS</span><strong>84</strong><small>Synthetic cases across two versions</small></div><div className="stat"><span>DEVELOPMENT / HELD OUT</span><strong>42 / 42</strong><small>30 + 12 per split; related scenarios</small></div><div className="stat"><span>HELD-OUT RULES F1</span><strong>{pct(bench?.reports.find(r=>r.label==='rules' && r.dataset==='test.jsonl')?.metrics.task_f1)}</strong><small>Lexical task matching</small></div></div>
           <div className="notice warning">Annotations were authored by Codex and have not been independently reviewed. Synthetic results do not establish real-meeting accuracy. Gold support is a proxy based on annotated tasks, metadata, and spans; it is not an entailment judge.</div>
-          <div className="panel benchmark-panel"><div className="panel-heading"><div><h2>Model & prompt comparison</h2><p>Measured quality, latency, API cost, and failures from retained runs.</p></div><label className="split-filter">Dataset<select aria-label="Dataset" value={split} onChange={e=>setSplit(e.target.value)}><option value="test.jsonl">Held out</option><option value="dev.jsonl">Development</option><option value="all">All reports</option></select></label></div>
-            {!bench?<p className="loading">Loading experiments…</p>:<div className="table-scroll"><table><thead><tr><th>Experiment</th><th>F1</th><th>Precision</th><th>Recall</th><th>Owner¹</th><th>Date¹</th><th>Known owner²</th><th>Known date²</th><th>Support³</th><th>Valid spans</th><th>p50</th><th>p95</th><th>API cost</th><th>Failures</th></tr></thead><tbody>{bench.reports.filter(r=>split==='all'||r.dataset===split).map(r=><tr key={r.id} className={reportId===r.id?'active-row':''}><td><button className="experiment" onClick={()=>inspect(r.id)}>{r.label}<small>{r.dataset} · {r.case_count} cases</small></button></td>{['task_f1','task_precision','task_recall','owner_accuracy_on_matched','deadline_accuracy_on_matched','known_owner_end_to_end','known_deadline_end_to_end','gold_support_proxy','evidence_validity'].map(k=><td key={k}>{pct(r.metrics[k])}</td>)}<td>{duration(r.metrics.latency_p50_ms)}</td><td>{duration(r.metrics.latency_p95_ms)}</td><td>{r.metrics.cost_usd==null?'Unknown':`$${r.metrics.cost_usd.toFixed(4)}`}</td><td>{r.counts.failures}/{r.case_count}</td></tr>)}</tbody></table></div>}
-            <p className="table-note">¹ Accuracy among matched tasks. ² End-to-end accuracy for gold items with known metadata. ³ Gold support proxy. Local model API fees are $0; compute costs are excluded. Each model/prompt has one measured pass.</p>
+          <div className="panel benchmark-panel"><div className="panel-heading"><div><h2>Model & prompt comparison</h2><p>Measured quality, latency, API cost, and failures from retained runs.</p></div><label className="split-filter">Dataset<select aria-label="Dataset" value={split} onChange={e=>setSplit(e.target.value)}><option value="test.jsonl">Held out</option><option value="dev.jsonl">Development</option><option value="revision-dev">Revision v1 development</option><option value="revision-test">Revision v1 held out</option><option value="all">All reports</option></select></label></div>
+            {!bench?<p className="loading">Loading experiments…</p>:<div className="table-scroll"><table><thead><tr><th>Experiment</th><th>F1</th><th>Precision</th><th>Recall</th><th>Owner¹</th><th>Date¹</th><th>Known owner²</th><th>Known date²</th><th>Support³</th><th>Valid spans</th><th>p50</th><th>p95</th><th>API cost</th><th>Failures</th></tr></thead><tbody>{bench.reports.filter(r=>split==='all' || (split.startsWith('revision-') ? r.dataset_sha256===bench.additional_corpora?.[0]?.splits[split==='revision-dev'?'dev':'test'].sha256 : r.dataset_sha256===bench.manifest.splits[split==='dev.jsonl'?'dev':'test'].sha256)).map(r=><tr key={r.id} className={reportId===r.id?'active-row':''}><td><button className="experiment" onClick={()=>inspect(r.id)}>{r.label}<small>{r.dataset} · {r.case_count} cases</small></button></td>{['task_f1','task_precision','task_recall','owner_accuracy_on_matched','deadline_accuracy_on_matched','known_owner_end_to_end','known_deadline_end_to_end','gold_support_proxy','evidence_validity'].map(k=><td key={k}>{pct(r.metrics[k])}</td>)}<td>{duration(r.metrics.latency_p50_ms)}</td><td>{duration(r.metrics.latency_p95_ms)}</td><td>{r.metrics.cost_usd==null?'Unknown':`$${r.metrics.cost_usd.toFixed(4)}`}</td><td>{r.counts.failures}/{r.case_count}</td></tr>)}</tbody></table></div>}
+            <p className="table-note">¹ Accuracy among matched tasks. ² End-to-end accuracy for gold items with known metadata. ³ Gold support proxy. Local model API fees are $0; compute costs are excluded. The original corpus has one measured pass per model/prompt. Repeated development experiments are summarized below.</p>
           </div>
+          <div className="notice">Revision v1 adds 24 synthetic cases with varied dates (12 development / 12 held out). Manual labels were authored by Codex; independent review and permitted real transcripts remain needed.</div>
+          {bench?.repeat_summaries?.map((summary,n)=><section className="panel benchmark-panel" key={n}><h2>Repeated model comparisons</h2><p>{summary.limitations}</p><div className="table-scroll"><table><thead><tr><th>Model / prompt</th><th>Repeats</th><th>F1 mean ± SD</th><th>F1 range</th><th>Owner mean</th><th>Date mean</th><th>Support mean</th><th>p50 mean ± SD</th><th>API cost mean</th><th>Failure rate mean</th></tr></thead><tbody>{summary.groups.map((g,i)=><tr key={i}><td>{g.model} / {g.prompt}<small className="span-note">Corpus {g.dataset_sha256.slice(0,8)}</small></td><td>{g.repeats}</td><td>{pct(g.metrics.task_f1.mean)} ± {pct(g.metrics.task_f1.stdev)}</td><td>{pct(g.metrics.task_f1.min)}–{pct(g.metrics.task_f1.max)}</td><td>{pct(g.metrics.owner_accuracy_on_matched.mean)}</td><td>{pct(g.metrics.deadline_accuracy_on_matched.mean)}</td><td>{pct(g.metrics.gold_support_proxy.mean)}</td><td>{duration(g.metrics.latency_p50_ms.mean)} ± {duration(g.metrics.latency_p50_ms.stdev)}</td><td>{g.metrics.cost_usd.known_runs===g.repeats?'$'+g.metrics.cost_usd.mean.toFixed(4):'Unknown'}</td><td>{pct(g.metrics.failure_rate.mean)}</td></tr>)}</tbody></table></div><button className="button secondary" onClick={()=>downloadJson(summary,'repeat-summary.json')}>Download repeat statistics</button></section>)}
           {reportId&&!report&&<div className="notice">Loading experiment…</div>}
           {report&&<section className="panel case-panel"><div className="panel-heading"><div><h2>Inspect: {report.report.label}</h2><p>Compare annotations with the exact retained output.</p></div><button className="button secondary" onClick={()=>downloadJson(report.report,`${report.report.label}-${report.report.dataset}.json`)}><Icon name="download" size={16}/>Full report</button></div><label className="case-select">Transcript case<select aria-label="Transcript case" value={caseId} onChange={e=>setCaseId(e.target.value)}>{report.report.runs.map(c=><option key={c.id}>{c.id}</option>)}</select></label>
             {activeCase&&<><div className="eyebrow">TRANSCRIPT · {activeCase.reference_date}</div><pre className="saved-transcript">{activeCase.transcript}</pre></>}

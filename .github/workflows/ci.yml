@@ -60,6 +60,11 @@ jobs:
           python evaluate.py --extractor rules --split dev --output artifacts/rules-dev.json | tee artifacts/benchmark.log
           python scripts/check_benchmark.py artifacts/rules-dev.json | tee -a artifacts/benchmark.log
 
+      - name: Check revision and cancellation development quality
+        run: |
+          python evaluate.py --extractor rules --dataset evaluation/revision-v1/dev.jsonl --split dev --output artifacts/revision-dev.json | tee artifacts/revision-benchmark.log
+          python scripts/check_benchmark.py artifacts/revision-dev.json --dataset evaluation/revision-v1/dev.jsonl --baseline evaluation/results/revision-v1/rules-dev.json | tee -a artifacts/revision-benchmark.log
+
       - name: Run Node API tests
         run: pnpm test 2>&1 | tee artifacts/api-tests.log
 

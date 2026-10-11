@@ -56,6 +56,35 @@ class HistoryStore:
         with self.connection() as conn:
             return conn.execute("SELECT run_id,created_at FROM events WHERE kind='extraction' ORDER BY event_id DESC").fetchall()
 
+    def save_draft(self, run_id, decisions, version, client_id=None, edit_id=None):
+        """Save incomplete edits; only confirmation requires valid final dates."""
+        with self.connection() as conn:
+            conn.execute('BEGIN IMMEDIATE')
+            rows=conn.execute('SELECT kind,payload FROM events WHERE run_id=? ORDER BY event_id',(run_id,)).fetchall()
+            if not rows or rows[0][0]!='extraction':
+                raise KeyError(run_id)
+            if any(k=='final' for k,_ in rows):
+                raise ValueError('This run is already finalized')
+            drafts=[json.loads(p) for k,p in rows if k=='draft']
+            current=drafts[-1]['version'] if drafts else 0
+            if type(version) is not int or version!=current:
+                raise ValueError('Draft changed in another tab; reopen the run before editing')
+            ids={p['proposal_id'] for p in json.loads(rows[0][1])['proposals']}
+            if not isinstance(decisions,list) or len(decisions)!=len(ids) or any(not isinstance(d,dict) for d in decisions):
+                raise ValueError('Draft must include every proposal once')
+            if {d.get('proposal_id') for d in decisions}!=ids:
+                raise ValueError('Draft must include every proposal once')
+            clean=[]
+            for d in decisions:
+                if type(d.get('accept')) is not bool or any(not isinstance(d.get(k),str) or len(d[k])>10000 for k in ('task','owner','deadline')):
+                    raise ValueError('Invalid draft fields')
+                clean.append({k:d[k] for k in ('proposal_id','accept','task','owner','deadline')})
+            if client_id is not None and (not isinstance(client_id,str) or len(client_id)>80 or type(edit_id) is not int or edit_id<1):
+                raise ValueError('Invalid draft client metadata')
+            payload={'version':current+1,'decisions':clean,'client_id':client_id,'edit_id':edit_id}
+            self._append(conn,run_id,'draft',payload)
+        return payload
+
     def finalize(self, run_id, decisions):
         """Commit all corrections/decisions and the final result atomically, once."""
         with self.connection() as conn:

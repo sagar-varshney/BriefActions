@@ -45,11 +45,13 @@ def regression_errors(current, baseline, dataset_sha256):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('report', type=Path, help='Fresh evaluate.py rules/dev report')
+    parser.add_argument('--baseline',type=Path,default=ROOT/'evaluation'/'results'/'rules-dev.json')
+    parser.add_argument('--dataset',type=Path,default=ROOT/'evaluation'/'dev.jsonl')
     args = parser.parse_args()
     try:
         current = json.loads(args.report.read_text())
-        baseline = json.loads((ROOT/'evaluation'/'results'/'rules-dev.json').read_text())
-        fingerprint = hashlib.sha256((ROOT/'evaluation'/'dev.jsonl').read_bytes()).hexdigest()
+        baseline = json.loads(args.baseline.read_text())
+        fingerprint = hashlib.sha256(args.dataset.read_bytes()).hexdigest()
         errors = regression_errors(current, baseline, fingerprint)
     except (OSError, ValueError, TypeError, AttributeError) as error:
         print(f'Benchmark check could not read valid reports: {error}')

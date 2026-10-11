@@ -133,11 +133,44 @@ def deduplicate(items: list[ActionItem]) -> list[ActionItem]:
     return merged
 
 
-def extract_action_items(text: str, reference_date: date | None = None) -> list[ActionItem]:
+def extract_with_changes(text: str, reference_date: date | None = None):
     reference_date = reference_date or date.today()
     items = []
+    changes = []
+    previous = None
     for body, speaker, evidence in passages(text):
         body = body.strip()
+        cancel = re.match(r"^(?:Actually,?\s+)?(?:cancel|drop)\s+(.+?)[.!?]*$",body,re.I)
+        revise = re.match(r"^(?:Actually,?\s+)?(?:make|move|reschedule)\s+(.+?)\s+(?:to\s+|by\s+|on\s+)?((?:(?:this|next) )?(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)|tomorrow|today|next week|20\d{2}-\d{2}-\d{2})[.!?]*$",body,re.I)
+        if cancel or revise:
+            items = deduplicate(items)
+            target = (cancel or revise).group(1).strip(' .!?')
+            if re.fullmatch(r"(?:that|it|that task|that deadline)",target,re.I):
+                candidates = [p for p in items if previous and p is previous and (not speaker or speaker==p.owner)]
+            else:
+                target_tokens=set(normalize_task(target).split())-{'task','deadline'}
+                candidates=[p for p in items if target_tokens and target_tokens<=set(normalize_task(p.task).split())]
+            if len(candidates)==1:
+                item=candidates[0]
+                before=item.deadline
+                support=[{'text':e.text,'start':e.start,'end':e.end} for e in item.evidence]+[{'text':evidence.text,'start':evidence.start,'end':evidence.end}]
+                if cancel:
+                    items.remove(item)
+                    changes.append({'kind':'cancellation','task':item.task,'owner':item.owner,'deadline':before,'evidence':support})
+                    previous=None
+                else:
+                    parsed=parse_deadline('by '+revise.group(2),reference_date)
+                    # Invalid exact dates require review; never keep an obsolete deadline.
+                    item.deadline=parsed.isoformat() if parsed else UNKNOWN
+                    item.priority=priority(body,parsed,reference_date)
+                    item.evidence.append(evidence)
+                    changes.append({'kind':'deadline_revision','task':item.task,'before':before,'after':item.deadline,'evidence':support})
+                    previous=item
+            else:
+                changes.append({'kind':'unresolved_reference','directive':body,'reason':'No unique, immediate action reference','evidence':[{'text':evidence.text,'start':evidence.start,'end':evidence.end}]})
+                previous=None
+            continue
+        previous=None
         body = re.sub(r"\bI'll\b", "I will", body, flags=re.I)
         # Completed, cancelled, negated and hypothetical work isn't a commitment.
         if re.search(r"\b(?:won't|will not|don't|do not|no longer|already|yesterday|cancelled|canceled|might|maybe|could potentially)\b", body, re.I):
@@ -172,4 +205,10 @@ def extract_action_items(text: str, reference_date: date | None = None) -> list[
         task = re.sub(r"\s+\b(?:by|before|due(?: on)?|on)\s+(?:20\d{2}[-/]\d{1,2}[-/]\d{1,2}|[A-Z][a-z]+ \d{1,2}(?:st|nd|rd|th)?(?:,? 20\d{2})?|(?:(?:this|next) )?(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)|today|tomorrow|end of week)\b.*$", "", task, flags=re.I)
         task = re.sub(r"\s+(?:today|tomorrow|in \d+ days?)\b.*$", "", task, flags=re.I).strip(" .?!")
         items.append(ActionItem(task=task, owner=owner, deadline=deadline.isoformat() if deadline else UNKNOWN, priority=priority(body, deadline, reference_date), evidence=[evidence]))
-    return deduplicate(items)
+        items=deduplicate(items)
+        previous=items[-1] if items[-1].evidence[-1]==evidence else next((p for p in items if evidence in p.evidence),None)
+    return deduplicate(items), changes
+
+
+def extract_action_items(text: str, reference_date: date | None = None) -> list[ActionItem]:
+    return extract_with_changes(text,reference_date)[0]

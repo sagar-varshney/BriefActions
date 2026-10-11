@@ -29,11 +29,13 @@ def run_snapshot(run_id):
     if not isinstance(run_id, str) or not re.fullmatch(r'[a-f0-9]{32}', run_id):
         raise ApiError('Invalid run ID.')
     events = store().get_run(run_id)
+    if events[0]['kind'] != 'extraction':
+        raise KeyError(run_id)
     original = events[0]['payload']
     final = next((e['payload']['tasks'] for e in events if e['kind'] == 'final'), None)
     return {'id':run_id, 'created_at':events[0]['created_at'], **original,
             'summary':original.get('settings',{}).get('summary',''),
-            'status':'confirmed' if final is not None else 'review', 'final_tasks':final, 'events':events}
+            'status':'confirmed' if final is not None else 'review', 'final_tasks':final, 'events':events, 'draft':next((e['payload'] for e in reversed(events) if e['kind']=='draft'),None)}
 
 
 def report_paths():
@@ -44,10 +46,29 @@ def report_paths():
 
 def handle(request):
     op = request.get('operation')
+    if op.startswith('annotation_'):
+        from annotations import AnnotationStore
+        annotations=AnnotationStore(store())
+        if op=='annotation_list': return annotations.listing()
+        if op=='annotation_create':
+            return annotations.create(request.get('transcript'),request.get('reference_date'),request.get('source'),
+                                      request.get('permission'),request.get('anonymized'),request.get('group'))
+        if op=='annotation_get': return annotations.get(request.get('case_id'))
+        if op=='annotation_submit':
+            return annotations.submit(request.get('case_id'),request.get('reviewer'),request.get('items'),request.get('independent'),request.get('reason'))
+        if op=='annotation_freeze': return annotations.freeze(request.get('seed'),request.get('test_fraction',.3))
+        if op=='annotation_export': return annotations.export(request.get('snapshot'))
+        raise ApiError('Unknown annotation operation',404)
+    if op == 'draft':
+        run_snapshot(request.get('run_id'))
+        try:
+            return store().save_draft(request.get('run_id'),request.get('decisions'),request.get('version'),request.get('client_id'),request.get('edit_id'))
+        except ValueError as error:
+            raise ApiError(str(error),409 if 'another tab' in str(error) or 'finalized' in str(error) else 400) from error
     if op == 'health':
         # Import now so readiness checks the extraction runtime, not just Python.
         import flow_engine
-        return {'status':'ready', 'engine':'rules-v2', 'python_version':sys.version.split()[0]}
+        return {'status':'ready', 'engine':'rules-v3', 'python_version':sys.version.split()[0]}
     if op == 'config':
         from sample_data import SAMPLE_TRANSCRIPT
         return {'sample_transcript':SAMPLE_TRANSCRIPT, 'sample_reference_date':'2026-09-15',
@@ -67,7 +88,9 @@ def handle(request):
             raise ApiError('Maximum groups must be an integer from 1 to 6.')
         from flow_engine import run_pipeline
         frame, summary, silhouette = run_pipeline(transcript, clusters, meeting_date)
-        settings = {'extractor':'rules-v2','extractor_sha256':hashlib.sha256((ROOT/'extraction.py').read_bytes()).hexdigest(),
+        from extraction import extract_with_changes
+        _, conversation_changes = extract_with_changes(transcript,meeting_date)
+        settings = {'conversation_changes':conversation_changes,'extractor':'rules-v3','extractor_sha256':hashlib.sha256((ROOT/'extraction.py').read_bytes()).hexdigest(),
                     'clusters':clusters,'summary':summary,'silhouette':silhouette,'interface':'react-node-v1'}
         run_id = store().create_run(transcript,reference,frame.to_dict('records'),settings)
         return run_snapshot(run_id)
@@ -120,7 +143,7 @@ def handle(request):
             report = json.loads(path.read_text())
             reports.append({'id':report_id,**{k:v for k,v in report.items() if k not in ('runs','details')},'case_count':len(report['runs'])})
         from baseline_extractor import TRAINING_EXAMPLES
-        return {'training_data':[{'task':task,'category':category} for task,category in TRAINING_EXAMPLES], 'reports':reports,'manifest':json.loads((ROOT/'evaluation'/'corpus_manifest.json').read_text())}
+        return {'training_data':[{'task':task,'category':category} for task,category in TRAINING_EXAMPLES], 'reports':reports,'manifest':json.loads((ROOT/'evaluation'/'corpus_manifest.json').read_text()), 'additional_corpora':[json.loads((ROOT/'evaluation'/'revision-v1'/'manifest.json').read_text())], 'repeat_summaries':[json.loads(p.read_text()) for p in sorted((ROOT/'evaluation'/'results').rglob('repeat-summary.json'))]}
     if op == 'benchmark':
         path = report_paths().get(request.get('report_id'))
         if path is None:
@@ -128,8 +151,11 @@ def handle(request):
         report = json.loads(path.read_text())
         dataset = report['dataset']
         cases = []
-        if dataset in ('dev.jsonl','test.jsonl'):
-            cases = [json.loads(line) for line in (ROOT/'evaluation'/dataset).read_text().splitlines() if line.strip()]
+        candidates=[ROOT/'evaluation'/dataset, ROOT/'evaluation'/'revision-v1'/dataset] if dataset in ('dev.jsonl','test.jsonl') else []
+        for corpus in candidates:
+            if corpus.exists() and hashlib.sha256(corpus.read_bytes()).hexdigest()==report['dataset_sha256']:
+                cases=[json.loads(line) for line in corpus.read_text().splitlines() if line.strip()]
+                break
         return {'report':report,'cases':cases}
     raise ApiError('Unknown operation.',404)
 

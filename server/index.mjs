@@ -103,8 +103,12 @@ export function createApp({historyPath, maxWorkers = 4} = {}) {
         const input = await body(req);
         return json(res, 201, await call({transcript:input.transcript,reference_date:input.reference_date,clusters:input.clusters ?? 3,operation:'analyze'}));
       }
-      if ((match = pathname.match(/^\/api\/runs\/([a-f0-9]{32})(?:\/(finalize|history.json|tasks.csv))?$/))) {
+      if ((match = pathname.match(/^\/api\/runs\/([a-f0-9]{32})(?:\/(finalize|draft|history.json|tasks.csv))?$/))) {
         const [, run_id, action] = match;
+        if (req.method === 'POST' && action === 'draft') {
+          const input=await body(req);
+          return json(res,200,await call({operation:'draft',run_id,decisions:input.decisions,version:input.version,client_id:input.client_id,edit_id:input.edit_id}));
+        }
         if (req.method === 'POST' && action === 'finalize') {
           const input = await body(req);
           return json(res, 200, await call({operation:'finalize',run_id,decisions:input.decisions}));
@@ -119,6 +123,14 @@ export function createApp({historyPath, maxWorkers = 4} = {}) {
           if (action === 'history.json') res.setHeader('Content-Disposition', `attachment; filename="flow-history-${run_id.slice(0,8)}.json"`);
           return json(res, 200, action ? run.events : run);
         }
+      }
+      if (pathname === '/api/annotations' && req.method === 'GET') return json(res,200,await call({operation:'annotation_list'}));
+      if (pathname === '/api/annotations' && req.method === 'POST') return json(res,201,await call({...await body(req),operation:'annotation_create'}));
+      if (pathname === '/api/annotations/freeze' && req.method === 'POST') return json(res,200,await call({...await body(req),operation:'annotation_freeze'}));
+      if ((match=pathname.match(/^\/api\/annotations\/([a-f0-9]{32})(?:\/(submit|export))?$/))) {
+        const [,case_id,action]=match;
+        if(req.method==='GET') return json(res,200,await call(action==='export'?{operation:'annotation_export',snapshot:case_id}:{operation:'annotation_get',case_id}));
+        if(req.method==='POST' && action==='submit') return json(res,200,await call({...await body(req),operation:'annotation_submit',case_id}));
       }
       if (req.method === 'GET' && pathname === '/api/benchmarks') return json(res, 200, await call({operation:'benchmarks'}));
       if (req.method === 'GET' && (match = pathname.match(/^\/api\/benchmarks\/([a-f0-9]{16})$/)))

@@ -46,7 +46,9 @@ Missing owners and exact deadlines are explicitly `Unknown`. Vague timing stays
 in the task wording. Every proposal includes character spans into the saved
 transcript. Repeated tasks with compatible metadata are merged conservatively;
 conflicting owners/dates remain separate for review. Broad semantic paraphrase
-merging and multi-turn revisions remain limitations.
+merging remains limited. Explicit deadline revisions and cancellations resolve only
+unique named actions or immediate same-speaker references; ambiguous references
+are recorded for review. Supporting original and revision passages are retained.
 
 ## Evaluation comes first
 
@@ -78,6 +80,51 @@ Read [the retained model/rule comparison](evaluation/results/COMPARISON.md) and
 The next evaluation milestone is independently annotated real meeting transcripts
 and a fresh held-out split before further tuning from current test errors.
 
+## Annotation review and fresh evaluation data
+
+Open **Annotation reviewer** to import synthetic material or real transcripts you have
+permission to use. Literal `original => alias` replacements are applied in the browser;
+inspect the preview and confirm permission and a manual privacy check. Only the
+preview reaches SQLite. There is no automatic guarantee that all identifiers are removed.
+
+Select passages in the read-only transcript, add task/owner/deadline labels, and attach
+additional passages for revisions. `Unknown` is explicit; evidence uses Unicode code-point
+offsets. Each reviewer starts with empty labels and attests independence. Reviews are
+immutable. After submission, compare labels; disagreements are recorded and require
+a resolution with an explanation before export. Reviewer identities are self-reported
+on this local app, not authenticated, and the app cannot verify human independence.
+
+Freeze agreed/resolved cases into seeded source-group splits; related meetings/scenarios
+must use the same source group. Download dev/test JSONL, their hash manifest, or a
+complete snapshot. Frozen cases cannot be relabeled. Existing snapshot IDs reload exports.
+Use a fresh source group and a new snapshot for later evaluation rounds. Do not tune
+on a held-out snapshot after inspecting its results.
+
+No real transcripts were supplied for this update. **Revision v1 adds 24 manually
+annotated synthetic transcripts**, with 12 development / 12 held-out cases, varied
+meeting dates, leap/year boundaries, cancellation, ambiguous references, and deadline
+changes. Labels were written before benchmark execution and were not independently
+reviewed. Related linguistic patterns occur across splits; this is scenario validation,
+not a blinded estimate of real-meeting accuracy. The 60-case starter corpus and its
+retained reports remain unchanged. See [the new corpus manifest](evaluation/revision-v1/manifest.json).
+
+Repeat development comparisons without overwriting retained reports:
+
+```bash
+python3 compare_models.py --config evaluation/repeated-local-models.json \
+  --dataset evaluation/revision-v1/dev.jsonl --split dev \
+  --output-dir evaluation/experiments/my-repeat-run
+python3 compare_models.py --summarize-only --output-dir evaluation/experiments/my-repeat-run
+```
+
+Ollama must already be running with the configured models installed. Each pass retains
+raw output, usage, actual model ID, code/prompt/data hashes, latency, cost and failures.
+Fixed temperature 0 / seed 42 measure repeatability under those settings, not quality
+across random seeds. Local API fees are zero; hardware/electricity costs are excluded.
+Mean ± sample standard deviation is descriptive, not a confidence interval. Latency
+includes adapter/startup/model-load time. Original and new corpus results are filtered
+by dataset hash in the Evaluation lab so same-named JSONL files cannot be mixed.
+
 ## What the pipeline implements
 
 - Evidence-grounded rule extraction for commitments and direct requests, with
@@ -100,15 +147,17 @@ Local transcript/history data is saved under ignored `data/history.sqlite3`.
 History exports include the original transcript and user corrections. Existing
 Streamlit-created history is readable without a database migration; old runs may
 lack a saved summary. The last opened run is restored after a browser reload.
-Unconfirmed form edits are held in memory until confirmation; reloading restores
-the original proposal. `FLOW_HISTORY_PATH` overrides the database location.
+Unconfirmed task edits and acceptance selections autosave immediately in browser
+storage, then to SQLite after a short debounce. Partial/invalid dates are preserved
+for correction. Draft revisions reject stale writes from another tab; confirmation
+still validates all fields and locks the final plan. `FLOW_HISTORY_PATH` overrides the database location.
 
 ## Web architecture
 
 - `web/src/main.jsx`: React extraction/review, history, and evaluation screens.
 - `web/src/styles.css`: responsive desktop/mobile layout and accessible form states.
 - `server/index.mjs`: Node HTTP API, bounded Python workers, and built asset serving.
-- `web_bridge.py`: JSON operations over the unchanged extraction/history modules.
+- `web_bridge.py`: JSON operations over the extraction/history and annotation modules.
 - `vite.config.js`, `scripts/dev.mjs`: frontend build, dev proxy, and process lifecycle.
 
 The API binds to localhost. It accepts JSON requests up to 1 MB and transcripts
@@ -124,8 +173,12 @@ latency; benchmark timings continue to describe extraction only.
 | `GET /api/health`, `/api/config` | Runtime readiness and sample input |
 | `POST /api/runs` | Analyze `{transcript, reference_date, clusters}` |
 | `GET /api/runs`, `/api/runs/:id` | List and inspect saved runs |
+| `POST /api/runs/:id/draft` | Save incomplete edits with an optimistic draft version |
 | `POST /api/runs/:id/finalize` | Save `{decisions}` with explicit acceptance |
 | `GET /api/runs/:id/tasks.csv`, `/history.json` | Confirmed tasks and full audit exports |
+| `GET/POST /api/annotations`, `GET /api/annotations/:id` | Import and inspect annotation cases |
+| `POST /api/annotations/:id/submit` | Submit an independent review or reasoned resolution |
+| `POST /api/annotations/freeze`, `GET /api/annotations/:snapshot/export` | Freeze grouped splits and export hashed files |
 | `GET /api/benchmarks`, `/api/benchmarks/:id` | Measured reports and annotated cases |
 
 ## Continuous integration
@@ -143,6 +196,7 @@ The quality gate compares a freshly generated `rules/dev` report against
 quality metrics must meet or exceed their retained values, every development
 case must be present, and extraction failures must be zero. Corpus or scoring
 fingerprint changes require an explicitly reviewed development baseline refresh;
+CI also gates the new revision-v1 development set against its separate retained baseline.
 CI does not rewrite retained reports. Latency/cost are recorded without unstable
 machine-dependent thresholds. Held-out scoring and real LLM calls are not rerun.
 
@@ -173,7 +227,7 @@ pnpm build
 # Or, with pytest installed:
 pytest -q
 
-python3 evaluate.py --extractor rules --split dev --output evaluation/results/rules-dev.json
+python3 evaluate.py --extractor rules --split dev --output artifacts/rules-dev.json
 ```
 
 The tests cover extraction contracts, duplicate/conflicting tasks, date handling,
@@ -185,8 +239,10 @@ To compare local models and prompt versions, fill in the installed model names
 in `evaluation/models.example.json` and run `compare_models.py`; see the guide.
 The comparison measures `llama3.2:3b`, `qwen2.5:1.5b` and `qwen2.5:0.5b`, each
 with two unchanged prompt versions on the frozen held-out corpus. Local model
-IDs and experiment configuration are retained. Each combination has one pass;
-robust model selection still needs repeated runs and independently labeled real data.
+IDs and experiment configuration are retained. The original held-out comparison has
+one pass per combination. The new revision-v1 development matrix has three repeats
+per model/prompt, with aggregate means, sample standard deviations, ranges, and
+per-case failures. Model selection still needs independently labeled real data.
 The app's Evaluation lab displays retained rule and measured LLM reports.
 
 Browser workflow check (after the production build):
@@ -216,7 +272,7 @@ reload recovery, history, benchmark case inspection, empty plans, and mobile ove
 
 This remains an exploratory portfolio project. The workstream classifier uses
 only a tiny illustrative training set; extraction is not trained by Logistic
-Regression. Contextual handoffs, superseded commitments, paraphrases and mixed
+Regression. Contextual handoffs, broad implicit revisions, paraphrases and mixed
 negation require further work against new annotated evaluation data.
 
 ## Migration notes

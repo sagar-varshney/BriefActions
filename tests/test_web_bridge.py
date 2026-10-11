@@ -70,7 +70,7 @@ class WebBridgeTests(unittest.TestCase):
 
     def test_retained_benchmarks_and_case_annotations(self):
         listing=handle({'operation':'benchmarks'})
-        self.assertEqual(len(listing['reports']),10)
+        self.assertEqual(sum(r['dataset_sha256']==listing['manifest']['splits']['test']['sha256'] or r['dataset_sha256']==listing['manifest']['splits']['dev']['sha256'] for r in listing['reports']),10)
         rules=next(r for r in listing['reports'] if r['label']=='rules' and r['dataset']=='test.jsonl')
         report=handle({'operation':'benchmark','report_id':rules['id']})
         self.assertEqual(len(report['cases']),30)
