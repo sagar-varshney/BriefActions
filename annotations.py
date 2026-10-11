@@ -63,6 +63,37 @@ class AnnotationStore:
                 'permission_attested':True,'anonymization_attested':True,'transcript_sha256':digest})
         return self.get(case_id)
 
+    def import_corpus(self, corpus_id, split='all'):
+        from corpus_library import corpus_inputs, LIBRARY
+        selected=list(LIBRARY) if corpus_id=='all' else [corpus_id]
+        # Verify every requested split before opening a write transaction.
+        inputs=[row for corpus in selected for row in corpus_inputs(corpus,split)]
+        imported=[];existing=[]
+        with self.history.connection() as conn:
+            conn.execute('BEGIN IMMEDIATE')
+            current=[(cid,json.loads(payload)) for cid,payload in conn.execute("SELECT run_id,payload FROM events WHERE kind='annotation_input'")]
+            origins={(p['origin']['corpus_id'],p['origin']['case_id']):cid for cid,p in current if p.get('origin')}
+            transcripts={(p['transcript_sha256'],p['reference_date']):cid for cid,p in current}
+            frozen={cid for (cid,) in conn.execute("SELECT DISTINCT run_id FROM events WHERE kind='annotation_split'")}
+            frozen_groups={p['group'] for cid,p in current if cid in frozen}
+            for row in inputs:
+                origin=row['origin'];source_id=(origin['corpus_id'],origin['case_id'])
+                digest=hashlib.sha256(row['transcript'].encode()).hexdigest()
+                duplicate=origins.get(source_id) or transcripts.get((digest,row['reference_date']))
+                if duplicate:
+                    existing.append(duplicate);continue
+                group='library:'+origin['corpus_id']
+                if group in frozen_groups:
+                    raise ValueError('This corpus group is already frozen; import all related inputs before freezing it')
+                cid=uuid4().hex
+                self.history._append(conn,cid,'annotation_input',{'transcript':row['transcript'],
+                    'reference_date':row['reference_date'],'source':'synthetic','group':group,
+                    'transcript_sha256':digest,'origin':origin,
+                    'permission_basis':'Bundled synthetic project corpus; requested library import',
+                    'gold_labels_imported':False})
+                imported.append(cid);origins[source_id]=cid;transcripts[(digest,row['reference_date'])]=cid
+        return {'imported':len(imported),'existing':len(existing),'case_ids':imported+existing}
+
     def get(self, case_id):
         if not isinstance(case_id,str) or not re.fullmatch(r'[a-f0-9]{32}',case_id):
             raise ValueError('Invalid annotation case ID')
@@ -81,13 +112,15 @@ class AnnotationStore:
     def listing(self):
         with self.history.connection() as conn:
             ids=[row[0] for row in conn.execute("SELECT run_id FROM events WHERE kind='annotation_input' ORDER BY event_id DESC")]
-        return [{k:c[k] for k in ('id','reference_date','source','group','status','disagreement')} |
+        return [{k:c[k] for k in ('id','reference_date','source','group','status','disagreement')} | {'origin':c.get('origin')} |
                 {'review_count':len(c['reviews']), 'preview':c['transcript'][:100]} for c in map(self.get,ids)]
 
     def submit(self, case_id, reviewer, items, independent, reason=None):
         if not isinstance(reviewer,str) or not reviewer.strip() or len(reviewer)>80:
             raise ValueError('Enter a reviewer identity (at most 80 characters)')
         reviewer=reviewer.strip()
+        from annotation_drafts import AnnotationDrafts
+        AnnotationDrafts(self)
         with self.history.connection() as conn:
             conn.execute('BEGIN IMMEDIATE')
             case=self.get(case_id)
@@ -108,9 +141,13 @@ class AnnotationStore:
                     raise ValueError('Attest that labels were made without viewing other reviews')
                 if any(r['reviewer'].casefold()==reviewer.casefold() for r in case['reviews']):
                     raise ValueError('Each reviewer can submit only one independent review')
+                draft=conn.execute("SELECT payload FROM annotation_drafts WHERE case_id=? AND reviewer_key=? AND mode='review'",(case_id,reviewer.casefold())).fetchone()
+                if draft and json.loads(draft[0])['state']['comparison_opened']:
+                    raise ValueError('This draft has viewed comparison labels; use a separate independent reviewer session')
                 kind='annotation_review'
                 payload={'reviewer':reviewer,'items':clean,'independent_attested':True}
             self.history._append(conn,case_id,kind,payload)
+            conn.execute('DELETE FROM annotation_drafts WHERE case_id=? AND reviewer_key=? AND mode=?',(case_id,reviewer.casefold(),'resolution' if reason is not None else 'review'))
             if kind=='annotation_review' and case['reviews'] and canonical(clean)!=canonical(case['reviews'][0]['items']):
                 self.history._append(conn,case_id,'annotation_disagreement',{'reviewers':[case['reviews'][0]['reviewer'],reviewer],
                     'first_labels':canonical(case['reviews'][0]['items']),'other_labels':canonical(clean)})
@@ -123,12 +160,15 @@ class AnnotationStore:
             raise ValueError('Held-out fraction must be 0.1–0.5')
         with self.history.connection() as conn:
             conn.execute('BEGIN IMMEDIATE')
-            cases=[self.get(c['id']) for c in self.listing()]
-            cases=[c for c in cases if c['gold'] is not None and not any(e['kind']=='annotation_split' for e in c['events'])]
+            all_cases=[self.get(c['id']) for c in self.listing()]
+            cases=[c for c in all_cases if c['gold'] is not None and not any(e['kind']=='annotation_split' for e in c['events'])]
             if len(cases)<2 or len({c['group'] for c in cases})<2:
                 raise ValueError('Review at least two source groups before freezing a split')
             if any(e['kind']=='annotation_split' for c in cases for e in c['events']):
                 raise ValueError('These cases already have a frozen split; export the existing snapshot')
+            selected_groups={c['group'] for c in cases}
+            if any(c['group'] in selected_groups and c['gold'] is None for c in all_cases):
+                raise ValueError('Complete all cases in each selected source group before freezing its split')
             groups=sorted({c['group'] for c in cases},key=lambda g:hashlib.sha256(f'{seed}|{g}'.encode()).hexdigest())
             held=set(groups[:max(1,round(len(groups)*test_fraction))])
             snapshot=uuid4().hex
@@ -146,7 +186,7 @@ class AnnotationStore:
             if split:
                 split_settings=split
                 rows.append({'id':c['id'],'split':split['split'],'transcript':c['transcript'],
-                    'reference_date':c['reference_date'],'items':c['gold'],'source':c['source'],'group':c['group'],
+                    'reference_date':c['reference_date'],'items':c['gold'],'source':c['source'],'group':c['group'],'origin':c.get('origin'),
                     'annotation_provenance':{'reviewers':[r['reviewer'] for r in c['reviews']], 'submitted_reviews':c['reviews'],
                        'independence':'self-attested; identity not authenticated','resolution':c['resolution']}})
         if not rows:

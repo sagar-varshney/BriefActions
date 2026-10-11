@@ -87,15 +87,35 @@ permission to use. Literal `original => alias` replacements are applied in the b
 inspect the preview and confirm permission and a manual privacy check. Only the
 preview reaches SQLite. There is no automatic guarantee that all identifiers are removed.
 
+Select a case, enter your reviewer identity, and choose **Start or resume review**.
 Select passages in the read-only transcript, add task/owner/deadline labels, and attach
 additional passages for revisions. `Unknown` is explicit; evidence uses Unicode code-point
-offsets. Each reviewer starts with empty labels and attests independence. Reviews are
-immutable. After submission, compare labels; disagreements are recorded and require
+offsets. A reviewer starts with empty labels or resumes only their own draft. Unfinished labels,
+selected passages, task/owner/deadline fields, and resolution notes save immediately
+in browser storage, then to SQLite after a debounce. Drafts are isolated by case,
+normalized reviewer identity, and review/resolution mode. Navigation and reload
+restore the last reviewer session; independence must be attested again before submission.
+Incomplete or invalid dates stay in the draft until corrected. Submitted reviews are
+immutable and their drafts are cleared atomically; late autosaves cannot recreate them.
+Stale writes from another tab are rejected, with the browser copy retained for explicit recovery. After submission, compare labels; disagreements are recorded and require
 a resolution with an explanation before export. Reviewer identities are self-reported
 on this local app, not authenticated, and the app cannot verify human independence.
 
+Use **Review the existing evaluation corpus** to import all 84 bundled synthetic
+transcripts, one corpus version, or an original split. Imports verify manifest hashes
+and copy only transcript/date/source identifiers. Gold items and annotation rationale
+are never copied into annotation storage or first-pass forms. Repeating an import
+reuses cases by source ID or matching transcript and date. Filter/search cases by
+corpus, original split, or text; the list is paginated. Imported source provenance
+is retained in reviewed exports. The existing corpus files and reports stay unchanged.
+Reviewing already evaluated cases does not make them unseen held-out data; reviewers
+should avoid inspecting their original labels in the Evaluation lab. Reviewer identity
+and independence remain self-attested, not authenticated access control.
+
 Freeze agreed/resolved cases into seeded source-group splits; related meetings/scenarios
-must use the same source group. Download dev/test JSONL, their hash manifest, or a
+must use the same source group. Bundled inputs conservatively share one source group
+per corpus version. Complete the reviews for all cases in a selected group before
+freezing it, so unfinished members cannot later cross splits. Download dev/test JSONL, their hash manifest, or a
 complete snapshot. Frozen cases cannot be relabeled. Existing snapshot IDs reload exports.
 Use a fresh source group and a new snapshot for later evaluation rounds. Do not tune
 on a held-out snapshot after inspecting its results.
@@ -177,6 +197,8 @@ latency; benchmark timings continue to describe extraction only.
 | `POST /api/runs/:id/finalize` | Save `{decisions}` with explicit acceptance |
 | `GET /api/runs/:id/tasks.csv`, `/history.json` | Confirmed tasks and full audit exports |
 | `GET/POST /api/annotations`, `GET /api/annotations/:id` | Import and inspect annotation cases |
+| `GET /api/annotations/corpora`, `POST /api/annotations/import-corpus` | Verified, input-only bundled imports |
+| `GET/POST /api/annotations/:id/draft` | Save/resume reviewer- and mode-specific partial labels |
 | `POST /api/annotations/:id/submit` | Submit an independent review or reasoned resolution |
 | `POST /api/annotations/freeze`, `GET /api/annotations/:snapshot/export` | Freeze grouped splits and export hashed files |
 | `GET /api/benchmarks`, `/api/benchmarks/:id` | Measured reports and annotated cases |
@@ -267,6 +289,8 @@ reload recovery, history, benchmark case inspection, empty plans, and mobile ove
 - `evaluate.py`: task, metadata, evidence, latency, cost and failure measurement.
 - `ollama_runner.py`, `compare_models.py`: actual LLM adapter and experiment matrix.
 - `history.py`: append-only local review persistence.
+- `annotations.py`, `annotation_drafts.py`: immutable submitted reviews and separate mutable drafts.
+- `corpus_library.py`: fingerprint-verified, input-only bundled corpus registry.
 - `flow_engine.py`: existing ML classification/grouping and heuristic suggestions.
 - `web/`, `server/`, `web_bridge.py`: React UI, Node API and Python bridge.
 

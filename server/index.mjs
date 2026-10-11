@@ -126,9 +126,16 @@ export function createApp({historyPath, maxWorkers = 4} = {}) {
       }
       if (pathname === '/api/annotations' && req.method === 'GET') return json(res,200,await call({operation:'annotation_list'}));
       if (pathname === '/api/annotations' && req.method === 'POST') return json(res,201,await call({...await body(req),operation:'annotation_create'}));
+      if (pathname === '/api/annotations/corpora' && req.method === 'GET') return json(res,200,await call({operation:'annotation_corpora'}));
+      if (pathname === '/api/annotations/import-corpus' && req.method === 'POST') return json(res,200,await call({...await body(req),operation:'annotation_import'}));
       if (pathname === '/api/annotations/freeze' && req.method === 'POST') return json(res,200,await call({...await body(req),operation:'annotation_freeze'}));
-      if ((match=pathname.match(/^\/api\/annotations\/([a-f0-9]{32})(?:\/(submit|export))?$/))) {
+      if ((match=pathname.match(/^\/api\/annotations\/([a-f0-9]{32})(?:\/(submit|export|draft))?$/))) {
         const [,case_id,action]=match;
+        if(action==='draft' && req.method==='GET') {
+          const params=new URL(req.url,'http://localhost').searchParams;
+          return json(res,200,await call({operation:'annotation_draft_get',case_id,reviewer:params.get('reviewer'),mode:params.get('mode') || 'review'}));
+        }
+        if(action==='draft' && req.method==='POST') return json(res,200,await call({...await body(req),operation:'annotation_draft_save',case_id}));
         if(req.method==='GET') return json(res,200,await call(action==='export'?{operation:'annotation_export',snapshot:case_id}:{operation:'annotation_get',case_id}));
         if(req.method==='POST' && action==='submit') return json(res,200,await call({...await body(req),operation:'annotation_submit',case_id}));
       }

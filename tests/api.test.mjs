@@ -94,3 +94,29 @@ test('Draft endpoint stores partial fields and rejects stale writes',async()=>{
   assert.equal((await request(`/api/runs/${run.id}/draft`,{decisions,version:0})).status,409);
   const restored=await (await fetch(base+`/api/runs/${run.id}`)).json();assert.equal(restored.draft.decisions[0].task,'unfinished');
 });
+
+test('Annotation draft routes isolate identities, preserve partial edits and reject stale writes',async()=>{
+  const listing=await (await fetch(base+'/api/annotations')).json();const c=listing[0];
+  const state={items:[],selection:{text:c.preview,start:0,end:c.preview.length},task:'Unfinished task',owner:'',deadline:'2028-',reason:'',comparison_opened:false};
+  const payload={reviewer:'draft-owner',state,version:0,client_id:'test-client',edit_id:1};
+  assert.equal((await request(`/api/annotations/${c.id}/draft`,payload)).status,200);
+  assert.equal((await request(`/api/annotations/${c.id}/draft`,payload)).status,409);
+  const restored=await (await fetch(base+`/api/annotations/${c.id}/draft?reviewer=draft-owner`)).json();
+  assert.equal(restored.state.task,'Unfinished task');assert.equal(restored.state.deadline,'2028-');
+  assert.equal(await (await fetch(base+`/api/annotations/${c.id}/draft?reviewer=someone-else`)).json(),null);
+  assert.equal((await fetch(base+`/api/annotations/${c.id}/draft`)).status,400);
+  const publicCase=await (await fetch(base+`/api/annotations/${c.id}`)).json();
+  assert.ok(publicCase.events.every(e=>!e.kind.includes('draft')));
+});
+test('Bundled corpus import copies 84 input-only cases and repeated imports reuse them',async()=>{
+  const catalogue=await (await fetch(base+'/api/annotations/corpora')).json();assert.equal(catalogue.length,2);
+  assert.equal((await request('/api/annotations/import-corpus',{corpus_id:'../../secret'})).status,400);
+  let response=await request('/api/annotations/import-corpus',{corpus_id:'all'});assert.equal(response.status,200);
+  assert.equal((await response.json()).imported,84);
+  const listing=await (await fetch(base+'/api/annotations')).json();assert.equal(listing.filter(c=>c.origin).length,84);
+  const c=await (await fetch(base+`/api/annotations/${listing.find(c=>c.origin).id}`)).json();
+  assert.equal(c.gold,null);assert.deepEqual(c.reviews,[]);assert.equal(c.gold_labels_imported,false);
+  assert.ok(!Object.hasOwn(c.events[0].payload,'items'));assert.ok(!Object.hasOwn(c.events[0].payload,'rationale'));
+  response=await request('/api/annotations/import-corpus',{corpus_id:'all'});
+  assert.deepEqual(Object.fromEntries(Object.entries(await response.json()).filter(([k])=>k!=='case_ids')),{imported:0,existing:84});
+});

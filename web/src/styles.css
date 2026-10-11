@@ -14,3 +14,12 @@
 .annotation-item { border:1px solid var(--border); border-radius:12px; padding:16px; margin:18px 0; }
 .annotation-panel blockquote { white-space:pre-wrap; overflow-wrap:anywhere; border-left:3px solid #9689db; padding:10px 16px; margin:12px 0; }
 @media (max-width:600px) { .annotation-case { flex-direction:column; align-items:flex-start; } .annotation-panel { padding:16px; } }
+
+.annotation-pagination {display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px;}
+.reviewer-session {padding:12px 16px;border:1px solid #dedbef;border-radius:12px;background:#faf9ff;margin:20px 0;}
+.annotation-selection {background:#f4f0ff;}
+.annotation-panel .field-label {min-width:0;}
+.annotation-panel .field-row {grid-template-columns:repeat(2,minmax(0,1fr));}
+.annotation-panel select {width:100%;}
+.annotation-panel h2,.annotation-panel strong,.annotation-panel p,.annotation-panel small {overflow-wrap:anywhere;}
+@media(max-width:600px){.annotation-panel .field-row{grid-template-columns:minmax(0,1fr);}.annotation-panel .button{max-width:100%;white-space:normal;overflow-wrap:anywhere;}}

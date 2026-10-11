@@ -49,6 +49,18 @@ def handle(request):
     if op.startswith('annotation_'):
         from annotations import AnnotationStore
         annotations=AnnotationStore(store())
+        if op=='annotation_corpora':
+            from corpus_library import catalogue
+            return catalogue()
+        if op=='annotation_import': return annotations.import_corpus(request.get('corpus_id'),request.get('split','all'))
+        if op in ('annotation_draft_get','annotation_draft_save'):
+            from annotation_drafts import AnnotationDrafts, DraftConflict
+            drafts=AnnotationDrafts(annotations)
+            if op=='annotation_draft_get': return drafts.get(request.get('case_id'),request.get('reviewer'),request.get('mode','review'))
+            try:
+                return drafts.save(request.get('case_id'),request.get('reviewer'),request.get('mode','review'),request.get('state'),request.get('version'),request.get('client_id'),request.get('edit_id'))
+            except DraftConflict as error:
+                raise ApiError(str(error),409) from error
         if op=='annotation_list': return annotations.listing()
         if op=='annotation_create':
             return annotations.create(request.get('transcript'),request.get('reference_date'),request.get('source'),
