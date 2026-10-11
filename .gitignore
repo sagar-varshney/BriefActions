@@ -68,3 +68,6 @@ evaluation/private/
 evaluation/experiments/
 node_modules/
 dist/
+
+# CI reports and browser screenshots
+artifacts/

@@ -1,5 +1,7 @@
 # Productivity Flow Engine
 
+[![CI](https://github.com/sagar-varshney/Productivity-Flow-Engine/actions/workflows/ci.yml/badge.svg)](https://github.com/sagar-varshney/Productivity-Flow-Engine/actions/workflows/ci.yml)
+
 A React + Node.js local application that turns meeting transcripts into evidence-backed action
 proposals, lets users correct or confirm them, and preserves the complete review
 history. Extraction improvements are measured against a retained annotated corpus.
@@ -125,6 +127,41 @@ latency; benchmark timings continue to describe extraction only.
 | `POST /api/runs/:id/finalize` | Save `{decisions}` with explicit acceptance |
 | `GET /api/runs/:id/tasks.csv`, `/history.json` | Confirmed tasks and full audit exports |
 | `GET /api/benchmarks`, `/api/benchmarks/:id` | Measured reports and annotated cases |
+
+## Continuous integration
+
+[GitHub Actions CI](https://github.com/sagar-varshney/Productivity-Flow-Engine/actions/workflows/ci.yml)
+runs on pushes, pull requests, and manual dispatch. An Ubuntu 24.04
+runner uses Python 3.13, Node.js 24, and pnpm 11.25.0 to install dependencies,
+run Python tests, verify development extraction quality, test the Node API,
+build React, and exercise the complete desktop/mobile browser workflow.
+The workflow has a 20-minute timeout, a read-only repository token, and actions
+pinned to verified release commits. New runs cancel older runs for the same ref.
+
+The quality gate compares a freshly generated `rules/dev` report against
+`evaluation/results/rules-dev.json`. All nine task, owner/date, and evidence
+quality metrics must meet or exceed their retained values, every development
+case must be present, and extraction failures must be zero. Corpus or scoring
+fingerprint changes require an explicitly reviewed development baseline refresh;
+CI does not rewrite retained reports. Latency/cost are recorded without unstable
+machine-dependent thresholds. Held-out scoring and real LLM calls are not rerun.
+
+Logs, the fresh development report, and synthetic browser screenshots are
+uploaded as `ci-verification` artifacts (with the run attempt suffix) for seven
+days, including on failures. Browser tests use temporary databases; local
+transcript/history data is not uploaded. The pre-existing FastAPI/RAG backend
+has separate dependencies and is outside these transcript-workflow checks.
+Passing CI is reported on commits/PRs; branch protection is configured separately.
+
+Run the development quality check locally:
+
+```bash
+python3 evaluate.py --extractor rules --split dev --output artifacts/rules-dev.json
+python3 scripts/check_benchmark.py artifacts/rules-dev.json
+```
+
+Workflow setup follows the [GitHub Python CI guide](https://docs.github.com/en/actions/tutorials/build-and-test-code/python)
+and [Playwright CI guide](https://playwright.dev/docs/ci).
 
 ## Tests and benchmarks
 
