@@ -168,7 +168,7 @@ pnpm test:browser
 FLOW_TEST_DATABASE_URL=postgresql://... python scripts/test_postgres.py
 ```
 
-The final command installs the migration and creates isolated test accounts in
+The final command installs both migrations and creates isolated test accounts in
 a **disposable test database**. Never use the live production URI for CI.
 GitHub CI tests the full workflow suite on SQLite and real Postgres, checks RLS
 against forged/missing owners, verifies desktop/mobile and themes, and builds

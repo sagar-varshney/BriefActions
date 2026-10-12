@@ -263,8 +263,12 @@ latency; benchmark timings continue to describe extraction only.
 | API | Purpose |
 | --- | --- |
 | `GET /api/health`, `/api/config` | Runtime readiness and sample input |
-| `POST /api/runs` | Analyze `{transcript, reference_date, clusters}` |
+| `POST /api/runs` | Analyze `{transcript, reference_date, clusters, request_id}`; reuse saved results for matching retries |
 | `GET /api/runs`, `/api/runs/:id` | List and inspect saved runs |
+| `GET /api/account` | Workspace lifecycle and account-deletion availability |
+| `GET /api/account/export` | Streaming, complete workspace JSONL export |
+| `POST /api/account/delete` | Confirmed workspace erasure and sign-in account deletion |
+| `POST /api/runs/:id/delete`, `/api/annotations/:id/delete` | Confirmed permanent input erasure |
 | `POST /api/runs/:id/manual-actions` | Add an evidence-backed user proposal with an idempotent request ID |
 | `POST /api/runs/:id/draft` | Save incomplete edits with an optimistic draft version |
 | `POST /api/runs/:id/finalize` | Save `{decisions}` with explicit acceptance |
@@ -275,7 +279,7 @@ latency; benchmark timings continue to describe extraction only.
 | `POST /api/annotations/:id/submit` | Submit an independent review or reasoned resolution |
 | `POST /api/annotations/freeze`, `GET /api/annotations/:snapshot/export` | Freeze grouped splits and export hashed files |
 | `GET /api/reviewed-snapshots` | List frozen reviewed dataset manifests |
-| `GET/POST /api/reviewed-benchmarks`, `GET /api/reviewed-benchmarks/:id` | Run/reopen local original/current rule comparisons |
+| `GET/POST /api/reviewed-benchmarks`, `GET /api/reviewed-benchmarks/:id` | Run/reopen original/current rule comparisons |
 | `GET /api/benchmarks`, `/api/benchmarks/:id` | Measured reports and annotated cases |
 
 ## Continuous integration
@@ -283,8 +287,10 @@ latency; benchmark timings continue to describe extraction only.
 [GitHub Actions CI](https://github.com/sagar-varshney/Productivity-Flow-Engine/actions/workflows/ci.yml)
 runs on pushes, pull requests, and manual dispatch. An Ubuntu 24.04
 runner uses Python 3.13, Node.js 24, and pnpm 11.25.0 to install dependencies,
-run Python tests, verify development extraction quality, test the Node API,
-build React, and exercise the complete desktop/mobile browser workflow.
+run Python workflow tests on SQLite and real Postgres, verify account isolation and
+erasure permissions, check development extraction quality, test the Node API,
+build React, and exercise desktop/mobile workflows, account deletion recovery,
+lost-response retries, and complete exports. It also builds and checks the production Docker image.
 The workflow has a 20-minute timeout, a read-only repository token, and actions
 pinned to verified release commits. New runs cancel older runs for the same ref.
 
