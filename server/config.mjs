@@ -6,6 +6,12 @@ export function loadConfig(env=process.env) {
   const host=env.HOST || (production?'0.0.0.0':'127.0.0.1');
   const publicOrigin=env.PUBLIC_ORIGIN || '';
   const supabaseUrl=env.SUPABASE_URL || '',supabaseKey=env.SUPABASE_PUBLISHABLE_KEY || '';
+  const supabaseSecret=env.SUPABASE_SECRET_KEY || '';
+  if(production && !supabaseSecret)throw new Error('Set server-only SUPABASE_SECRET_KEY for account deletion.');
+  if(supabaseSecret && !supabaseSecret.startsWith('sb_secret_')){
+    let role;try{role=JSON.parse(Buffer.from(supabaseSecret.split('.')[1],'base64url')).role;}catch{}
+    if(role!=='service_role')throw new Error('SUPABASE_SECRET_KEY must be a secret or legacy service-role key.');
+  }
   if(production || !['127.0.0.1','localhost','::1'].includes(host)) {
     if(authMode!=='supabase')throw new Error('Public hosting requires Supabase authentication.');
     if(!env.FLOW_DATABASE_URL)throw new Error('Public hosting requires persistent FLOW_DATABASE_URL.');
@@ -30,6 +36,6 @@ export function loadConfig(env=process.env) {
   }
   const port=Number(env.PORT || 3001);
   if(!Number.isInteger(port)||port<1||port>65535)throw new Error('PORT must be between 1 and 65535.');
-  return {production,authMode,host,port,publicOrigin,supabaseUrl,supabaseKey,emailEnabled:env.FLOW_EMAIL_SIGNIN==='true',databaseUrl:env.FLOW_DATABASE_URL,
+  return {production,authMode,host,port,publicOrigin,supabaseUrl,supabaseKey,supabaseSecret,emailEnabled:env.FLOW_EMAIL_SIGNIN==='true',databaseUrl:env.FLOW_DATABASE_URL,
     historyPath:env.FLOW_HISTORY_PATH || path.resolve('data/history.sqlite3')};
 }

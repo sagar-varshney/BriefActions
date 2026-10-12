@@ -10,7 +10,7 @@ import {rateLimiter,accountVerifier} from '../server/auth.mjs';
 
 const alice='11111111-1111-4111-8111-111111111111',bob='22222222-2222-4222-8222-222222222222';
 test('Public configuration fails closed without auth, persistent storage, or HTTPS',()=>{
-  const valid={NODE_ENV:'production',PUBLIC_ORIGIN:'https://flow.example',SUPABASE_URL:'https://project.supabase.co',SUPABASE_PUBLISHABLE_KEY:'sb_publishable_test',FLOW_DATABASE_URL:'postgresql://test/database?sslmode=require'};
+  const valid={NODE_ENV:'production',PUBLIC_ORIGIN:'https://flow.example',SUPABASE_URL:'https://project.supabase.co',SUPABASE_PUBLISHABLE_KEY:'sb_publishable_test',SUPABASE_SECRET_KEY:'sb_secret_test',FLOW_DATABASE_URL:'postgresql://test/database?sslmode=require'};
   assert.equal(loadConfig(valid).host,'0.0.0.0');
   for(const change of [{FLOW_AUTH_MODE:'local'},{FLOW_DATABASE_URL:''},{FLOW_DATABASE_URL:'postgresql://remote/database'},{PUBLIC_ORIGIN:'http://flow.example'},{PUBLIC_ORIGIN:'https://flow.example/path'},{SUPABASE_URL:'https://username:secret@project.supabase.co'},{SUPABASE_PUBLISHABLE_KEY:'sb_secret_test'},{PORT:'-1'}])assert.throws(()=>loadConfig({...valid,...change}));
   const privileged=`x.${Buffer.from(JSON.stringify({role:'service_role'})).toString('base64url')}.x`;

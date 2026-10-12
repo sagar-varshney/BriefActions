@@ -19,12 +19,35 @@ Hosting credentials and live OAuth configuration must be supplied before launch;
 the production server refuses an unprotected or ephemeral storage configuration.
 Benchmark provenance is available in an expandable details section.
 
+## Data controls and interrupted analyses
+
+**Data & account** downloads a complete workspace JSONL export and lets users
+permanently erase extraction or annotation inputs after typed confirmation.
+Erasing an extraction removes its transcript, draft, review decisions, and plan.
+Erasing an annotation also removes frozen snapshots and comparison reports that
+contain it. Other inputs remain available. Local browser copies for erased inputs
+are cleared, and other open tabs reload. Downloaded files and old backups remain
+separate copies.
+
+Hosted users can delete their workspace and Supabase sign-in account themselves.
+Configure server-only `SUPABASE_SECRET_KEY` and apply migration `002_data_controls.sql`
+after `001_accounts.sql`. If the auth provider fails, workspace data stays erased
+and the account is paused; **Retry account deletion** finishes the operation.
+
+Each analysis uses a stable request ID. If a response is lost, the interface checks
+for the saved result. Unfinished input and its ID survive reloads; **Retry saved
+analysis** reuses the same request and cannot create a duplicate run. Reusing an ID
+with different input is rejected. Deleted requests cannot recreate erased data.
+Save a new analysis when you intentionally want another run.
+
 ## Run locally
 
 Use **Node.js 24+** and **pnpm 11+**, plus Python 3.10+ for the retained
 extraction engine. React handles the interface; a Node HTTP API calls the Python
 engine through a bounded JSON subprocess protocol. The extractor, annotated
-evaluation set, prompts, measured reports, and SQLite event schema are unchanged.
+evaluation set, prompts, and measured reports are unchanged. Local SQLite storage
+adds erasure markers and account lifecycle tables automatically; existing runs
+remain readable.
 
 
 ```bash

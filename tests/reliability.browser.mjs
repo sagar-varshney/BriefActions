@@ -1,0 +1,55 @@
+import assert from 'node:assert/strict';
+import {mkdtemp,mkdir,rm,readFile} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import path from 'node:path';
+import {chromium} from 'playwright';
+import {createApp} from '../server/index.mjs';
+
+const folder=await mkdtemp(path.join(tmpdir(),'flow-reliability-browser-'));
+const shots=process.env.FLOW_SCREENSHOTS || path.join(folder,'screenshots');await mkdir(shots,{recursive:true});
+const server=createApp({historyPath:path.join(folder,'history.sqlite3')});let browser;
+try{
+  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const base=`http://127.0.0.1:${server.address().port}`;
+  browser=await chromium.launch({headless:true,...(process.env.FLOW_CHROMIUM_PATH?{executablePath:process.env.FLOW_CHROMIUM_PATH}:{})});
+  const page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.goto(base);await page.getByRole('button',{name:'Analyze transcript',exact:true}).waitFor();
+  await page.getByLabel('Meeting transcript',{exact:true}).fill('Maya will send the private report tomorrow.');
+  let droppedId;
+  await page.route('**/api/runs',async route=>{
+    if(route.request().method()!=='POST')return route.continue();
+    droppedId=route.request().postDataJSON().request_id;
+    const response=await route.fetch();assert.equal(response.status(),201);await route.abort('failed');
+  });
+  await page.getByRole('button',{name:'Analyze transcript',exact:true}).click();
+  await page.getByRole('heading',{name:/Review action proposals/}).waitFor();
+  assert.equal((await (await fetch(base+'/api/runs')).json()).length,1);
+  assert.equal(await page.evaluate(()=>localStorage.getItem('flow.pendingAnalysis')),null);
+  await page.unroute('**/api/runs');
+  // Before-write failure: reload and explicitly retry the same persisted request.
+  await page.getByLabel('Meeting transcript',{exact:true}).fill('Jon will send the invoice tomorrow.');
+  let firstId;
+  await page.route('**/api/runs',route=>{if(route.request().method()!=='POST')return route.continue();firstId=route.request().postDataJSON().request_id;return route.abort('failed');});
+  await page.getByRole('button',{name:'Analyze transcript',exact:true}).click();await page.getByRole('button',{name:'Retry saved analysis'}).waitFor();
+  assert.equal((await (await fetch(base+'/api/runs')).json()).length,1);await page.unroute('**/api/runs');await page.reload();
+  await page.getByRole('button',{name:'Retry saved analysis'}).waitFor();assert.equal(await page.getByLabel('Meeting transcript',{exact:true}).inputValue(),'Jon will send the invoice tomorrow.');
+  await page.getByRole('button',{name:'Retry saved analysis'}).click();await page.getByRole('status').filter({hasText:'Analysis saved. Review the proposals below.'}).waitFor();
+  const runs=await (await fetch(base+'/api/runs')).json();assert.equal(runs.length,2);assert.equal(runs[0].id,firstId);assert.notEqual(firstId,droppedId);
+  await page.getByRole('button',{name:'Data & account',exact:true}).click();await page.getByRole('heading',{name:/Saved transcripts/}).waitFor();
+  const exportEvent=page.waitForEvent('download');await page.getByRole('button',{name:'Download workspace JSONL'}).click();const lines=(await readFile(await (await exportEvent).path(),'utf8')).trim().split('\n').map(JSON.parse);assert.equal(lines.at(-1).type,'complete');assert.equal(lines.filter(r=>r.kind==='extraction').length,2);
+  const remove=page.getByRole('button',{name:`Delete extraction ${firstId.slice(0,8)}`,exact:true});await remove.click();
+  assert.ok(await page.getByRole('button',{name:'Cancel',exact:true}).evaluate(el=>el===document.activeElement));
+  assert.ok(!await page.getByRole('button',{name:'Delete transcript',exact:true}).isEnabled());
+  await page.keyboard.press('Escape');assert.equal(await page.locator('dialog').count(),0);assert.ok(await remove.evaluate(el=>el===document.activeElement));
+  await remove.click();await page.getByLabel('Deletion confirmation').fill('DELETE TRANSCRIPT');
+  await page.getByRole('button',{name:'Delete transcript',exact:true}).click();await page.getByRole('heading',{name:/Saved transcripts/}).waitFor();
+  await page.waitForFunction(()=>document.querySelectorAll('.data-entry').length===1);
+  assert.equal((await fetch(base+`/api/runs/${firstId}`)).status,404);
+  assert.equal(await page.evaluate(()=>localStorage.getItem('flow.activeRun')),null);
+  await page.getByLabel('Color theme').selectOption('dark');await page.screenshot({path:path.join(shots,'desktop-data-controls-dark.png'),fullPage:true});
+  await page.setViewportSize({width:390,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await page.screenshot({path:path.join(shots,'mobile-data-controls-dark.png'),fullPage:true});
+  // An export with a missing completion record must never become a downloaded file.
+  let badDownload=false;page.on('download',()=>{badDownload=true;});
+  await page.route('**/api/account/export',route=>route.fulfill({status:200,contentType:'application/x-ndjson',body:'{"type":"manifest"}\n'}));
+  await page.getByRole('button',{name:'Download workspace JSONL'}).click();await page.getByRole('alert').filter({hasText:'The export was interrupted.'}).waitFor();assert.equal(badDownload,false);
+  assert.deepEqual(errors,[]);console.log('Reliability browser passed: lost-response recovery, reload/same-ID retry, complete export, keyboard confirmation, transcript deletion, erased browser cache, mobile dark layout, and rejected incomplete download.');
+}finally{await browser?.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));await rm(folder,{recursive:true,force:true});}

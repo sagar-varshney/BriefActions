@@ -1,5 +1,10 @@
 import {createClient} from '@supabase/supabase-js';
 export const UUID=/^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/;
+export function accountDeleter(config) {
+  if(!config.supabaseSecret)return null;
+  const client=createClient(config.supabaseUrl,config.supabaseSecret,{auth:{persistSession:false,autoRefreshToken:false},global:{fetch:(url,options)=>fetch(url,{...options,signal:AbortSignal.timeout(10_000)})}});
+  return async id=>{const {error}=await client.auth.admin.deleteUser(id);if(error && error.status!==404)throw new Error('Sign-in account deletion failed.');};
+}
 export function accountVerifier(config) {
   if(config.authMode==='local')return async()=>null;
   const client=createClient(config.supabaseUrl,config.supabaseKey,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false},

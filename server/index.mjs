@@ -5,7 +5,7 @@ import { stat } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {loadConfig} from './config.mjs';
-import {accountVerifier,rateLimiter,UUID} from './auth.mjs';
+import {accountVerifier,accountDeleter,rateLimiter,UUID} from './auth.mjs';
 
 const ROOT = fileURLToPath(new URL('../', import.meta.url));
 const DIST = path.join(ROOT, 'dist');
@@ -78,7 +78,7 @@ async function body(req) {
   } catch { throw new HttpError(400, 'Request must be a JSON object.'); }
 }
 const TYPES = {'.html':'text/html', '.js':'text/javascript', '.css':'text/css', '.svg':'image/svg+xml', '.png':'image/png', '.ico':'image/x-icon'};
-export function createApp({historyPath, maxWorkers = 2, config=loadConfig(), verifyAccount=accountVerifier(config)} = {}) {
+export function createApp({historyPath, maxWorkers = 2, config=loadConfig(), verifyAccount=accountVerifier(config), deleteAccount=accountDeleter(config)} = {}) {
   historyPath ||= config.historyPath;
   let workers = 0;
   const waiting=[];
@@ -93,11 +93,33 @@ export function createApp({historyPath, maxWorkers = 2, config=loadConfig(), ver
   };
   const allow=rateLimiter(),allowAnalysis=rateLimiter({limit:10}),allowAuth=rateLimiter({limit:120});
   let healthPromise=null,healthUntil=0;
+  const workerOptions=accountId=>({historyPath:accountId && !config.databaseUrl ? path.join(historyPath+'.accounts',accountId+'.sqlite3') : historyPath,databaseUrl:config.databaseUrl,accountId});
   const runWorker = async (request,accountId) => {
     await acquire();
-    const scopedPath=accountId && !config.databaseUrl ? path.join(historyPath+'.accounts',accountId+'.sqlite3') : historyPath;
-    try { return await engine(request, {historyPath:scopedPath,databaseUrl:config.databaseUrl,accountId}); } finally { workers--;waiting.shift()?.(); }
+    try { return await engine(request, workerOptions(accountId)); } finally { workers--;waiting.shift()?.(); }
   };
+  async function exportWorkspace(res,accountId){
+    await acquire();
+    const options=workerOptions(accountId);
+    try{
+      await new Promise((resolve,reject)=>{
+        const worker=spawn(pythonBinary(),['-B',path.join(ROOT,'export_bridge.py')],{cwd:ROOT,env:{...process.env,FLOW_HISTORY_PATH:options.historyPath,FLOW_DATABASE_URL:options.databaseUrl || '',FLOW_ACCOUNT_ID:accountId || '',PYTHONIOENCODING:'utf-8'},stdio:['ignore','pipe','ignore']});
+        let size=0,finished=false;
+        const timer=setTimeout(()=>worker.kill('SIGKILL'),60_000);
+        const disconnected=()=>{if(!finished)worker.kill('SIGKILL');};res.once('close',disconnected);
+        worker.stdout.on('data',chunk=>{
+          size+=chunk.length;
+          if(size>75_000_000){worker.kill('SIGKILL');return;}
+          if(!res.headersSent)res.writeHead(200,{'Content-Type':'application/x-ndjson; charset=utf-8','Content-Disposition':'attachment; filename="flow-workspace.jsonl"','Cache-Control':'no-store'});
+          if(!res.write(chunk))worker.stdout.pause();
+        });
+        res.on('drain',()=>worker.stdout.resume());
+        const complete=(error)=>{if(finished)return;finished=true;clearTimeout(timer);res.off('close',disconnected);error?reject(error):(res.end(),resolve());};
+        worker.on('error',()=>complete(new HttpError(503,'Workspace export is temporarily unavailable.')));
+        worker.on('close',code=>complete(code===0?null:new HttpError(503,'Workspace export did not finish. Retry the download.')));
+      });
+    }finally{workers--;waiting.shift()?.();}
+  }
   return http.createServer(async (req, res) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Referrer-Policy','no-referrer');
@@ -131,11 +153,26 @@ export function createApp({historyPath, maxWorkers = 2, config=loadConfig(), ver
       }
       const call=request=>runWorker(request,accountId);
       let match;
+      if(req.method==='GET' && pathname==='/api/account')return json(res,200,{...await call({operation:'account_status'}),can_delete_account:!!accountId && !!deleteAccount});
+      if(req.method==='GET' && pathname==='/api/account/export')return await exportWorkspace(res,accountId);
+      if(req.method==='POST' && pathname==='/api/account/delete'){
+        const input=await body(req);
+        if(input.confirmation!=='DELETE MY ACCOUNT')throw new HttpError(400,'Type DELETE MY ACCOUNT to confirm.');
+        if(!accountId || !deleteAccount)throw new HttpError(503,'Account deletion is not configured for this workspace.');
+        await call({operation:'account_erase'});
+        try{await deleteAccount(accountId);}catch{throw new HttpError(503,'Your workspace data was erased. Sign-in account deletion is pending; retry from Data & account.');}
+        return json(res,200,{deleted:true});
+      }
+      if(req.method==='POST' && (match=pathname.match(/^\/api\/(runs|annotations)\/([a-f0-9]{32})\/delete$/))){
+        const input=await body(req);
+        if(input.confirmation!=='DELETE TRANSCRIPT')throw new HttpError(400,'Type DELETE TRANSCRIPT to confirm.');
+        return json(res,200,await call({operation:'delete_input',run_id:match[2],kind:match[1]==='runs'?'extraction':'annotation_input'}));
+      }
       if (req.method === 'GET' && pathname === '/api/config') return json(res, 200, await call({operation:'config'}));
       if (req.method === 'GET' && pathname === '/api/runs') return json(res, 200, await call({operation:'runs'}));
       if (req.method === 'POST' && pathname === '/api/runs') {
         const input = await body(req);
-        return json(res, 201, await call({transcript:input.transcript,reference_date:input.reference_date,clusters:input.clusters ?? 3,operation:'analyze'}));
+        return json(res, 201, await call({transcript:input.transcript,reference_date:input.reference_date,clusters:input.clusters ?? 3,request_id:input.request_id,operation:'analyze'}));
       }
       if ((match = pathname.match(/^\/api\/runs\/([a-f0-9]{32})(?:\/(finalize|draft|manual-actions|history.json|tasks.csv))?$/))) {
         const [, run_id, action] = match;

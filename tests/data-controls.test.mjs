@@ -1,0 +1,57 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {randomUUID} from 'node:crypto';
+import {mkdtemp,rm} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import path from 'node:path';
+import {createApp} from '../server/index.mjs';
+import {loadConfig} from '../server/config.mjs';
+import {accountDeleter} from '../server/auth.mjs';
+import http from 'node:http';
+import {spawnSync} from 'node:child_process';
+import {fileURLToPath} from 'node:url';
+import {pythonBinary} from '../server/index.mjs';
+
+test('Data controls isolate exports, protect deletions, prevent resurrection, and recover provider failures',async()=>{
+  const folder=await mkdtemp(path.join(tmpdir(),'flow-data-controls-')),alice=randomUUID(),bob=randomUUID(),deleted=[];
+  let fail=true;
+  const config={...loadConfig(),authMode:'supabase',supabaseUrl:'https://test-project.supabase.co',supabaseKey:'sb_publishable_test',supabaseSecret:'sb_secret_private',databaseUrl:process.env.FLOW_TEST_DATABASE_URL};
+  const server=createApp({config,historyPath:path.join(folder,'history.sqlite3'),verifyAccount:async token=>({alice,bob})[token],deleteAccount:async id=>{deleted.push(id);if(fail)throw new Error('offline');}});
+  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+  const base=`http://127.0.0.1:${server.address().port}`;
+  const get=(route,user='alice')=>fetch(base+route,{headers:{Authorization:`Bearer ${user}`}});
+  const post=(route,input,user='alice')=>fetch(base+route,{method:'POST',headers:{Authorization:`Bearer ${user}`,'Content-Type':'application/json'},body:JSON.stringify(input)});
+  const input={transcript:'Alice will send the private report tomorrow.',reference_date:'2026-09-15',request_id:randomUUID().replaceAll('-','')};
+  try{
+    assert.equal((await (await get('/api/auth-config')).text()).includes('sb_secret'),false);
+    const first=await (await post('/api/runs',input)).json();assert.equal(first.id,input.request_id);
+    const both=await Promise.all([post('/api/runs',input),post('/api/runs',input)]);for(const r of both)assert.equal((await r.json()).id,first.id);
+    assert.equal((await (await get('/api/runs')).json()).length,1);
+    assert.equal((await post('/api/runs',{...input,clusters:2})).status,409);
+    await post('/api/runs',{transcript:'Bob will send the confidential invoice.',reference_date:'2026-09-15'},'bob');
+    const seeded=spawnSync(pythonBinary(),['-B','-c',"import json,sys; from history import HistoryStore; r=json.load(sys.stdin); h=HistoryStore(r['path'],database_url=r.get('database_url'),owner=r['owner']); [h.create_run('Legacy private notes. '+('x'*4100000),'2026-09-15',[]) for _ in range(2)]"],{cwd:fileURLToPath(new URL('../',import.meta.url)),input:JSON.stringify({path:path.join(folder,'history.sqlite3.accounts',alice+'.sqlite3'),database_url:config.databaseUrl,owner:alice}),encoding:'utf8'});
+    assert.equal(seeded.status,0,seeded.stderr);
+    const download=await get('/api/account/export');assert.equal(download.status,200);assert.equal(download.headers.get('cache-control'),'no-store');
+    const text=await download.text(),records=text.trim().split('\n').map(line=>JSON.parse(line));
+    assert.ok(Buffer.byteLength(text)>8_000_000,'Large workspace export must bypass the normal worker response limit');
+    assert.equal(records[0].account_id,alice);assert.equal(records.at(-1).type,'complete');assert.ok(text.includes('private report'));assert.ok(!text.includes('confidential invoice'));
+    assert.equal((await post(`/api/runs/${first.id}/delete`,{confirmation:'wrong'})).status,400);
+    assert.equal((await post(`/api/runs/${first.id}/delete`,{confirmation:'DELETE TRANSCRIPT'},'bob')).status,404);
+    assert.equal((await post(`/api/runs/${first.id}/delete`,{confirmation:'DELETE TRANSCRIPT'})).status,200);
+    assert.equal((await post(`/api/runs/${first.id}/delete`,{confirmation:'DELETE TRANSCRIPT'})).status,200);
+    assert.equal((await post('/api/runs',input)).status,410);assert.equal((await get(`/api/runs/${first.id}/history.json`)).status,404);
+    const after=await (await get('/api/account/export')).text();assert.ok(!after.includes('private report'));
+    assert.equal((await post('/api/account/delete',{confirmation:'wrong',account_id:bob})).status,400);assert.deepEqual(deleted,[]);
+    assert.equal((await post('/api/account/delete',{confirmation:'DELETE MY ACCOUNT',account_id:bob})).status,503);
+    assert.deepEqual(deleted,[alice]);assert.equal((await (await get('/api/account')).json()).state,'deleting');
+    assert.equal((await get('/api/runs')).status,409);assert.equal((await post('/api/runs',input)).status,409);
+    assert.equal((await (await get('/api/runs','bob')).json()).length,1);
+    fail=false;assert.equal((await post('/api/account/delete',{confirmation:'DELETE MY ACCOUNT'})).status,200);assert.deepEqual(deleted,[alice,alice]);
+  }finally{server.closeAllConnections();await new Promise(resolve=>server.close(resolve));await rm(folder,{recursive:true,force:true});}
+});
+test('Supabase account deletion uses the server-only admin client and tolerates an already removed user',async()=>{
+  const id=randomUUID(),calls=[];
+  const provider=http.createServer((req,res)=>{calls.push({url:req.url,method:req.method,key:req.headers.apikey});res.writeHead(calls.length===1?200:404,{'Content-Type':'application/json'});res.end(JSON.stringify(calls.length===1?{id}:{message:'User not found'}));});
+  await new Promise(resolve=>provider.listen(0,'127.0.0.1',resolve));
+  try{const erase=accountDeleter({supabaseUrl:`http://127.0.0.1:${provider.address().port}`,supabaseSecret:'sb_secret_test'});await erase(id);await erase(id);assert.equal(calls.length,2);assert.deepEqual(calls[0],{url:`/auth/v1/admin/users/${id}`,method:'DELETE',key:'sb_secret_test'});}finally{provider.closeAllConnections();await new Promise(resolve=>provider.close(resolve));}
+});

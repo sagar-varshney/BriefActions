@@ -13,7 +13,8 @@ const alice='11111111-1111-4111-8111-111111111111',bob='22222222-2222-4222-8222-
 const session=id=>({access_token:`${Buffer.from('{"alg":"HS256","typ":"JWT"}').toString('base64url')}.${Buffer.from(JSON.stringify({sub:id,exp:Math.floor(Date.now()/1000)+3600})).toString('base64url')}.fixture`,refresh_token:'fixture-refresh',expires_at:Math.floor(Date.now()/1000)+3600,expires_in:3600,token_type:'bearer',user:{id,email:id===alice?'alice@example.test':'bob@example.test',aud:'authenticated',role:'authenticated',app_metadata:{},user_metadata:{},created_at:'2026-10-12T00:00:00Z'}});
 const first=session(alice),second=session(bob);
 const config={...loadConfig(),authMode:'supabase',supabaseUrl:'https://test-project.supabase.co',supabaseKey:'sb_publishable_test'};
-const server=createApp({config,historyPath:path.join(folder,'history.sqlite3'),verifyAccount:async token=>token===first.access_token?alice:token===second.access_token?bob:null});
+let failDeletion=true;const deleted=[];
+const server=createApp({config,historyPath:path.join(folder,'history.sqlite3'),verifyAccount:async token=>token===first.access_token?alice:token===second.access_token && !deleted.includes(bob)?bob:null,deleteAccount:async id=>{assert.equal(id,bob);if(failDeletion)throw new Error('provider unavailable');deleted.push(id);}});
 let browser;
 try{
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
@@ -36,5 +37,18 @@ try{
   await page.getByRole('button',{name:'Extract & review',exact:true}).click();await page.setViewportSize({width:390,height:844});
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await page.screenshot({path:path.join(screenshotDir,'mobile-account-dark.png'),fullPage:true});
   await page.getByLabel('Color theme').selectOption('light');await page.screenshot({path:path.join(screenshotDir,'mobile-account-light.png'),fullPage:true});
-  assert.deepEqual(errors,[]);console.log('Authenticated browser checks passed: sign-in gate, SDK session, authenticated CSV, sign-out, account-scoped history/browser drafts, desktop/mobile themes.');
+  await page.getByRole('button',{name:'Analyze transcript',exact:true}).click();await page.getByRole('heading',{name:/Review action proposals/}).waitFor();
+  await page.evaluate(id=>localStorage.setItem(`flow.account.${id}.flow.draft.fake`,'private unfinished text'),bob);
+  await page.getByRole('button',{name:'Data & account',exact:true}).click();await page.getByRole('button',{name:'Delete my account',exact:true}).waitFor();
+  await page.getByRole('button',{name:'Delete my account',exact:true}).click();await page.getByLabel('Deletion confirmation').fill('DELETE MY ACCOUNT');
+  await page.getByRole('dialog').getByRole('button',{name:'Delete my account',exact:true}).click();
+  await page.getByRole('dialog').getByRole('alert').filter({hasText:'Sign-in account deletion is pending'}).waitFor();
+  assert.equal(await page.evaluate(id=>localStorage.getItem(`flow.account.${id}.flow.draft.fake`),bob),null);
+  assert.equal(await page.evaluate(id=>localStorage.getItem(`flow.account.${id}.flow.activeRun`),alice),active);
+  await page.getByRole('button',{name:'Cancel',exact:true}).click();assert.ok(!await page.getByRole('button',{name:'Extract & review',exact:true}).isEnabled());
+  await page.reload();await page.getByRole('button',{name:'Retry account deletion',exact:true}).waitFor();
+  await page.screenshot({path:path.join(screenshotDir,'mobile-account-deletion-retry.png'),fullPage:true});
+  failDeletion=false;await page.getByRole('button',{name:'Retry account deletion',exact:true}).click();await page.getByLabel('Deletion confirmation').fill('DELETE MY ACCOUNT');
+  await page.getByRole('dialog').getByRole('button',{name:'Delete my account',exact:true}).click();await page.getByRole('button',{name:'Continue with GitHub',exact:true}).waitFor();assert.deepEqual(deleted,[bob]);
+  assert.deepEqual(errors,[]);console.log('Authenticated browser checks passed: sign-in gate, SDK session, authenticated CSV, sign-out, account-scoped history/browser drafts, desktop/mobile themes, confirmed account erasure, provider-failure/reload retry, cache cleanup, and unaffected second account.');
 }finally{await browser?.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));await rm(folder,{recursive:true,force:true});}

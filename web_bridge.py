@@ -10,6 +10,7 @@ import re
 import sys
 
 from history import HistoryStore, proposals_from_events
+from data_controls import DataError
 
 ROOT = Path(__file__).resolve().parent
 MAX_TRANSCRIPT = 100_000
@@ -52,6 +53,15 @@ def report_paths():
 
 def handle(request):
     op = request.get('operation')
+    if op=='account_status':
+        from data_controls import account_status
+        return account_status(store())
+    if op=='account_erase':
+        from data_controls import close_account
+        return close_account(store())
+    if op=='delete_input':
+        from data_controls import delete_input
+        return delete_input(store(),request.get('run_id'),request.get('kind'))
     if op in ('reviewed_snapshots','reviewed_reports','reviewed_report','reviewed_run'):
         from reviewed_benchmarks import ReviewedBenchmarks
         reviewed=ReviewedBenchmarks(store())
@@ -120,13 +130,19 @@ def handle(request):
         clusters = request.get('clusters',3)
         if type(clusters) is not int or not 1 <= clusters <= 6:
             raise ApiError('Maximum groups must be an integer from 1 to 6.')
+        request_id=request.get('request_id')
+        fingerprint=hashlib.sha256(json.dumps([transcript,reference,clusters],ensure_ascii=False).encode()).hexdigest()
+        if request_id is not None and store().existing_analysis(request_id,fingerprint):return run_snapshot(request_id)
         from flow_engine import run_pipeline
         frame, summary, silhouette = run_pipeline(transcript, clusters, meeting_date)
+        if len(frame)>200:raise ApiError('This transcript produced too many proposals. Split it into smaller meetings.',413)
         from extraction import extract_with_changes
         _, conversation_changes = extract_with_changes(transcript,meeting_date)
         settings = {'conversation_changes':conversation_changes,'extractor':'rules-v3','extractor_sha256':hashlib.sha256((ROOT/'extraction.py').read_bytes()).hexdigest(),
-                    'clusters':clusters,'summary':summary,'silhouette':silhouette,'interface':'react-node-v1'}
-        run_id = store().create_run(transcript,reference,frame.to_dict('records'),settings)
+                    'clusters':clusters,'summary':summary,'silhouette':silhouette,'interface':'react-node-v1','request_fingerprint':fingerprint}
+        if len(json.dumps({'transcript':transcript,'proposals':frame.to_dict('records'),'settings':settings}).encode())>3_000_000:
+            raise ApiError('The analysis result is too large. Split the transcript into smaller meetings.',413)
+        run_id = store().create_run(transcript,reference,frame.to_dict('records'),settings,request_id=request_id)
         return run_snapshot(run_id)
     if op == 'runs':
         # One query, including old Streamlit runs, without loading every transcript.
@@ -204,6 +220,8 @@ def main():
         result = {'ok':False,'status':error.status,'error':str(error)}
     except KeyError:
         result = {'ok':False,'status':404,'error':'Saved run not found.'}
+    except DataError as error:
+        result = {'ok':False,'status':error.status,'error':str(error)}
     except (ValueError,TypeError) as error:
         result = {'ok':False,'status':400,'error':str(error)}
     except Exception as error:

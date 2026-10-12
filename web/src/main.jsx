@@ -8,6 +8,9 @@ import './styles.css';
 import AnnotationReviewer from './AnnotationReviewer.jsx';
 import ReviewedBenchmarks from './ReviewedBenchmarks.jsx';
 import MissedActionForm from './MissedActionForm.jsx';
+import DataControls from './DataControls.jsx';
+
+function loadPending(){try{const value=JSON.parse(accountStorage.getItem('flow.pendingAnalysis') || 'null');return value && /^[a-f0-9]{32}$/.test(value.request_id) && typeof value.transcript==='string'?value:null;}catch{return null;}}
 
 function reviewDrafts(proposals,decisions=[]){const byId=new Map(decisions.map(d=>[d.proposal_id,d]));return proposals.map(p=>byId.get(p.proposal_id)||{proposal_id:p.proposal_id,task:p.task,owner:p.owner,deadline:p.deadline,accept:false});}
 
@@ -37,10 +40,14 @@ function downloadJson(value, filename) {
   const link = document.createElement('a'); link.href=url; link.download=filename; link.click();
   setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
-const pages = [{id:'extract',name:'Extract & review',icon:'extract'},{id:'history',name:'Run history',icon:'history'},{id:'benchmark',name:'Evaluation lab',icon:'chart'},{id:'annotations',name:'Annotation reviewer',icon:'quote'}];
+const pages = [{id:'extract',name:'Extract & review',icon:'extract'},{id:'history',name:'Run history',icon:'history'},{id:'benchmark',name:'Evaluation lab',icon:'chart'},{id:'annotations',name:'Annotation reviewer',icon:'quote'},{id:'data',name:'Data & account',icon:'history'}];
 
-function App({account,signOut,authError}) {
-  const [page,setPage] = useState('extract');
+function App({account,signOut,completeAccountDeletion,authError}) {
+  const [page,setPage] = useState(location.hash==='#data'?'data':'extract');
+  const [closing,setClosing]=useState(false);
+  const [restoring,setRestoring]=useState(true);
+  const [pending,setPending]=useState(loadPending),[analysisStatus,setAnalysisStatus]=useState('');
+  const analysisBusy=useRef(false);
   const [config,setConfig] = useState(null);
   const [transcript,setTranscript] = useState('');
   const [meetingDate,setMeetingDate] = useState('');
@@ -103,6 +110,9 @@ function App({account,signOut,authError}) {
     let alive=true;
     (async()=>{
       try {
+        const status=await api('/account');
+        if(!alive)return;
+        if(status.state==='deleting'){setClosing(true);setPage('data');return;}
         const value=await api('/config');
         if(!alive)return;
         setConfig(value);setTranscript(value.sample_transcript);setMeetingDate(value.sample_reference_date);
@@ -111,11 +121,21 @@ function App({account,signOut,authError}) {
           try {
             const snapshot=await api(`/runs/${saved}`);
             if(alive){adopt(snapshot);setTranscript(snapshot.transcript);setMeetingDate(snapshot.reference_date);setClusters(snapshot.settings?.clusters || 3);}
-          } catch {accountStorage.removeItem('flow.activeRun');}
+          } catch(e){if([404,410].includes(e.status))accountStorage.removeItem('flow.activeRun');else throw e;}
         }
-      } catch(e){if(alive)setError(e.message);}
+        const unfinished=loadPending();
+        if(unfinished && alive){
+          setTranscript(unfinished.transcript);setMeetingDate(unfinished.reference_date);setClusters(unfinished.clusters);
+          try{const saved=await api(`/runs/${unfinished.request_id}`);if(alive){adopt(saved);accountStorage.removeItem('flow.pendingAnalysis');setPending(null);setAnalysisStatus('Recovered your saved analysis.');}}
+          catch(e){if(alive)setAnalysisStatus('An unfinished analysis is saved. Retry it to recover or finish the same request.');}
+        }
+      } catch(e){if(alive)setError(e.message);}finally{if(alive)setRestoring(false);}
     })();
     return ()=>{alive=false;};
+  },[]);
+  useEffect(()=>{
+    const erased=e=>{if(e.key!==accountStorage.erasureKey() || !e.newValue)return;try{const value=JSON.parse(e.newValue);value.account?accountStorage.clearWorkspace(false):accountStorage.forgetInput(value.id,false);}finally{location.reload();}};
+    window.addEventListener('storage',erased);return()=>window.removeEventListener('storage',erased);
   },[]);
   useEffect(()=>{
     if(page==='history') {
@@ -127,9 +147,29 @@ function App({account,signOut,authError}) {
     if(page==='benchmark' && !bench) api('/benchmarks').then(setBench).catch(e=>setError(e.message));
   },[page,bench]);
   async function analyze(event) {
-    event.preventDefault();setError('');setBusy(true);
-    try {adopt(await api('/runs',{method:'POST',body:JSON.stringify({transcript,reference_date:meetingDate,clusters})}));}
-    catch(e){setError(e.message);}finally{setBusy(false);}
+    event.preventDefault();
+    const input={transcript,reference_date:meetingDate,clusters};
+    const saved=loadPending();
+    const same=saved && saved.transcript===transcript && saved.reference_date===meetingDate && saved.clusters===clusters;
+    await submitAnalysis(same?saved:{...input,request_id:crypto.randomUUID().replaceAll('-','')});
+  }
+  async function submitAnalysis(input){
+    if(analysisBusy.current)return;
+    try{accountStorage.setItem('flow.pendingAnalysis',JSON.stringify(input));}catch{setError('Browser storage is unavailable. Enable storage before starting a recoverable analysis.');return;}
+    analysisBusy.current=true;setPending(input);setError('');setBusy(true);setAnalysisStatus('Analyzing your saved request…');
+    setTranscript(input.transcript);setMeetingDate(input.reference_date);setClusters(input.clusters);
+    const finish=value=>{adopt(value);accountStorage.removeItem('flow.pendingAnalysis');setPending(null);setAnalysisStatus('Analysis saved. Review the proposals below.');};
+    try{finish(await api('/runs',{method:'POST',body:JSON.stringify(input)}));}
+    catch(e){
+      if(e.retryable){
+        setAnalysisStatus('Connection interrupted. Checking for a saved result…');
+        try{finish(await api(`/runs/${input.request_id}`));}
+        catch{setError(e.message);setAnalysisStatus('Your input and request ID are saved. Retry the same analysis below; a completed result will be reused.');}
+      }else{
+        setError(e.message);setAnalysisStatus('');
+        accountStorage.removeItem('flow.pendingAnalysis');setPending(null);
+      }
+    }finally{analysisBusy.current=false;setBusy(false);}
   }
   async function finalize(event) {
     event.preventDefault();setError('');setBusy(true);
@@ -170,22 +210,24 @@ function App({account,signOut,authError}) {
     <aside className="sidebar">
       <a href="#" className="brand" onClick={e=>{e.preventDefault();setPage('extract');}}><span className="brand-mark"><Icon name="flow" size={25}/></span><span>Productivity<span className="brand-sub">FLOW ENGINE</span></span></a>
       <div className="nav-label">WORKSPACE</div>
-      <nav aria-label="Main navigation">{pages.map(p=><button key={p.id} className={`nav-item ${page===p.id?'active':''}`} aria-current={page===p.id?'page':undefined} onClick={()=>{setPage(p.id);setError('');}}><Icon name={p.icon}/>{p.name}{page===p.id&&<span className="nav-dot"/>}</button>)}</nav>
+      <nav aria-label="Main navigation">{pages.map(p=><button key={p.id} disabled={closing && p.id!=='data'} className={`nav-item ${page===p.id?'active':''}`} aria-current={page===p.id?'page':undefined} onClick={()=>{setPage(p.id);location.hash=p.id==='data'?'data':'';setError('');}}><Icon name={p.icon}/>{p.name}{page===p.id&&<span className="nav-dot"/>}</button>)}</nav>
       <div className="sidebar-bottom"><span className="engine-status"><span/> Evidence-backed extraction</span><p>Review your proposals.<br/>You make the final call.</p></div>
     </aside>
     <main>
       <header className="topbar"><span>Workspace <span className="slash">/</span> {pages.find(p=>p.id===page).name}</span><div className="topbar-actions"><ThemeControl/>{account&&<><span className="account-name" title={account.email}>{account.email || 'Signed in'}</span><button className="text-button" onClick={signOut}>Sign out</button></>}<span className="local-badge"><span/> {account?'Private account':'Local workspace'}</span></div></header>
       <div className="content">
-        {authError&&<div className="notice error" role="alert">{authError}</div>}{error&&<div className="notice error" role="alert">{error}<button aria-label="Dismiss error" onClick={()=>setError('')}>×</button></div>}
+        {authError&&<div className="notice error" role="alert">{authError}</div>}{error&&<div className="notice error" role="alert">{error}{!config&&<button className="text-button" onClick={()=>location.reload()}>Retry workspace loading</button>}<button aria-label="Dismiss error" onClick={()=>setError('')}>×</button></div>}
         {page==='extract'&&<>
           <div className="page-intro"><div><div className="eyebrow accent">FROM CONVERSATION TO ACTION</div><h1>Make your next move clear.</h1><p>Extract action items, check the evidence, and confirm your plan.</p></div><span className="intro-icon"><Icon name="flow" size={38}/></span></div>
           <div className="steps"><span className="current"><b>1</b> Add transcript</span><span className={run?'current':''}><b>2</b> Review proposals</span><span className={run?.status==='confirmed'?'current':''}><b>3</b> Confirm plan</span></div>
           <form className="panel transcript-panel" onSubmit={analyze}>
             <div className="panel-heading"><div><h2>Meeting transcript</h2><p>Paste the conversation. Keep speaker names where available.</p></div><button type="button" className="text-button" disabled={!config || busy} onClick={()=>{setTranscript(config.sample_transcript);setMeetingDate(config.sample_reference_date);}}>Load example</button></div>
             <label className="sr-only" htmlFor="transcript">Meeting transcript</label><textarea id="transcript" className="transcript" value={transcript} onChange={e=>setTranscript(e.target.value)} maxLength={config?.max_transcript || 100000} required placeholder="Maya: I’ll send the report tomorrow…"/>
-            <div className="input-footer"><div className="settings"><label>Meeting date<input type="date" value={meetingDate} onChange={e=>setMeetingDate(e.target.value)} required/></label><label>Maximum groups<select aria-label="Maximum groups" value={clusters} onChange={e=>setClusters(Number(e.target.value))}>{[1,2,3,4,5,6].map(n=><option key={n}>{n}</option>)}</select></label></div><button className="button primary" disabled={busy || !config}>{busy?'Working…':'Analyze transcript'}{!busy&&<Icon name="arrow" size={17}/>}</button></div>
+            <div className="input-footer"><div className="settings"><label>Meeting date<input type="date" value={meetingDate} onChange={e=>setMeetingDate(e.target.value)} required/></label><label>Maximum groups<select aria-label="Maximum groups" value={clusters} onChange={e=>setClusters(Number(e.target.value))}>{[1,2,3,4,5,6].map(n=><option key={n}>{n}</option>)}</select></label></div><button className="button primary" disabled={busy || !config || restoring}>{busy?'Working…':'Analyze transcript'}{!busy&&<Icon name="arrow" size={17}/>}</button></div>
             <div className="form-hint">Relative deadlines use the meeting date. Missing people and exact dates stay <strong>Unknown</strong>.</div>
           </form>
+          {analysisStatus&&<p className="notice" role="status">{analysisStatus}</p>}
+          {pending&&!busy&&!restoring&&<button className="button secondary" onClick={()=>submitAnalysis(pending)}>Retry saved analysis</button>}
           {!run&&<div className="empty-state"><span className="empty-icon"><Icon name="extract" size={28}/></span><h3>Your action plan starts here.</h3><p>Analyze a transcript to see proposals with their supporting passages.</p></div>}
           {run&&<section aria-label="Extraction result">
             {inputChanged&&<div className="notice warning">These proposals belong to the saved input. Analyze your edited transcript or settings to create a new run.</div>}
@@ -216,6 +258,7 @@ function App({account,signOut,authError}) {
           </section>}
         </>}
         {page==='annotations'&&<AnnotationReviewer api={api} downloadJson={downloadJson}/>}
+        {page==='data'&&<DataControls completeAccountDeletion={completeAccountDeletion} onClosing={()=>{clearTimeout(saveTimer.current);activeRun.current=null;setClosing(true);setRun(null);setDrafts([]);setTranscript('');setRuns([]);setReport(null);setPending(null);setAnalysisStatus('');}}/>}
         {page==='history'&&<>
           <div className="page-intro"><div><div className="eyebrow accent">EVERY DECISION, TRACEABLE</div><h1>Your run history.</h1><p>Revisit the input, original proposals, corrections, and final results.</p></div></div>
           <div className="notice">{account?'History is saved to your account and is available across devices.':'History is saved in this local workspace.'} JSON exports include the complete transcript and review decisions.</div>

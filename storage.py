@@ -15,7 +15,7 @@ class PostgresConnection:
 
 
 @contextmanager
-def postgres_connection(url, owner):
+def postgres_connection(url, owner, allow_closing=False):
     if not isinstance(owner, str) or not re.fullmatch(r'[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}', owner):
         raise ValueError('A verified account is required for hosted storage')
     import psycopg
@@ -24,4 +24,8 @@ def postgres_connection(url, owner):
         conn.execute("SELECT set_config('search_path','flow,pg_catalog',true)")
         conn.execute("SELECT set_config('flow.owner',%s,true)", (owner,))
         conn.execute("SET LOCAL statement_timeout = '20s'")
+        if not allow_closing:
+            from data_controls import DataError
+            row=conn.execute('SELECT state FROM account_lifecycle').fetchone()
+            if row and row[0]=='deleting':raise DataError('Account deletion is pending. Retry it from Data & account.')
         yield PostgresConnection(conn, owner)

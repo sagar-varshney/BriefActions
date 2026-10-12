@@ -100,7 +100,7 @@ jobs:
       - name: Verify production container and persistent storage readiness
         run: |
           docker build -t flow-ci .
-          docker run --detach --name flow-ci --network host -e PORT=8020 -e PUBLIC_ORIGIN=https://flow.example -e SUPABASE_URL=https://test-project.supabase.co -e SUPABASE_PUBLISHABLE_KEY=sb_publishable_test -e FLOW_DATABASE_URL=postgresql://postgres:flow-ci-only@127.0.0.1:5432/flow flow-ci
+          docker run --detach --name flow-ci --network host -e PORT=8020 -e PUBLIC_ORIGIN=https://flow.example -e SUPABASE_URL=https://test-project.supabase.co -e SUPABASE_PUBLISHABLE_KEY=sb_publishable_test -e SUPABASE_SECRET_KEY=sb_secret_ci_fixture -e FLOW_DATABASE_URL=postgresql://postgres:flow-ci-only@127.0.0.1:5432/flow flow-ci
           for attempt in {1..30}; do
             if curl --fail --silent http://127.0.0.1:8020/api/health; then break; fi
             sleep 2

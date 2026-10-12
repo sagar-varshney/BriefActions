@@ -27,34 +27,72 @@ class HistoryStore:
         if database_url:
             return  # Hosted schemas are installed by the deployment migration.
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        with self.connection() as conn:
+        with self.connection(allow_closing=True) as conn:
             conn.execute('''CREATE TABLE IF NOT EXISTS events (
                 event_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 run_id TEXT NOT NULL, kind TEXT NOT NULL,
                 created_at TEXT NOT NULL, payload TEXT NOT NULL)''')
             conn.execute('CREATE INDEX IF NOT EXISTS events_run ON events(run_id,event_id)')
+            conn.execute('CREATE TABLE IF NOT EXISTS deleted_inputs(run_id TEXT PRIMARY KEY)')
+            conn.execute('CREATE TABLE IF NOT EXISTS account_lifecycle(id INTEGER PRIMARY KEY,state TEXT NOT NULL)')
+            conn.execute('''CREATE TABLE IF NOT EXISTS annotation_drafts (
+                case_id TEXT NOT NULL,reviewer_key TEXT NOT NULL,mode TEXT NOT NULL,
+                version INTEGER NOT NULL,updated_at TEXT NOT NULL,payload TEXT NOT NULL,
+                PRIMARY KEY(case_id,reviewer_key,mode))''')
 
     @contextmanager
-    def connection(self):
+    def connection(self,allow_closing=False):
         if self.database_url:
             from storage import postgres_connection
-            with postgres_connection(self.database_url, self.owner) as conn:
+            with postgres_connection(self.database_url, self.owner,allow_closing) as conn:
                 yield conn
             return
         conn = sqlite3.connect(self.path, timeout=10)
         try:
             with conn:
+                if not allow_closing:
+                    from data_controls import DataError
+                    try:row=conn.execute('SELECT state FROM account_lifecycle').fetchone()
+                    except sqlite3.OperationalError:row=None  # First local schema initialization.
+                    if row and row[0]=='deleting':raise DataError('Account deletion is pending. Retry it from Data & account.')
                 yield conn
         finally:
             conn.close()
 
     def _append(self, conn, run_id, kind, payload):
+        from data_controls import DataError
+        row=conn.execute('SELECT state FROM account_lifecycle').fetchone()
+        if row and row[0]=='deleting':raise DataError('Account deletion is pending. Retry it from Data & account.')
+        if conn.execute('SELECT run_id FROM deleted_inputs WHERE run_id=?',(run_id,)).fetchone():
+            raise DataError('This input was deleted and cannot be restored by a retry.',410)
+        if kind=='reviewed_benchmark' and not any(json.loads(p).get('snapshot')==payload['snapshot'] for (p,) in conn.execute("SELECT payload FROM events WHERE kind='annotation_split'")):
+            raise DataError('The reviewed snapshot was deleted.',410)
         conn.execute('INSERT INTO events(run_id,kind,created_at,payload) VALUES (?,?,?,?)',
                      (run_id,kind,datetime.now(timezone.utc).isoformat(),json.dumps(payload)))
 
-    def create_run(self, transcript, reference_date, proposals, settings=None):
-        run_id = uuid4().hex
+    def existing_analysis(self,request_id,fingerprint):
+        from data_controls import DataError,identifier
+        identifier(request_id)
         with self.connection() as conn:
+            if conn.execute('SELECT run_id FROM deleted_inputs WHERE run_id=?',(request_id,)).fetchone():raise DataError('This analysis was deleted. Start a new analysis.',410)
+            row=conn.execute('SELECT kind,payload FROM events WHERE run_id=? ORDER BY event_id',(request_id,)).fetchone()
+        if row:
+            if row[0]!='extraction' or json.loads(row[1]).get('settings',{}).get('request_fingerprint')!=fingerprint:
+                raise DataError('This request ID belongs to different input.',409)
+            return request_id
+        return None
+
+    def create_run(self, transcript, reference_date, proposals, settings=None,request_id=None):
+        run_id = request_id or uuid4().hex
+        with self.connection() as conn:
+            conn.execute('BEGIN IMMEDIATE')
+            if request_id:
+                from data_controls import DataError
+                if conn.execute('SELECT run_id FROM deleted_inputs WHERE run_id=?',(run_id,)).fetchone():raise DataError('This analysis was deleted. Start a new analysis.',410)
+                row=conn.execute('SELECT kind,payload FROM events WHERE run_id=? ORDER BY event_id',(run_id,)).fetchone()
+                if row:
+                    if row[0]!='extraction' or json.loads(row[1]).get('settings',{}).get('request_fingerprint')!=settings.get('request_fingerprint'):raise DataError('This request ID belongs to different input.',409)
+                    return run_id
             self._append(conn,run_id,'extraction',{'transcript':transcript,'reference_date':reference_date,
                           'settings':settings or {},'proposals':proposals})
         return run_id

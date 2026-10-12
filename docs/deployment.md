@@ -32,7 +32,7 @@ important meeting records. Provider limits and available plans can change.
 ## Set up Supabase
 
 1. Create a project. Keep the database password server-side.
-2. Run `deploy/migrations/001_accounts.sql` in the project's SQL editor as the
+2. Run `deploy/migrations/001_accounts.sql`, then `002_data_controls.sql`, in the project's SQL editor as the
    database administrator. It creates a private `flow` schema and restricted
    `flow_app` role. Never expose that schema through the browser Data API.
 3. In Auth, enable the GitHub OAuth provider and configure a GitHub OAuth app.
@@ -46,6 +46,10 @@ important meeting records. Provider limits and available plans can change.
 6. Optional email links: configure custom SMTP, email templates, and redirect
    allowlists first, then set `FLOW_EMAIL_SIGNIN=true`. Supabase's built-in mail
    service is restricted and is not appropriate for public email delivery.
+7. Set `SUPABASE_SECRET_KEY` to the server-only secret key (or a legacy service-role
+   key) for Supabase's admin delete-user API. Never put it in the publishable-key
+   setting, React build variables, or browser configuration. The production
+   server requires it so self-service account deletion is available at launch.
 
 See [GitHub OAuth setup](https://supabase.com/docs/guides/auth/social-login/auth-github),
 [database connections](https://supabase.com/docs/guides/database/connecting-to-postgres),
@@ -93,7 +97,11 @@ private evaluation data, tests, and the legacy RAG backend.
   cannot select the storage owner. No public transcript/history routes exist.
 - Database transactions switch to the non-owner, non-superuser `flow_app` role.
   Row security checks the verified account ID for both reads and writes. The
-  restricted role can append events, but cannot update or delete history events.
+  restricted role can append events, but cannot directly update or delete history
+  events. Explicit erasure uses narrowly scoped functions owned by `flow_purger`,
+  a separate non-login role with row security and no superuser/bypass privileges.
+  These functions take their owner from the verified server transaction; no API
+  accepts a user-selected account ID for deletion.
 - Account data is private. Annotation reviewer names and independence remain
   self-attested labels inside that account; team sharing and authenticated
   multi-person annotation studies are not implemented.
@@ -112,11 +120,42 @@ private evaluation data, tests, and the legacy RAG backend.
   material. Their authorship and metric limitations remain in an expandable
   provenance section; deployment does not validate them as real-meeting accuracy.
 
-For support-driven deletion, an administrator can remove a selected account's
-rows from the private schema using its Supabase user UUID. Removing the auth
-user alone does not delete this application data. Back up/export as appropriate,
-and restrict administrative credentials. A self-service account deletion flow
-and organizational sharing require separate implementation.
+## Self-service export and erasure
+
+Data & account provides a streaming, authenticated JSONL export of all application
+history and server-saved annotation drafts. A manifest starts the file and a
+completion record ends it. An incomplete download is rejected by the interface.
+Exports bypass the ordinary 8 MB worker response limit and are bounded at 75 MB.
+This is a portable data export, not an automated database backup/restore service.
+
+Typed confirmation is required before erasing an input or an account. Extraction
+erasure removes its entire plan/history. Annotation erasure removes its reviews,
+any frozen snapshot containing it, and comparisons containing those snapshots;
+other annotation inputs remain. Browser drafts for erased inputs are removed and
+other open tabs reload. Downloaded exports, separate browsers, and provider/backups
+are separate copies; live-app erasure does not delete those copies remotely.
+
+Account erasure first pauses the account and deletes its stored application data,
+then removes the Supabase sign-in user. If the provider is unavailable, the workspace
+remains paused and the user can retry from Data & account. A minimal UUID/state
+marker remains in the private database to block in-flight writes and stale retries.
+It contains no transcript, profile, or review content. Administrators can retry
+provider removal for paused UUIDs if a user loses access during a provider outage.
+Do not clear an erasure marker while old requests may still be in flight.
+
+Removing a Supabase auth user directly, outside this application, does not purge
+application data; use the application flow or an explicit administrator erasure.
+Organizational sharing and automated backup/restore are separate features.
+
+## Retry behavior
+
+Clients send a stable 32-character request ID with each analysis. Input fingerprints
+include transcript, meeting date, and requested groups. Matching retries reuse the
+saved result, including any later review; conflicting input gets HTTP 409. Erased
+IDs get HTTP 410. The client checks for a stored result after a network error and
+keeps unfinished input/ID for an explicit retry after reload. Non-retryable validation
+errors let the user correct the input and start a new request. Legacy clients that
+omit a request ID remain supported but cannot deduplicate retries automatically.
 
 ## Verification
 

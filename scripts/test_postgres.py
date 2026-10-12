@@ -15,7 +15,7 @@ from annotation_drafts import AnnotationDrafts
 
 url=os.environ['FLOW_TEST_DATABASE_URL']
 with psycopg.connect(url,autocommit=True) as conn:
-    conn.execute((ROOT/'deploy/migrations/001_accounts.sql').read_text(),prepare=False)
+    for migration in sorted((ROOT/'deploy/migrations').glob('*.sql')):conn.execute(migration.read_text(),prepare=False)
 
 original=HistoryStore.__init__
 namespace=uuid4()
@@ -66,3 +66,16 @@ with one.connection() as conn:
     except psycopg.errors.RaiseException as error:assert str(error).startswith('Workspace history storage limit reached')
     else:raise AssertionError('History storage quota bypassed')
 print('Postgres: workflow regression suite, RLS isolation, forged/missing-owner denial, append-only permissions, concurrent draft conflict, and history quota passed.')
+
+# Even privileged erasure functions retain row security across account boundaries.
+with two.connection() as conn:conn.execute('SELECT flow.erase_input(?)',(run,))
+assert one.get_run(run)
+other=two.create_run('Other account remains.','2026-09-15',[])
+from data_controls import close_account,DataError
+close_account(one)
+with one.connection(allow_closing=True) as conn:assert conn.execute('SELECT COUNT(*) FROM events').fetchone()[0]==0
+assert two.get_run(other)
+try:one.create_run('Must not return.','2026-09-15',[])
+except DataError:pass
+else:raise AssertionError('Closed account accepted a write')
+print('Postgres: erasure functions preserve cross-account isolation and closed-account writes are blocked.')
