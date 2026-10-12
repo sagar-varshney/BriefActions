@@ -1,3 +1,4 @@
+import accountStorage from './accountStorage.js';
 import React,{useEffect,useRef,useState} from 'react';
 import useAnnotationDraft,{emptyAnnotation} from './useAnnotationDraft';
 
@@ -9,7 +10,7 @@ export default function AnnotationReviewer({api,downloadJson}) {
   const [text,setText]=useState(''),[meeting,setMeeting]=useState(new Date().toLocaleDateString('en-CA')),[source,setSource]=useState('synthetic'),[group,setGroup]=useState('');
   const [aliases,setAliases]=useState(''),[permission,setPermission]=useState(false),[checked,setChecked]=useState(false);
   const [reviewer,setReviewer]=useState(''),[independent,setIndependent]=useState(false),[compare,setCompare]=useState(false);
-  const [seed,setSeed]=useState('reviewed-corpus-v1'),[snapshot,setSnapshot]=useState(null),[snapshotId,setSnapshotId]=useState(localStorage.getItem('flow.annotationSnapshot')||'');
+  const [seed,setSeed]=useState('reviewed-corpus-v1'),[snapshot,setSnapshot]=useState(null),[snapshotId,setSnapshotId]=useState(accountStorage.getItem('flow.annotationSnapshot')||'');
   const [library,setLibrary]=useState([]),[corpus,setCorpus]=useState('all'),[importSplit,setImportSplit]=useState('all'),[importNotice,setImportNotice]=useState('');
   const [caseFilter,setCaseFilter]=useState('all'),[splitFilter,setSplitFilter]=useState('all'),[search,setSearch]=useState(''),[offset,setOffset]=useState(0);
   const draft=useAnnotationDraft(api), mounted=useRef(true);
@@ -33,7 +34,7 @@ export default function AnnotationReviewer({api,downloadJson}) {
       try {
         const [listing,catalogue]=await Promise.all([api('/annotations'),api('/annotations/corpora')]);
         if(!mounted.current)return;setCases(listing);setLibrary(catalogue);
-        let saved;try{saved=JSON.parse(localStorage.getItem('flow.annotationSession')||'null');}catch{}
+        let saved;try{saved=JSON.parse(accountStorage.getItem('flow.annotationSession')||'null');}catch{}
         if(saved){
           const c=await api(`/annotations/${saved.caseId}`);if(!mounted.current)return;
           setActive(c);setReviewer(saved.reviewer);await draft.open(c.id,saved.reviewer,saved.mode,readOnly(c,saved.reviewer,saved.mode));
@@ -80,7 +81,7 @@ export default function AnnotationReviewer({api,downloadJson}) {
   const filter=(setter,value)=>{setter(value);setOffset(0);};
   return <>
     <div className="page-intro"><div><div className="eyebrow accent">BUILD TRUSTWORTHY LABELS</div><h1>Annotation reviewer.</h1><p>Label exact passages, collect separate reviews, and resolve disagreements before freezing evaluation data.</p></div></div>
-    <div className="notice">Reviewer identities and independence are self-attested on this local app. First-pass labels start empty; only your own unfinished draft is restored. Submitted reviews stay immutable.</div>
+    <div className="notice">Reviewer identities and independence are self-attested in this workspace. First-pass labels start empty; only your own unfinished draft is restored. Submitted reviews stay immutable.</div>
     {error&&<div className="notice error" role="alert">{error}</div>}
     <section className="panel annotation-panel" aria-label="Bundled corpus import">
       <h2>Review the existing evaluation corpus</h2><p>Import 84 synthetic transcripts for human review. Gold tasks, owners, deadlines, supporting spans, and annotation explanations are excluded.</p>
@@ -124,7 +125,7 @@ export default function AnnotationReviewer({api,downloadJson}) {
       </>}
       {compare&&<><div className="notice">Comparison opened. {active.disagreement?'Reviewers disagree; record an adjudication.':active.status}</div><pre className="json">{JSON.stringify(active.reviews,null,2)}</pre>{draft.session?.mode==='resolution'&&!locked&&active.reviews.map((r,i)=><button key={i} className="button secondary" onClick={()=>draft.update({items:structuredClone(r.items),comparison_opened:true})}>Use {r.reviewer} labels for resolution</button>)}{active.resolution&&<pre className="json">{JSON.stringify(active.resolution,null,2)}</pre>}<button className="button secondary" onClick={()=>downloadJson(active,'annotation-audit.json')}>Download annotation audit</button></>}
     </section>}
-    <div className="panel annotation-panel"><h2>Freeze a fresh evaluation split</h2><p>Only agreed or resolved cases qualify. Related source groups stay together. Bundled cases share a group per corpus version. Frozen cases cannot be relabeled.</p><label className="field-label">Split seed<input disabled={busy} value={seed} onChange={e=>setSeed(e.target.value)}/></label><button className="button primary" disabled={busy} onClick={()=>action(async()=>{const value=await api('/annotations/freeze',{method:'POST',body:JSON.stringify({seed,test_fraction:.3})});setSnapshot(value);setSnapshotId(value.snapshot);localStorage.setItem('flow.annotationSnapshot',value.snapshot);await refresh();})}>Freeze reviewed dataset</button>{snapshot&&<><p>Snapshot {snapshot.snapshot} · {snapshot.manifest.sources.real} real / {snapshot.manifest.sources.synthetic} cases</p><button className="button secondary" onClick={()=>exportFiles(snapshot)}>Download dev, held-out, and manifest</button><button className="button secondary" onClick={()=>downloadJson(snapshot,'reviewed-snapshot.json')}>Download complete snapshot</button></>}
+    <div className="panel annotation-panel"><h2>Freeze a fresh evaluation split</h2><p>Only agreed or resolved cases qualify. Related source groups stay together. Bundled cases share a group per corpus version. Frozen cases cannot be relabeled.</p><label className="field-label">Split seed<input disabled={busy} value={seed} onChange={e=>setSeed(e.target.value)}/></label><button className="button primary" disabled={busy} onClick={()=>action(async()=>{const value=await api('/annotations/freeze',{method:'POST',body:JSON.stringify({seed,test_fraction:.3})});setSnapshot(value);setSnapshotId(value.snapshot);accountStorage.setItem('flow.annotationSnapshot',value.snapshot);await refresh();})}>Freeze reviewed dataset</button>{snapshot&&<><p>Snapshot {snapshot.snapshot} · {snapshot.manifest.sources.real} real / {snapshot.manifest.sources.synthetic} cases</p><button className="button secondary" onClick={()=>exportFiles(snapshot)}>Download dev, held-out, and manifest</button><button className="button secondary" onClick={()=>downloadJson(snapshot,'reviewed-snapshot.json')}>Download complete snapshot</button></>}
       <label className="field-label">Existing snapshot ID<input disabled={busy} placeholder="Paste a saved snapshot ID" value={snapshotId} onChange={e=>setSnapshotId(e.target.value)} /></label><button className="button secondary" disabled={busy} onClick={()=>action(async()=>setSnapshot(await api(`/annotations/${snapshotId}/export`)))}>Load frozen snapshot</button>
     </div>
   </>;

@@ -1,3 +1,4 @@
+import accountStorage from './accountStorage.js';
 import React,{useEffect,useRef,useState} from 'react';
 const pct=v=>v==null?'Unknown':`${(v*100).toFixed(1)}%`;
 const ms=v=>v==null?'Unknown':`${v.toFixed(2)} ms`;
@@ -9,8 +10,8 @@ export default function ReviewedBenchmarks({api,downloadJson,onAnnotate}) {
   const [result,setResult]=useState(null),[caseId,setCaseId]=useState(''),[extractor,setExtractor]=useState(1),[busy,setBusy]=useState(false),[error,setError]=useState('');
   const epoch=useRef(0), alive=useRef(true), request=useRef(null);
   async function refresh(){const [a,b]=await Promise.all([api('/reviewed-snapshots'),api('/reviewed-benchmarks')]);if(!alive.current)return;setSnapshots(a);setRuns(b);setSnapshot(v=>v||a[0]?.id||'');}
-  function adopt(value){setResult(value);setCaseId(value.cases[0]?.id||'');localStorage.setItem('flow.reviewedBenchmark',value.id);}
-  useEffect(()=>{alive.current=true;(async()=>{try{await refresh();const saved=localStorage.getItem('flow.reviewedBenchmark');if(saved){const value=await api(`/reviewed-benchmarks/${saved}`);if(alive.current)adopt(value);}}catch(e){if(alive.current)setError(e.message);}})();return()=>{alive.current=false;++epoch.current;};},[]);
+  function adopt(value){setResult(value);setCaseId(value.cases[0]?.id||'');accountStorage.setItem('flow.reviewedBenchmark',value.id);}
+  useEffect(()=>{alive.current=true;(async()=>{try{await refresh();const saved=accountStorage.getItem('flow.reviewedBenchmark');if(saved){const value=await api(`/reviewed-benchmarks/${saved}`);if(alive.current)adopt(value);}}catch(e){if(alive.current)setError(e.message);}})();return()=>{alive.current=false;++epoch.current;};},[]);
   async function inspect(id){const token=++epoch.current;setBusy(true);setError('');try{const value=await api(`/reviewed-benchmarks/${id}`);if(alive.current&&token===epoch.current)adopt(value);}catch(e){if(alive.current)setError(e.message);}finally{if(alive.current)setBusy(false);}}
   async function run(){setBusy(true);setError('');const key=`${snapshot}:${split}`;if(request.current?.key!==key)request.current={key,id:crypto.randomUUID().replaceAll('-','')};
     try{const value=await api('/reviewed-benchmarks',{method:'POST',body:JSON.stringify({snapshot,split,acknowledge_heldout:ack,request_id:request.current.id})});if(alive.current){adopt(value);request.current=null;await refresh();}}
@@ -18,7 +19,7 @@ export default function ReviewedBenchmarks({api,downloadJson,onAnnotate}) {
   }
   const row=result?.cases.find(c=>c.id===caseId), report=result?.reports[extractor], prediction=report?.runs.find(r=>r.id===caseId), detail=report?.details.find(d=>d.id===caseId);
   return <section className="panel annotation-panel reviewed-panel" aria-label="Reviewed snapshot benchmarking">
-    <h2>Benchmark reviewed snapshots</h2><p>Compare the original and current rules against the same frozen human-review labels. Results and exact inputs stay in local history.</p>
+    <h2>Benchmark reviewed snapshots</h2><p>Compare the original and current rules against the same frozen human-review labels. Results and exact inputs stay in your saved history.</p>
     {error&&<div className="notice error" role="alert">{error}</div>}
     {!snapshots.length?<div className="notice">No frozen reviewed snapshots yet. Agree on labels or resolve disagreements, then freeze a dataset in Annotation reviewer. <button className="text-button" onClick={onAnnotate}>Open annotation reviewer</button></div>:<>
       <div className="field-row"><label className="field-label">Reviewed snapshot<select aria-label="Reviewed snapshot" disabled={busy} value={snapshot} onChange={e=>{setSnapshot(e.target.value);request.current=null;}}>{snapshots.map(s=><option key={s.id} value={s.id}>{s.id.slice(0,8)} · {s.case_count} cases · {s.manifest.sources.real} real / {s.manifest.sources.synthetic} synthetic</option>)}</select></label><label className="field-label">Reviewed benchmark split<select aria-label="Reviewed benchmark split" disabled={busy} value={split} onChange={e=>{setSplit(e.target.value);setAck(false);request.current=null;}}><option value="dev">Development</option><option value="test">Held out</option><option value="all">Both splits</option></select></label></div>

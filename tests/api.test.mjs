@@ -21,7 +21,7 @@ async function request(url, data, method='POST') {
 }
 test('Python readiness and sample configuration',async()=>{
   const response=await fetch(base+'/api/health');assert.equal(response.status,200);
-  assert.equal((await response.json()).engine,'rules-v3');
+  assert.equal((await response.json()).status,'ready');
   const config=await (await fetch(base+'/api/config')).json();assert.ok(config.sample_transcript.includes('Maya'));
 });
 test('Analyze validates input, saves grounded proposals and metadata',async()=>{

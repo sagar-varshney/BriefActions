@@ -57,6 +57,8 @@ class AnnotationDrafts:
     def __init__(self,annotations):
         self.annotations=annotations
         self.history=annotations.history
+        if self.history.database_url:
+            return
         with self.history.connection() as conn:
             conn.execute('''CREATE TABLE IF NOT EXISTS annotation_drafts (
                 case_id TEXT NOT NULL, reviewer_key TEXT NOT NULL, mode TEXT NOT NULL,
@@ -96,8 +98,9 @@ class AnnotationDrafts:
                 raise DraftConflict('Draft changed in another tab. Reopen it before restoring your browser copy.')
             payload={'state':draft_state(state,case['transcript']),'client_id':client_id,'edit_id':edit_id}
             stamp=datetime.now(timezone.utc).isoformat()
-            conn.execute('''INSERT INTO annotation_drafts VALUES (?,?,?,?,?,?)
-                ON CONFLICT(case_id,reviewer_key,mode) DO UPDATE SET
+            conflict='owner_id,case_id,reviewer_key,mode' if self.history.database_url else 'case_id,reviewer_key,mode'
+            conn.execute(f'''INSERT INTO annotation_drafts (case_id,reviewer_key,mode,version,updated_at,payload) VALUES (?,?,?,?,?,?)
+                ON CONFLICT({conflict}) DO UPDATE SET
                 version=excluded.version,updated_at=excluded.updated_at,payload=excluded.payload''',
                 (*key,current+1,stamp,json.dumps(payload)))
         return {'version':current+1,'updated_at':stamp,**payload}

@@ -4,6 +4,8 @@ import { existsSync, createReadStream } from 'node:fs';
 import { stat } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {loadConfig} from './config.mjs';
+import {accountVerifier,rateLimiter,UUID} from './auth.mjs';
 
 const ROOT = fileURLToPath(new URL('../', import.meta.url));
 const DIST = path.join(ROOT, 'dist');
@@ -16,10 +18,10 @@ export function pythonBinary() {
   const local = path.join(ROOT, '.venv', 'bin', 'python3');
   return existsSync(local) ? local : 'python3';
 }
-export function engine(request, {historyPath, timeout = 60_000} = {}) {
+export function engine(request, {historyPath, databaseUrl, accountId, timeout = 60_000} = {}) {
   return new Promise((resolve, reject) => {
     const worker = spawn(pythonBinary(), ['-B', path.join(ROOT, 'web_bridge.py')], {
-      cwd: ROOT, env: {...process.env, ...(historyPath ? {FLOW_HISTORY_PATH:historyPath} : {}),
+      cwd: ROOT, env: {...process.env, FLOW_ACCOUNT_ID:accountId || '', FLOW_DATABASE_URL:databaseUrl || '', ...(historyPath ? {FLOW_HISTORY_PATH:historyPath} : {}),
         PYTHONIOENCODING:'utf-8', LOKY_MAX_CPU_COUNT:'2'}, stdio:['pipe','pipe','pipe'],
     });
     let output = '', diagnostics = '', settled = false;
@@ -76,27 +78,59 @@ async function body(req) {
   } catch { throw new HttpError(400, 'Request must be a JSON object.'); }
 }
 const TYPES = {'.html':'text/html', '.js':'text/javascript', '.css':'text/css', '.svg':'image/svg+xml', '.png':'image/png', '.ico':'image/x-icon'};
-export function createApp({historyPath, maxWorkers = 4} = {}) {
+export function createApp({historyPath, maxWorkers = 2, config=loadConfig(), verifyAccount=accountVerifier(config)} = {}) {
+  historyPath ||= config.historyPath;
   let workers = 0;
-  const call = async request => {
-    if (workers >= maxWorkers) throw new HttpError(503, 'The engine is busy. Please try again shortly.');
-    workers++;
-    try { return await engine(request, {historyPath}); } finally { workers--; }
+  const waiting=[];
+  const acquire=()=>{
+    if(workers<maxWorkers){workers++;return Promise.resolve();}
+    if(waiting.length>=10)throw new HttpError(503,'The engine is busy. Please try again shortly.');
+    return new Promise((resolve,reject)=>{
+      const wake=()=>{clearTimeout(timer);workers++;resolve();};
+      const timer=setTimeout(()=>{const i=waiting.indexOf(wake);if(i>=0)waiting.splice(i,1);reject(new HttpError(503,'The engine is busy. Please try again shortly.'));},15_000);
+      waiting.push(wake);
+    });
+  };
+  const allow=rateLimiter(),allowAnalysis=rateLimiter({limit:10}),allowAuth=rateLimiter({limit:120});
+  let healthPromise=null,healthUntil=0;
+  const runWorker = async (request,accountId) => {
+    await acquire();
+    const scopedPath=accountId && !config.databaseUrl ? path.join(historyPath+'.accounts',accountId+'.sqlite3') : historyPath;
+    try { return await engine(request, {historyPath:scopedPath,databaseUrl:config.databaseUrl,accountId}); } finally { workers--;waiting.shift()?.(); }
   };
   return http.createServer(async (req, res) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Referrer-Policy','no-referrer');
+    res.setHeader('X-Frame-Options','DENY');
+    res.setHeader('Cache-Control','no-store');
+    res.setHeader('Content-Security-Policy',`default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' ${config.authMode==='supabase'?new URL(config.supabaseUrl).origin:''}; frame-ancestors 'none'; base-uri 'self'; form-action 'self'`);
+    if(config.production)res.setHeader('Strict-Transport-Security','max-age=31536000');
     try {
       const pathname = new URL(req.url, 'http://localhost').pathname;
       // Browser writes must originate from this app. No permissive CORS.
       if (req.method === 'POST' && req.headers.origin) {
-        const origin = new URL(req.headers.origin);
-        if (!['127.0.0.1','localhost'].includes(origin.hostname) || !['http:','https:'].includes(origin.protocol))
-          throw new HttpError(403, 'Use the local app to save changes.');
-        const host = req.headers.host?.split(':')[0];
-        if (origin.hostname !== host) throw new HttpError(403, 'Origin does not match this app.');
+        let origin;try{origin=new URL(req.headers.origin);}catch{throw new HttpError(403,'Invalid request origin.');}
+        const expected=config.publicOrigin || `http://${req.headers.host}`;
+        const localDev=config.authMode==='local' && ['127.0.0.1','localhost'].includes(origin.hostname) && origin.hostname===new URL(expected).hostname && origin.port==='5173';
+        if(origin.origin!==expected && !localDev)throw new HttpError(403,'Origin does not match this app.');
       }
+      if(req.method==='GET' && pathname==='/api/auth-config')return json(res,200,{mode:config.authMode,url:config.supabaseUrl,key:config.supabaseKey,emailEnabled:config.emailEnabled});
+      if(req.method==='GET' && pathname==='/api/health') {
+        if(!healthPromise || Date.now()>healthUntil){healthUntil=Date.now()+10_000;healthPromise=runWorker({operation:'health'},config.databaseUrl?'00000000-0000-0000-0000-000000000000':null).then(()=>({status:'ready'})).catch(e=>{healthPromise=null;throw e;});}
+        return json(res,200,await healthPromise);
+      }
+      let accountId=null;
+      if(pathname.startsWith('/api/') && config.authMode==='supabase') {
+        if(!allowAuth(req.socket.remoteAddress || 'unknown'))throw new HttpError(429,'Too many requests. Try again in a minute.');
+        const token=req.headers.authorization?.match(/^Bearer ([^\s]{1,8192})$/)?.[1];
+        if(!token)throw new HttpError(401,'Sign in to use your workspace.');
+        try{accountId=await verifyAccount(token);}catch{throw new HttpError(503,'Authentication is temporarily unavailable.');}
+        if(!UUID.test(accountId || ''))throw new HttpError(401,'Your session has expired. Sign in again.');
+        if(!allow(accountId))throw new HttpError(429,'Too many requests. Try again in a minute.');
+        if(req.method==='POST' && pathname==='/api/runs' && !allowAnalysis(accountId))throw new HttpError(429,'Analysis limit reached. Try again in a minute.');
+      }
+      const call=request=>runWorker(request,accountId);
       let match;
-      if (req.method === 'GET' && pathname === '/api/health') return json(res, 200, await call({operation:'health'}));
       if (req.method === 'GET' && pathname === '/api/config') return json(res, 200, await call({operation:'config'}));
       if (req.method === 'GET' && pathname === '/api/runs') return json(res, 200, await call({operation:'runs'}));
       if (req.method === 'POST' && pathname === '/api/runs') {
@@ -171,9 +205,9 @@ export function createApp({historyPath, maxWorkers = 4} = {}) {
   });
 }
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const port = Number(process.env.PORT || 3001);
-  const server = createApp();
+  const config=loadConfig(),{port,host}=config;
+  const server = createApp({config});
   server.on('error', error => { console.error(`Server could not start: ${error.message}`); process.exitCode = 1; });
-  server.listen(port, '127.0.0.1', () => console.log(`Productivity Flow Engine → http://127.0.0.1:${port}`));
+  server.listen(port, host, () => console.log(`Productivity Flow Engine listening on ${host}:${port}`));
   for (const signal of ['SIGINT','SIGTERM']) process.on(signal, () => server.close(() => process.exit(0)));
 }

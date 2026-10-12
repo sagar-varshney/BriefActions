@@ -21,8 +21,11 @@ def proposals_from_events(events):
 
 
 class HistoryStore:
-    def __init__(self, path):
+    def __init__(self, path, *, database_url=None, owner=None):
         self.path = Path(path)
+        self.database_url, self.owner = database_url, owner
+        if database_url:
+            return  # Hosted schemas are installed by the deployment migration.
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self.connection() as conn:
             conn.execute('''CREATE TABLE IF NOT EXISTS events (
@@ -33,6 +36,11 @@ class HistoryStore:
 
     @contextmanager
     def connection(self):
+        if self.database_url:
+            from storage import postgres_connection
+            with postgres_connection(self.database_url, self.owner) as conn:
+                yield conn
+            return
         conn = sqlite3.connect(self.path, timeout=10)
         try:
             with conn:

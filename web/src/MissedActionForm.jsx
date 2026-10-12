@@ -1,18 +1,19 @@
+import accountStorage from './accountStorage.js';
 import React,{useEffect,useRef,useState} from 'react';
 const fresh=()=>({task:'',owner:'Unknown',deadline:'Unknown',evidence:[],selection:null,request_id:crypto.randomUUID().replaceAll('-','')});
 
 export default function MissedActionForm({run,busy,onAdd}) {
   const key=`flow.missedAction.${run.id}`;
-  const load=()=>{try{return JSON.parse(localStorage.getItem(key)||'null')||fresh();}catch{return fresh();}};
+  const load=()=>{try{return JSON.parse(accountStorage.getItem(key)||'null')||fresh();}catch{return fresh();}};
   const [entry,setEntry]=useState(load),[error,setError]=useState(''),[saving,setSaving]=useState(false),[notice,setNotice]=useState('');
   const current=useRef(entry);
   useEffect(()=>{const value=load();current.current=value;setEntry(value);setError('');setNotice('');},[run.id]);
-  function update(patch){const value={...current.current,...patch,request_id:crypto.randomUUID().replaceAll('-','')};current.current=value;setEntry(value);try{localStorage.setItem(key,JSON.stringify(value));setNotice('Unfinished entry saved in this browser.');}catch{setNotice('Browser storage unavailable. Keep this page open until the action is added.');}}
+  function update(patch){const value={...current.current,...patch,request_id:crypto.randomUUID().replaceAll('-','')};current.current=value;setEntry(value);try{accountStorage.setItem(key,JSON.stringify(value));setNotice('Unfinished entry saved in this browser.');}catch{setNotice('Browser storage unavailable. Keep this page open until the action is added.');}}
   function selected(e){const el=e.currentTarget;if(el.selectionStart===el.selectionEnd)return;update({selection:{text:el.value.slice(el.selectionStart,el.selectionEnd),start:Array.from(el.value.slice(0,el.selectionStart)).length,end:Array.from(el.value.slice(0,el.selectionEnd)).length}});}
   const support=[...entry.evidence,...(entry.selection?[entry.selection]:[])].filter((e,i,a)=>a.findIndex(v=>v.start===e.start&&v.end===e.end)===i);
   async function submit(e){e.preventDefault();setError('');setSaving(true);try{
     await onAdd({item:{task:entry.task,owner:entry.owner,deadline:entry.deadline,evidence:support},request_id:entry.request_id});
-    localStorage.removeItem(key);const value=fresh();current.current=value;setEntry(value);setNotice('User-added proposal saved. Select it above to keep it in the plan.');
+    accountStorage.removeItem(key);const value=fresh();current.current=value;setEntry(value);setNotice('User-added proposal saved. Select it above to keep it in the plan.');
   }catch(e){setError(e.message);}finally{setSaving(false);}}
   return <form className="panel annotation-panel missed-action-panel" onSubmit={submit} aria-label="Add a missed action">
     <h2>Add a missed action</h2><p>Highlight the saved conversation and describe a committed action the extractor missed. It becomes an unchecked proposal for your review.</p>

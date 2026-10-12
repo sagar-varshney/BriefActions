@@ -2,13 +2,26 @@
 
 [![CI](https://github.com/sagar-varshney/Productivity-Flow-Engine/actions/workflows/ci.yml/badge.svg)](https://github.com/sagar-varshney/Productivity-Flow-Engine/actions/workflows/ci.yml)
 
-A React + Node.js local application that turns meeting transcripts into evidence-backed action
+A React + Node.js application that turns meeting transcripts into evidence-backed action
 proposals, lets users correct or confirm them, and preserves the complete review
 history. Extraction improvements are measured against a retained annotated corpus.
 
+## Public deployment and themes
+
+The interface includes Light, Dark, and System themes, with a persistent preference.
+The public deployment uses Supabase sign-in and persistent Postgres storage with
+account isolation. Browser drafts are scoped per account, and CSV/JSON exports
+are authenticated. Local development continues to use SQLite on loopback.
+
+Use the included Dockerfile and Render Blueprint for **Render + Supabase**.
+See [deployment setup, provider limits, and launch verification](docs/deployment.md).
+Hosting credentials and live OAuth configuration must be supplied before launch;
+the production server refuses an unprotected or ephemeral storage configuration.
+Benchmark provenance is available in an expandable details section.
+
 ## Run locally
 
-Use **Node.js 22.12+** and **pnpm 11+**, plus Python 3.10+ for the retained
+Use **Node.js 24+** and **pnpm 11+**, plus Python 3.10+ for the retained
 extraction engine. React handles the interface; a Node HTTP API calls the Python
 engine through a bounded JSON subprocess protocol. The extractor, annotated
 evaluation set, prompts, measured reports, and SQLite event schema are unchanged.

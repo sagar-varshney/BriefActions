@@ -17,6 +17,19 @@ jobs:
     name: Python, API, build, browser, and benchmark checks
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: flow-ci-only
+          POSTGRES_DB: flow
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     defaults:
       run:
         shell: bash
@@ -55,6 +68,11 @@ jobs:
       - name: Run Python tests
         run: python -m unittest discover -s tests -v 2>&1 | tee artifacts/python-tests.log
 
+      - name: Verify real Postgres workflows and account isolation
+        env:
+          FLOW_TEST_DATABASE_URL: postgresql://postgres:flow-ci-only@127.0.0.1:5432/flow
+        run: python scripts/test_postgres.py 2>&1 | tee artifacts/postgres-tests.log
+
       - name: Check development extraction quality
         run: |
           python evaluate.py --extractor rules --split dev --output artifacts/rules-dev.json | tee artifacts/benchmark.log
@@ -76,6 +94,19 @@ jobs:
 
       - name: Run desktop and mobile browser checks
         run: pnpm test:browser 2>&1 | tee artifacts/browser-tests.log
+
+      - name: Verify production container and persistent storage readiness
+        run: |
+          docker build -t flow-ci .
+          docker run --detach --name flow-ci --network host -e PORT=8020 -e PUBLIC_ORIGIN=https://flow.example -e SUPABASE_URL=https://test-project.supabase.co -e SUPABASE_PUBLISHABLE_KEY=sb_publishable_test -e FLOW_DATABASE_URL=postgresql://postgres:flow-ci-only@127.0.0.1:5432/flow flow-ci
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:8020/api/health; then break; fi
+            sleep 2
+          done
+          curl --fail --silent http://127.0.0.1:8020/api/health
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:8020/api/runs)" = 401
+          docker logs flow-ci > artifacts/container.log 2>&1
+          docker stop flow-ci
 
       - name: Retain verification reports and screenshots
         if: ${{ always() }}

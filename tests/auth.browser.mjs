@@ -1,0 +1,40 @@
+// Managed auth responses are fixtures; live OAuth settings still need launch verification.
+import assert from 'node:assert/strict';
+import {mkdtemp,rm,mkdir,readFile} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import path from 'node:path';
+import {chromium} from 'playwright';
+import {createApp} from '../server/index.mjs';
+import {loadConfig} from '../server/config.mjs';
+
+const folder=await mkdtemp(path.join(tmpdir(),'flow-auth-browser-'));
+const screenshotDir=process.env.FLOW_SCREENSHOTS || path.join(folder,'screenshots');await mkdir(screenshotDir,{recursive:true});
+const alice='11111111-1111-4111-8111-111111111111',bob='22222222-2222-4222-8222-222222222222';
+const session=id=>({access_token:`${Buffer.from('{"alg":"HS256","typ":"JWT"}').toString('base64url')}.${Buffer.from(JSON.stringify({sub:id,exp:Math.floor(Date.now()/1000)+3600})).toString('base64url')}.fixture`,refresh_token:'fixture-refresh',expires_at:Math.floor(Date.now()/1000)+3600,expires_in:3600,token_type:'bearer',user:{id,email:id===alice?'alice@example.test':'bob@example.test',aud:'authenticated',role:'authenticated',app_metadata:{},user_metadata:{},created_at:'2026-10-12T00:00:00Z'}});
+const first=session(alice),second=session(bob);
+const config={...loadConfig(),authMode:'supabase',supabaseUrl:'https://test-project.supabase.co',supabaseKey:'sb_publishable_test'};
+const server=createApp({config,historyPath:path.join(folder,'history.sqlite3'),verifyAccount:async token=>token===first.access_token?alice:token===second.access_token?bob:null});
+let browser;
+try{
+  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+  const base=`http://127.0.0.1:${server.address().port}`;
+  browser=await chromium.launch({headless:true,...(process.env.FLOW_CHROMIUM_PATH?{executablePath:process.env.FLOW_CHROMIUM_PATH}:{})});
+  const page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.route('https://test-project.supabase.co/auth/v1/**',route=>route.fulfill({status:route.request().url().includes('/logout')?204:200,contentType:'application/json',body:route.request().url().includes('/logout')?'':JSON.stringify(first.user)}));
+  await page.goto(base);await page.getByRole('button',{name:'Continue with GitHub'}).waitFor();assert.equal(await page.getByLabel('Meeting transcript',{exact:true}).count(),0);
+  await page.getByLabel('Color theme').selectOption('dark');await page.screenshot({path:path.join(screenshotDir,'sign-in-dark.png'),fullPage:true});
+  await page.evaluate(value=>localStorage.setItem('sb-test-project-auth-token',JSON.stringify(value)),first);await page.reload();
+  await page.getByText('alice@example.test',{exact:true}).waitFor();await page.getByRole('button',{name:'Analyze transcript'}).click();await page.getByRole('heading',{name:/Review action proposals/}).waitFor();
+  const active=await page.evaluate(id=>localStorage.getItem(`flow.account.${id}.flow.activeRun`),alice);assert.match(active,/^[a-f0-9]{32}$/);
+  await page.getByLabel('Keep task 1',{exact:true}).check();await page.getByRole('button',{name:'Confirm selected tasks'}).click();await page.getByRole('heading',{name:'Your confirmed plan'}).waitFor();
+  const download=page.waitForEvent('download');await page.getByRole('button',{name:'Export CSV'}).click();assert.ok((await readFile(await (await download).path(),'utf8')).includes('Arjun'));
+  await page.getByRole('button',{name:'Sign out',exact:true}).click();await page.getByRole('button',{name:'Continue with GitHub'}).waitFor();assert.equal(await page.getByRole('heading',{name:'Your confirmed plan'}).count(),0);
+  // Same browser, different account: the previous run and drafts remain inaccessible.
+  await page.evaluate(value=>localStorage.setItem('sb-test-project-auth-token',JSON.stringify(value)),second);await page.reload();
+  await page.getByText('bob@example.test',{exact:true}).waitFor();assert.equal(await page.getByRole('heading',{name:'Your confirmed plan'}).count(),0);
+  await page.getByRole('button',{name:'Run history',exact:true}).click();await page.getByRole('heading',{name:'No saved runs yet.'}).waitFor();
+  await page.getByRole('button',{name:'Extract & review',exact:true}).click();await page.setViewportSize({width:390,height:844});
+  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await page.screenshot({path:path.join(screenshotDir,'mobile-account-dark.png'),fullPage:true});
+  await page.getByLabel('Color theme').selectOption('light');await page.screenshot({path:path.join(screenshotDir,'mobile-account-light.png'),fullPage:true});
+  assert.deepEqual(errors,[]);console.log('Authenticated browser checks passed: sign-in gate, SDK session, authenticated CSV, sign-out, account-scoped history/browser drafts, desktop/mobile themes.');
+}finally{await browser?.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));await rm(folder,{recursive:true,force:true});}

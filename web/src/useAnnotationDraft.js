@@ -1,15 +1,16 @@
+import accountStorage from './accountStorage.js';
 import {useEffect,useRef,useState} from 'react';
 
 export const emptyAnnotation = () => ({items:[],selection:null,task:'',owner:'Unknown',deadline:'Unknown',reason:'',comparison_opened:false});
 const identity = (id, reviewer, mode) => `${id}:${reviewer.trim().toLowerCase()}:${mode}`;
-const loadJson = key => {try{return JSON.parse(localStorage.getItem(key)||'null');}catch{return null;}};
+const loadJson = key => {try{return JSON.parse(accountStorage.getItem(key)||'null');}catch{return null;}};
 
 export default function useAnnotationDraft(api) {
   const [session,setSession]=useState(null),[status,setStatus]=useState(''),[conflict,setConflict]=useState(false);
   const sessionRef=useRef(null),timers=useRef(new Map()),queues=useRef(new Map()),versions=useRef(new Map()),epoch=useRef(0),edits=useRef(0);
   const [client]=useState(()=>{let value=sessionStorage.getItem('flow.annotationClient');if(!value){value=crypto.randomUUID();sessionStorage.setItem('flow.annotationClient',value);}return value;});
   const keyFor = key => `flow.annotationDraft.${client}.${key}`;
-  function cache(key,value){try{localStorage.setItem(keyFor(key),JSON.stringify(value));return true;}catch{setStatus('Browser storage unavailable. Keep this page open until the history save finishes.');return false;}}
+  function cache(key,value){try{accountStorage.setItem(keyFor(key),JSON.stringify(value));return true;}catch{setStatus('Browser storage unavailable. Keep this page open until the history save finishes.');return false;}}
   function notice(key,message){if(sessionRef.current?.key===key)setStatus(message);}
   async function enqueue(value,editId) {
     const key=value.key;
@@ -22,7 +23,7 @@ export default function useAnnotationDraft(api) {
         const cached=loadJson(keyFor(key));
         const dirty=!!cached && cached.edit_id!==editId;
         if(cached)cache(key,{...cached,version:saved.version,dirty});
-        notice(key,dirty?'Latest edits saved in this browser; saving to history…':'Annotation draft saved to local history.');
+        notice(key,dirty?'Latest edits saved in this browser; saving to history…':'Annotation draft saved to history.');
       } catch(e) {
         notice(key,`Browser draft kept. History save failed: ${e.message}`);
         if(sessionRef.current?.key===key && /another tab/.test(e.message))setConflict(true);
@@ -55,7 +56,7 @@ export default function useAnnotationDraft(api) {
     const different=!!cached?.dirty && !compatible;
     setConflict(different);
     setStatus(different?'A newer history draft exists. Your browser copy is preserved for recovery.':cached||saved?'Restored unfinished annotation draft.':'New independent draft. Labels start empty.');
-    localStorage.setItem('flow.annotationSession',JSON.stringify({caseId,reviewer:value.reviewer,mode}));
+    accountStorage.setItem('flow.annotationSession',JSON.stringify({caseId,reviewer:value.reviewer,mode}));
     if(compatible && cached.dirty && !readOnly)schedule(value,cached.edit_id);
   }
   function update(patch) {
@@ -77,7 +78,7 @@ export default function useAnnotationDraft(api) {
   function completed(){
     const old=sessionRef.current;if(!old)return;
     clearTimeout(timers.current.get(old.key));timers.current.delete(old.key);
-    localStorage.removeItem(keyFor(old.key));
+    accountStorage.removeItem(keyFor(old.key));
     versions.current.set(old.key,0);
     const value={...old,state:emptyAnnotation()};sessionRef.current=value;setSession(value);setConflict(false);setStatus('Review submitted. Its saved labels are immutable.');
   }

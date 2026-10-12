@@ -22,7 +22,8 @@ class ApiError(Exception):
 
 
 def store():
-    return HistoryStore(os.environ.get('FLOW_HISTORY_PATH', str(ROOT/'data'/'history.sqlite3')))
+    return HistoryStore(os.environ.get('FLOW_HISTORY_PATH', str(ROOT/'data'/'history.sqlite3')),
+                        database_url=os.environ.get('FLOW_DATABASE_URL'),owner=os.environ.get('FLOW_ACCOUNT_ID'))
 
 
 def run_snapshot(run_id):
@@ -99,6 +100,8 @@ def handle(request):
     if op == 'health':
         # Import now so readiness checks the extraction runtime, not just Python.
         import flow_engine
+        with store().connection() as conn:
+            conn.execute('SELECT COUNT(*) FROM events').fetchone()
         return {'status':'ready', 'engine':'rules-v3', 'python_version':sys.version.split()[0]}
     if op == 'config':
         from sample_data import SAMPLE_TRANSCRIPT
@@ -204,8 +207,11 @@ def main():
     except (ValueError,TypeError) as error:
         result = {'ok':False,'status':400,'error':str(error)}
     except Exception as error:
-        print(f'{type(error).__name__}: {error}',file=sys.stderr)
-        result = {'ok':False,'status':500,'error':'The extraction engine could not complete this request. Check Python dependencies and the server log.'}
+        if getattr(error,'sqlstate',None)=='P0001' and str(error).startswith('Workspace '):
+            result = {'ok':False,'status':413,'error':str(error).splitlines()[0]}
+        else:
+            print(f'{type(error).__name__}: {error}',file=sys.stderr)
+            result = {'ok':False,'status':500,'error':'The extraction engine could not complete this request. Check Python dependencies and the server log.'}
     print(json.dumps(result,allow_nan=False))
 
 

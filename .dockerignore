@@ -1,0 +1,15 @@
+.git
+.env*
+.venv
+node_modules
+dist
+data
+artifacts
+__pycache__
+**/__pycache__
+*.sqlite*
+evaluation/private
+evaluation/experiments
+app
+requirements-rag.txt
+tests
