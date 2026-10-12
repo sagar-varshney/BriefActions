@@ -171,7 +171,7 @@ function App({account,signOut,authError}) {
       <a href="#" className="brand" onClick={e=>{e.preventDefault();setPage('extract');}}><span className="brand-mark"><Icon name="flow" size={25}/></span><span>Productivity<span className="brand-sub">FLOW ENGINE</span></span></a>
       <div className="nav-label">WORKSPACE</div>
       <nav aria-label="Main navigation">{pages.map(p=><button key={p.id} className={`nav-item ${page===p.id?'active':''}`} aria-current={page===p.id?'page':undefined} onClick={()=>{setPage(p.id);setError('');}}><Icon name={p.icon}/>{p.name}{page===p.id&&<span className="nav-dot"/>}</button>)}</nav>
-      <div className="sidebar-bottom"><span className="engine-status"><span/> Rules extraction engine</span><p>Evidence-backed proposals.<br/>You make the final call.</p><div className="stack-label">React · Node.js · Python</div></div>
+      <div className="sidebar-bottom"><span className="engine-status"><span/> Evidence-backed extraction</span><p>Review your proposals.<br/>You make the final call.</p></div>
     </aside>
     <main>
       <header className="topbar"><span>Workspace <span className="slash">/</span> {pages.find(p=>p.id===page).name}</span><div className="topbar-actions"><ThemeControl/>{account&&<><span className="account-name" title={account.email}>{account.email || 'Signed in'}</span><button className="text-button" onClick={signOut}>Sign out</button></>}<span className="local-badge"><span/> {account?'Private account':'Local workspace'}</span></div></header>
