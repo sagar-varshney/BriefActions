@@ -40,6 +40,32 @@ analysis** reuses the same request and cannot create a duplicate run. Reusing an
 with different input is rejected. Deleted requests cannot recreate erased data.
 Save a new analysis when you intentionally want another run.
 
+## Transcript files, accessibility, and recovery
+
+Use **Import a transcript file** on Extract & review or Annotation reviewer to choose `.txt`, `.vtt`, or
+`.srt` files up to 1 MiB. Files are parsed in your browser; caption timestamps,
+metadata, and styling are removed while available voice names are retained.
+Review/edit the preview, choose **Use this transcript**, then set the actual
+meeting date and analyze (or review permission/anonymization before importing for annotation). Selecting a file does not save or analyze it. Supporting
+passages refer to the exact approved text. UTF-8 and BOM-marked UTF-16 are supported;
+empty, malformed, or oversized inputs show a clear error. Repeated caption text
+is preserved for the extractor to interpret conservatively.
+
+Both themes have stronger text/control contrast and visible keyboard focus. A skip
+link reaches the main workspace, keyboard navigation focuses the new page heading,
+and comparison tables can be scrolled with the keyboard. Confirmation dialogs trap
+focus, start on Cancel, support Escape, and restore focus. CI runs axe accessibility
+checks across all five pages, import previews, sign-in and dialogs in both themes,
+plus keyboard checks and 320px reflow. Automated scans are not a full WCAG audit;
+screen-reader and user testing remain part of launch verification.
+
+Encrypted application backups and an empty-database restore tool are included.
+Apply `003_backup_metadata.sql`, configure the GitHub Actions backup secrets/variable,
+and test a restore before enabling scheduled backups. A fresh erasure ledger
+prevents the restore from reintroducing later transcript/account deletions known to
+that ledger. Scheduling is inactive until configured; provider Auth and hosting
+configuration need separate recovery procedures. See [backup setup and recovery](docs/backups.md).
+
 ## Run locally
 
 Use **Node.js 24+** and **pnpm 11+**, plus Python 3.10+ for the retained
@@ -252,8 +278,9 @@ still validates all fields and locks the final plan. `FLOW_HISTORY_PATH` overrid
 - `web_bridge.py`: JSON operations over the extraction/history and annotation modules.
 - `vite.config.js`, `scripts/dev.mjs`: frontend build, dev proxy, and process lifecycle.
 
-The API binds to localhost. It accepts JSON requests up to 1 MB and transcripts
-up to 100,000 characters, with at most four concurrent Python workers and a
+The API binds to loopback in local development and to the configured public host
+in production. It accepts JSON requests up to 1 MB and transcripts up to 100,000
+characters, with at most two concurrent Python workers and a
 60-second worker timeout. Analyze explicitly creates a saved proposal run;
 confirmation atomically records corrections/rejections and the final local plan.
 Model experiments are inspected from retained files; the UI does not silently
@@ -290,7 +317,9 @@ runner uses Python 3.13, Node.js 24, and pnpm 11.25.0 to install dependencies,
 run Python workflow tests on SQLite and real Postgres, verify account isolation and
 erasure permissions, check development extraction quality, test the Node API,
 build React, and exercise desktop/mobile workflows, account deletion recovery,
-lost-response retries, and complete exports. It also builds and checks the production Docker image.
+lost-response retries, complete exports, file-import previews, keyboard navigation,
+and automated accessibility scans in both themes. An encrypted Postgres restore drill
+verifies recovery and later erasures. It also builds and checks the production Docker image.
 The workflow has a 20-minute timeout, a read-only repository token, and actions
 pinned to verified release commits. New runs cancel older runs for the same ref.
 
@@ -375,6 +404,7 @@ reload recovery, history, benchmark case inspection, empty plans, and mobile ove
 - `corpus_library.py`: fingerprint-verified, input-only bundled corpus registry.
 - `flow_engine.py`: existing ML classification/grouping and heuristic suggestions.
 - `web/`, `server/`, `web_bridge.py`: React UI, Node API and Python bridge.
+- `scripts/backup.py`, `docs/backups.md`: encrypted application snapshots and erasure-aware recovery.
 
 This remains an exploratory portfolio project. The workstream classifier uses
 only a tiny illustrative training set; extraction is not trained by Logistic
@@ -400,5 +430,5 @@ it does not currently connect to these RAG endpoints.
 See [the existing backend guide](docs/rag-backend.md). Its original pinned
 requirements are preserved in `requirements-rag.txt`; install those separately,
 preferably in a separate virtual environment, then run `uvicorn app.main:app --reload`
-from the repository root. The root `requirements.txt` installs only the extraction
-engine's Python dependencies. Existing backend implementation files are unchanged.
+from the repository root. The root `requirements.txt` installs the extraction engine and backup/test
+dependencies. Existing backend implementation files are unchanged.

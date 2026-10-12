@@ -1,0 +1,82 @@
+import assert from 'node:assert/strict';
+import {mkdtemp,mkdir,rm,writeFile} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import path from 'node:path';
+import {chromium} from 'playwright';
+import AxeBuilder from '@axe-core/playwright';
+import {createApp} from '../server/index.mjs';
+import {loadConfig} from '../server/config.mjs';
+
+const folder=await mkdtemp(path.join(tmpdir(),'flow-import-a11y-'));
+const shots=process.env.FLOW_SCREENSHOTS || path.join(folder,'screenshots');await mkdir(shots,{recursive:true});
+const server=createApp({historyPath:path.join(folder,'history.sqlite3')});
+const authServer=createApp({config:{...loadConfig(),authMode:'supabase',supabaseUrl:'https://test-project.supabase.co',supabaseKey:'sb_publishable_test'},historyPath:path.join(folder,'auth.sqlite3'),verifyAccount:async()=>null});
+let browser;const checks=[];
+async function scan(page,label){
+  const result=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21a','wcag21aa','wcag22aa']).analyze();
+  checks.push({label,violations:result.violations,incomplete:result.incomplete.map(({id,impact,nodes})=>({id,impact,targets:nodes.map(n=>n.target)}))});
+  if(result.violations.length)console.error(label,JSON.stringify(result.violations.map(({id,nodes})=>({id,nodes:nodes.map(n=>({target:n.target,summary:n.failureSummary}))})),null,2));
+  assert.equal(result.violations.length,0,`${label}: accessibility violations`);
+}
+try{
+  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));await new Promise(resolve=>authServer.listen(0,'127.0.0.1',resolve));
+  const base=`http://127.0.0.1:${server.address().port}`,authBase=`http://127.0.0.1:${authServer.address().port}`;
+  browser=await chromium.launch({headless:true,...(process.env.FLOW_CHROMIUM_PATH?{executablePath:process.env.FLOW_CHROMIUM_PATH}:{})});
+  const context=await browser.newContext({viewport:{width:1440,height:1000}});const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.goto(base);await page.getByLabel('Meeting transcript',{exact:true}).fill('Ready.');
+  // First Tab exposes the skip link; it focuses the main landmark on Enter.
+  await page.reload();await page.getByRole('button',{name:'Analyze transcript',exact:true}).waitFor();
+  await page.keyboard.press('Tab');assert.ok(await page.getByRole('link',{name:'Skip to workspace'}).evaluate(el=>el===document.activeElement));
+  await page.keyboard.press('Enter');assert.equal(await page.evaluate(()=>document.activeElement.id),'workspace-main');
+  await page.locator('summary').filter({hasText:'Import a transcript file'}).click();
+  const upload=page.getByLabel('Transcript file',{exact:true});
+  await upload.setInputFiles({name:'meeting.vtt',mimeType:'text/vtt',buffer:Buffer.from('WEBVTT\n\n00:00:01.000 --> 00:00:03.000\n<v Bob>Okay 📝.</v>\n<v Maya>I’ll send the report tomorrow.</v>')});
+  const preview=page.getByLabel('Transcript import preview');await preview.waitFor();
+  assert.equal(await preview.inputValue(),'Bob: Okay 📝.\nMaya: I’ll send the report tomorrow.');
+  assert.equal((await (await fetch(base+'/api/runs')).json()).length,0);
+  await preview.fill('Bob: Okay 📝.\nMaya: I will send the invoice tomorrow.');await scan(page,'import-preview-light');
+  await page.getByRole('button',{name:'Use this transcript'}).click();assert.equal(await page.getByLabel('Meeting date',{exact:true}).inputValue(),'');assert.equal(await page.evaluate(()=>document.activeElement.id),'meeting-date');
+  await page.getByLabel('Meeting date',{exact:true}).fill('2026-10-12');
+  await page.getByRole('button',{name:'Analyze transcript',exact:true}).click();await page.getByRole('heading',{name:/Review action proposals/}).waitFor();
+  const saved=await (await fetch(base+'/api/runs')).json();const run=await (await fetch(base+`/api/runs/${saved[0].id}`)).json();
+  assert.equal(run.transcript,'Bob: Okay 📝.\nMaya: I will send the invoice tomorrow.');assert.equal(run.proposals[0].owner,'Maya');assert.equal(run.proposals[0].deadline,'2026-10-13');
+  for(const e of run.proposals[0].evidence)assert.equal(Array.from(run.transcript).slice(e.start,e.end).join(''),e.text);
+  await upload.setInputFiles({name:'meeting.srt',mimeType:'text/plain',buffer:Buffer.from('1\n00:00:01,000 --> 00:00:03,000\nJon will send the report.')});assert.equal(await preview.inputValue(),'Jon will send the report.');await page.getByRole('button',{name:'Discard preview'}).click();
+  await upload.setInputFiles({name:'meeting.txt',mimeType:'text/plain',buffer:Buffer.from('Maya will send the notes tomorrow.\r\nJon: Thanks.')});assert.equal(await preview.inputValue(),'Maya will send the notes tomorrow.\nJon: Thanks.');await page.getByRole('button',{name:'Discard preview'}).click();
+  await upload.setInputFiles({name:'bad.vtt',mimeType:'text/vtt',buffer:Buffer.from('broken')});await page.getByRole('alert').filter({hasText:'WEBVTT header'}).waitFor();
+  assert.equal((await (await fetch(base+'/api/runs')).json()).length,1);
+  // Keyboard navigation places focus on the new page heading, including unchanged pages.
+  const history=page.getByRole('button',{name:'Run history',exact:true});await history.focus();await page.keyboard.press('Enter');await page.waitForFunction(()=>document.activeElement?.tagName==='H1');
+  assert.equal(await page.evaluate(()=>document.activeElement.textContent),'Your run history.');
+  const pages=['Extract & review','Run history','Evaluation lab','Annotation reviewer','Data & account'];
+  for(const width of [1440,320]){
+    await page.setViewportSize({width,height:width===320?800:1000});
+    for(const theme of ['light','dark']){
+      await page.getByLabel('Color theme').selectOption(theme);
+      for(const name of pages){
+        await page.getByRole('button',{name,exact:true}).click();
+        if(name==='Data & account')await page.getByRole('heading',{name:/Saved transcripts/}).waitFor();
+        if(name==='Evaluation lab')await page.locator('.experiment').first().waitFor();
+        if(name==='Annotation reviewer')await page.getByRole('button',{name:'Import bundled cases',exact:true}).waitFor();
+        await scan(page,`${width}-${theme}-${name}`);
+        assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`${name} overflows at ${width}px`);
+      }
+      await page.getByRole('button',{name:/Delete extraction/,exact:false}).first().click();
+      const dialog=page.getByRole('dialog');assert.ok(await dialog.getByRole('button',{name:'Cancel',exact:true}).evaluate(el=>el===document.activeElement));
+      await page.keyboard.press('Shift+Tab');assert.ok(await dialog.evaluate(el=>el.contains(document.activeElement)));
+      await scan(page,`${width}-${theme}-erasure-dialog`);await page.keyboard.press('Escape');
+      await page.screenshot({path:path.join(shots,`accessibility-${width}-${theme}.png`),fullPage:true});
+    }
+  }
+  const annotation=await (await fetch(base+'/api/annotations',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({transcript:'Maya will send the report tomorrow.',reference_date:'2026-10-12',source:'synthetic',permission:true,anonymized:true,group:'Accessibility fixture'})})).json();
+  await page.getByRole('button',{name:'Annotation reviewer',exact:true}).click();await page.getByRole('button',{name:`Label case ${annotation.id.slice(0,6)}`,exact:true}).click();
+  await page.getByLabel('Reviewer identity').fill('Accessibility fixture');await page.getByRole('button',{name:'Start or resume review',exact:true}).click();await page.getByText('Independent review',{exact:false}).first().waitFor();
+  for(const theme of ['light','dark']){await page.getByLabel('Color theme').selectOption(theme);await scan(page,`active-annotation-${theme}`);}
+  await page.emulateMedia({reducedMotion:'reduce'});assert.equal(await page.evaluate(()=>matchMedia('(prefers-reduced-motion: reduce)').matches),true);
+  const login=await context.newPage();await login.setViewportSize({width:320,height:800});await login.goto(authBase);await login.getByRole('button',{name:'Continue with GitHub'}).waitFor();
+  for(const theme of ['light','dark']){await login.getByLabel('Color theme').selectOption(theme);await scan(login,`sign-in-${theme}`);assert.ok(await login.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));}
+  assert.deepEqual(errors,[]);console.log('File imports and accessibility passed: preview approval, TXT/VTT/SRT, caption voices, edited evidence offsets, required meeting date, rejected malformed file, keyboard skip/navigation/modal, 320px reflow and automated WCAG checks in both themes.');
+}finally{
+  await writeFile(path.join(shots,'accessibility-results.json'),JSON.stringify(checks,null,2));
+  await browser?.close();for(const s of [server,authServer]){s.closeAllConnections();await new Promise(resolve=>s.close(resolve));}await rm(folder,{recursive:true,force:true});
+}

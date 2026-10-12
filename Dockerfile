@@ -12,7 +12,7 @@ FROM python:3.13-slim-bookworm
 COPY --from=web /usr/local/bin/node /usr/local/bin/node
 WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends libstdc++6 libatomic1 ca-certificates && rm -rf /var/lib/apt/lists/*
-COPY requirements.txt ./
+COPY requirements.txt requirements-backup.txt ./
 RUN pip install --no-cache-dir -r requirements.txt && useradd --uid 10001 --create-home flow
 COPY --from=web /build/node_modules ./node_modules
 COPY --from=web /build/dist ./dist

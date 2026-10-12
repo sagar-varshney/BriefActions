@@ -1,0 +1,46 @@
+name: Encrypted application backup
+
+on:
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: encrypted-application-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    if: ${{ vars.FLOW_BACKUPS_ENABLED == 'true' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      FLOW_BACKUP_DATABASE_URL: ${{ secrets.FLOW_BACKUP_DATABASE_URL }}
+      FLOW_BACKUP_KEY: ${{ secrets.FLOW_BACKUP_KEY }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.13'
+      - name: Verify configuration
+        run: |
+          test -n "$FLOW_BACKUP_DATABASE_URL" || { echo 'Source administrator connection secret is missing.'; exit 1; }
+          test -n "$FLOW_BACKUP_KEY" || { echo 'Encryption key secret is missing.'; exit 1; }
+      - name: Create encrypted snapshot and erasure ledger
+        run: |
+          python -m pip install -r requirements-backup.txt
+          mkdir -m 700 encrypted-backups
+          python scripts/backup.py backup --output encrypted-backups/application.flowbak
+          python scripts/backup.py ledger --output encrypted-backups/erasures.flowbak
+      - name: Retain encrypted files
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: encrypted-flow-backup-${{ github.run_id }}
+          path: encrypted-backups/*.flowbak
+          if-no-files-found: error
+          retention-days: 7

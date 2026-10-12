@@ -12,7 +12,7 @@ export default function DataControls({completeAccountDeletion,onClosing}){
     await api(`/${target.kind==='extraction'?'runs':'annotations'}/${target.id}/delete`,{method:'POST',body:JSON.stringify({confirmation})});
     accountStorage.forgetInput(target.id);location.hash='data';location.reload();
   }
-  return <section aria-label="Data and account controls"><div className="page-intro"><div><div className="eyebrow accent">YOUR WORKSPACE, YOUR CONTROL</div><h1>Data & account.</h1><p>Export your workspace or permanently erase saved transcripts.</p></div></div>
+  return <section aria-label="Data and account controls"><div className="page-intro"><div><div className="eyebrow accent">YOUR WORKSPACE, YOUR CONTROL</div><h1 tabIndex={-1}>Data & account.</h1><p>Export your workspace or permanently erase saved transcripts.</p></div></div>
     {error&&<div className="notice error" role="alert">{error}<button className="text-button" onClick={refresh}>Retry loading</button></div>}
     {status?.state==='deleting'&&<div className="notice warning" role="status">Your stored workspace data was erased. Sign-in account deletion is still pending. Retry below to finish.</div>}
     <section className="panel data-panel"><h2>Export my workspace</h2><p>Includes original inputs, extracted proposals, corrections, confirmed plans, annotation reviews, frozen splits, comparison reports, and server-saved drafts. Save unfinished browser edits before exporting.</p><button className="button secondary" disabled={!status || status.state!=='active' || busy} onClick={async()=>{setBusy(true);setError('');try{await downloadFile('/api/account/export');}catch(e){setError(e.message);}finally{setBusy(false);}}}>{busy?'Preparing export…':'Download workspace JSONL'}</button></section>

@@ -13,3 +13,6 @@ evaluation/experiments
 app
 requirements-rag.txt
 tests
+
+*.flowbak
+encrypted-backups

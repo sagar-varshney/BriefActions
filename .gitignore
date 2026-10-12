@@ -72,3 +72,7 @@ dist/
 
 # CI reports and browser screenshots
 artifacts/
+
+# Encrypted database backups still contain private data
+*.flowbak
+encrypted-backups/

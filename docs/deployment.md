@@ -26,13 +26,13 @@ Sources: [Render](https://render.com/docs/free),
 
 Free plans are useful for a low-traffic launch, but include cold starts, quotas,
 and no uptime guarantee. Supabase Free does not include automatic backups;
-schedule independent database exports and test restoration before retaining
+configure the [encrypted backup workflow and recovery drill](backups.md) before retaining
 important meeting records. Provider limits and available plans can change.
 
 ## Set up Supabase
 
 1. Create a project. Keep the database password server-side.
-2. Run `deploy/migrations/001_accounts.sql`, then `002_data_controls.sql`, in the project's SQL editor as the
+2. Run all `deploy/migrations/*.sql` files in filename order (currently `001_accounts.sql`, `002_data_controls.sql`, and `003_backup_metadata.sql`), in the project's SQL editor as the
    database administrator. It creates a private `flow` schema and restricted
    `flow_app` role. Never expose that schema through the browser Data API.
 3. In Auth, enable the GitHub OAuth provider and configure a GitHub OAuth app.
@@ -145,7 +145,9 @@ Do not clear an erasure marker while old requests may still be in flight.
 
 Removing a Supabase auth user directly, outside this application, does not purge
 application data; use the application flow or an explicit administrator erasure.
-Organizational sharing and automated backup/restore are separate features.
+Organizational sharing is not implemented. Encrypted application backups and recovery
+are available through [the administrator workflow](backups.md); scheduling requires
+explicit secret/variable configuration. Supabase Auth recovery remains separate.
 
 ## Retry behavior
 
@@ -166,11 +168,15 @@ pnpm build
 pnpm exec playwright install chromium
 pnpm test:browser
 FLOW_TEST_DATABASE_URL=postgresql://... python scripts/test_postgres.py
+FLOW_TEST_DATABASE_URL=postgresql://... python scripts/test_backup_postgres.py
 ```
 
-The final command installs both migrations and creates isolated test accounts in
+The Postgres workflow command installs all migrations and creates isolated test accounts in
 a **disposable test database**. Never use the live production URI for CI.
 GitHub CI tests the full workflow suite on SQLite and real Postgres, checks RLS
 against forged/missing owners, verifies desktop/mobile and themes, and builds
-and smoke-tests the production Docker image. Test authentication fixtures do
+and smoke-tests the production Docker image. A separate encrypted recovery drill
+creates two disposable databases and verifies post-backup erasures. Accessibility
+checks scan all app pages and dialogs in both themes with 320px/desktop layouts;
+automated checks do not replace manual assistive-technology testing. Test authentication fixtures do
 not replace checking your live Supabase OAuth settings before launch.
