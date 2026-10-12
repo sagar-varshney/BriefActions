@@ -107,9 +107,10 @@ def handle(request):
             return store().save_draft(request.get('run_id'),request.get('decisions'),request.get('version'),request.get('client_id'),request.get('edit_id'))
         except ValueError as error:
             raise ApiError(str(error),409 if 'another tab' in str(error) or 'finalized' in str(error) else 400) from error
-    if op == 'health':
+    if op in ('health','health_light'):
         # Import now so readiness checks the extraction runtime, not just Python.
-        import flow_engine
+        if op=='health':
+            import flow_engine
         with store().connection() as conn:
             conn.execute('SELECT COUNT(*) FROM events').fetchone()
         return {'status':'ready', 'engine':'rules-v3', 'python_version':sys.version.split()[0]}
@@ -228,8 +229,10 @@ def main():
         if getattr(error,'sqlstate',None)=='P0001' and str(error).startswith('Workspace '):
             result = {'ok':False,'status':413,'error':str(error).splitlines()[0]}
         else:
-            print(f'{type(error).__name__}: {error}',file=sys.stderr)
-            result = {'ok':False,'status':500,'error':'The extraction engine could not complete this request. Check Python dependencies and the server log.'}
+            # Exception text can contain SQL values or connection credentials.
+            print('Worker could not complete the request.',file=sys.stderr)
+            code='runtime.dependencies' if isinstance(error,ImportError) else 'storage.failed' if type(error).__module__.startswith('psycopg') else 'worker.failed'
+            result = {'ok':False,'status':500,'error':'Your request could not be completed. Please try again.','code':code}
     print(json.dumps(result,allow_nan=False))
 
 

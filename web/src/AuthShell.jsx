@@ -1,5 +1,5 @@
 import React,{useEffect,useState} from 'react';
-import {configureApi} from './api.js';
+import {configureApi,request} from './api.js';
 import {scopeStorage} from './accountStorage.js';
 import ThemeControl from './ThemeControl.jsx';
 
@@ -10,8 +10,7 @@ export default function AuthShell({children}) {
   useEffect(()=>{
     let alive=true,subscription;
     (async()=>{
-      const response=await fetch('/api/auth-config',{cache:'no-store'});
-      if(!response.ok)throw new Error('Could not load workspace configuration.');
+      const response=await request('/api/auth-config');
       const config=await response.json();
       if(config.mode==='local'){configureApi(null,null);scopeStorage(null);if(alive)setReady(true);return;}
       const {createClient}=await import('@supabase/supabase-js');

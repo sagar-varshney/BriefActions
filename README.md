@@ -66,6 +66,24 @@ prevents the restore from reintroducing later transcript/account deletions known
 that ledger. Scheduling is inactive until configured; provider Auth and hosting
 configuration need separate recovery procedures. See [backup setup and recovery](docs/backups.md).
 
+## Launch reliability
+
+Production defaults to one analysis worker to bound memory use on a small host.
+Traffic limits belong to verified accounts, so users sharing a hosting proxy do
+not share a quota. Token rotation and forwarding headers cannot reset an account's
+limits. Provider checks, worker concurrency, and queues stay bounded.
+
+Errors include a reference code. Structured host logs record status, duration,
+fixed route names, and safe error categories; they exclude transcript content,
+credentials, account IDs, raw URLs, and exception text. Runtime counters include
+latency buckets, worker/queue use, and container memory where available.
+
+Render/Docker use `/api/live` for fast process health; `/api/health` independently
+checks runtime and storage readiness. CI exercises the production container with
+512 MiB and 0.1 CPU using synthetic concurrent analyses, explicit retries, local
+HTTPS auth fixtures, Postgres storage, evidence/isolation checks, and OOM detection.
+See [operational logs, resource tests, and final live verification](docs/launch-checks.md).
+
 ## Run locally
 
 Use **Node.js 24+** and **pnpm 11+**, plus Python 3.10+ for the retained
@@ -280,7 +298,7 @@ still validates all fields and locks the final plan. `FLOW_HISTORY_PATH` overrid
 
 The API binds to loopback in local development and to the configured public host
 in production. It accepts JSON requests up to 1 MB and transcripts up to 100,000
-characters, with at most two concurrent Python workers and a
+characters, with one Python worker in production (two locally) and a
 60-second worker timeout. Analyze explicitly creates a saved proposal run;
 confirmation atomically records corrections/rejections and the final local plan.
 Model experiments are inspected from retained files; the UI does not silently
@@ -289,7 +307,7 @@ latency; benchmark timings continue to describe extraction only.
 
 | API | Purpose |
 | --- | --- |
-| `GET /api/health`, `/api/config` | Runtime readiness and sample input |
+| `GET /api/live`, `/api/health`, `/api/config` | Process liveness, runtime/storage readiness, and private sample input |
 | `POST /api/runs` | Analyze `{transcript, reference_date, clusters, request_id}`; reuse saved results for matching retries |
 | `GET /api/runs`, `/api/runs/:id` | List and inspect saved runs |
 | `GET /api/account` | Workspace lifecycle and account-deletion availability |
@@ -319,7 +337,7 @@ erasure permissions, check development extraction quality, test the Node API,
 build React, and exercise desktop/mobile workflows, account deletion recovery,
 lost-response retries, complete exports, file-import previews, keyboard navigation,
 and automated accessibility scans in both themes. An encrypted Postgres restore drill
-verifies recovery and later erasures. It also builds and checks the production Docker image.
+verifies recovery and later erasures. It also builds and checks the production Docker image, then exercises the 512 MiB / 0.1 CPU hosting profile.
 The workflow has a 20-minute timeout, a read-only repository token, and actions
 pinned to verified release commits. New runs cancel older runs for the same ref.
 

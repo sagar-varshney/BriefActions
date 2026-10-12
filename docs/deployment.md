@@ -66,7 +66,8 @@ See [GitHub OAuth setup](https://supabase.com/docs/guides/auth/social-login/auth
 3. Keep `FLOW_DATABASE_URL` in the server environment only. Do not use `VITE_`
    prefixes for secrets. React obtains only public auth configuration at runtime,
    so changing hosts does not require embedding a localhost API URL in a build.
-4. Deploy and check `/api/health`. It verifies the Python runtime and an
+4. Deploy and check `/api/live` and `/api/health`. The Blueprint uses `/api/live`
+   for fast process health. `/api/health` verifies the Python runtime and an
    account-scoped database query. It returns no transcripts or credentials.
 5. Verify sign-in using two real accounts: create a run in one, confirm the
    other has empty history and cannot retrieve that run ID or its exports.
@@ -109,7 +110,7 @@ private evaluation data, tests, and the legacy RAG backend.
   browser; server-saved drafts and history are available across devices. Use
   your own browser profile for private material on shared computers.
 - Analysis is limited to 10 requests/account/minute, general APIs to 90,
-  worker concurrency to two, and requests to 1 MB. Postgres limits history
+  worker concurrency to one in production (two locally), and requests to 1 MB. Postgres limits history
   payloads to 25 MB/account and annotation drafts to 5 MB/account. These limits
   bound growth per account, not the total number of public signups. Monitor
   provider storage quotas; enable auth CAPTCHA/rate limits in Supabase for a
@@ -149,6 +150,15 @@ Organizational sharing is not implemented. Encrypted application backups and rec
 are available through [the administrator workflow](backups.md); scheduling requires
 explicit secret/variable configuration. Supabase Auth recovery remains separate.
 
+## Operational logs and hosting limits
+
+Production returns error references and enables structured, transcript-free failure
+logs and runtime metrics. `/api/live` remains fast during analyses; `/api/health`
+uses an independent, shared readiness probe. Account quotas are keyed to verified
+users, not the proxy address; credential checks and provider concurrency have
+separate bounds. Configure `FLOW_MAX_WORKERS` and `FLOW_TELEMETRY` in the host
+environment as described in [launch checks and telemetry](launch-checks.md).
+
 ## Retry behavior
 
 Clients send a stable 32-character request ID with each analysis. Input fingerprints
@@ -175,7 +185,9 @@ The Postgres workflow command installs all migrations and creates isolated test 
 a **disposable test database**. Never use the live production URI for CI.
 GitHub CI tests the full workflow suite on SQLite and real Postgres, checks RLS
 against forged/missing owners, verifies desktop/mobile and themes, and builds
-and smoke-tests the production Docker image. A separate encrypted recovery drill
+and smoke-tests the production Docker image. CI also runs a 512 MiB / 0.1 CPU
+concurrent-analysis drill, checks health responsiveness and OOM state, and retains
+resource/latency observations. A separate encrypted recovery drill
 creates two disposable databases and verifies post-backup erasures. Accessibility
 checks scan all app pages and dialogs in both themes with 320px/desktop layouts;
 automated checks do not replace manual assistive-technology testing. Test authentication fixtures do

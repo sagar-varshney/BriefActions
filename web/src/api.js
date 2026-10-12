@@ -10,7 +10,7 @@ export async function request(url,options={}) {
   if(options.body)headers.set('Content-Type','application/json');
   let response;
   try{response=await fetch(url,{signal:AbortSignal.timeout(90_000),...options,headers,cache:'no-store'});}catch{const error=new Error('Connection interrupted. Your saved work can be recovered.');error.retryable=true;throw error;}
-  if(!response.ok){const data=await response.json().catch(()=>({}));const error=new Error(data.error || 'Request failed.');error.status=response.status;error.retryable=[408,429,500,502,503,504].includes(response.status);throw error;}
+  if(!response.ok){const data=await response.json().catch(()=>({}));const reference=data.request_id || response.headers.get('x-request-id');const requestId=/^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/.test(reference || '')?reference:null;const error=new Error((data.error || 'Request failed.')+(requestId?` Reference: ${requestId}.`:''));error.requestId=requestId;error.status=response.status;error.retryAfter=Number(response.headers.get('retry-after')) || null;error.retryable=[408,429,500,502,503,504].includes(response.status);throw error;}
   return response;
 }
 export async function api(url,options={}){return (await request(`/api${url}`,options)).json();}

@@ -3,11 +3,12 @@ import {mkdtemp,mkdir,rm,readFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {chromium} from 'playwright';
-import {createApp} from '../server/index.mjs';
+import {createApp,engine} from '../server/index.mjs';
 
 const folder=await mkdtemp(path.join(tmpdir(),'flow-reliability-browser-'));
 const shots=process.env.FLOW_SCREENSHOTS || path.join(folder,'screenshots');await mkdir(shots,{recursive:true});
-const server=createApp({historyPath:path.join(folder,'history.sqlite3')});let browser;
+let failAnalysis=false;
+const server=createApp({historyPath:path.join(folder,'history.sqlite3'),execute:(request,options)=>failAnalysis && request.operation==='analyze'?Promise.reject(new Error('private exception detail must not appear')):engine(request,options)});let browser;
 try{
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const base=`http://127.0.0.1:${server.address().port}`;
   browser=await chromium.launch({headless:true,...(process.env.FLOW_CHROMIUM_PATH?{executablePath:process.env.FLOW_CHROMIUM_PATH}:{})});
@@ -51,5 +52,15 @@ try{
   let badDownload=false;page.on('download',()=>{badDownload=true;});
   await page.route('**/api/account/export',route=>route.fulfill({status:200,contentType:'application/x-ndjson',body:'{"type":"manifest"}\n'}));
   await page.getByRole('button',{name:'Download workspace JSONL'}).click();await page.getByRole('alert').filter({hasText:'The export was interrupted.'}).waitFor();assert.equal(badDownload,false);
-  assert.deepEqual(errors,[]);console.log('Reliability browser passed: lost-response recovery, reload/same-ID retry, complete export, keyboard confirmation, transcript deletion, erased browser cache, mobile dark layout, and rejected incomplete download.');
+  // A real server exception exposes only a support reference and preserves the
+  // original analysis request for an explicit retry after the service recovers.
+  const context=await browser.newContext(),failurePage=await context.newPage();await failurePage.setViewportSize({width:320,height:800});await failurePage.goto(base);
+  await failurePage.getByLabel('Meeting transcript',{exact:true}).fill('Maya will send the launch notes tomorrow.');
+  failAnalysis=true;const failedResponse=failurePage.waitForResponse(response=>response.url()===base+'/api/runs'&&response.request().method()==='POST');
+  await failurePage.getByRole('button',{name:'Analyze transcript',exact:true}).click();const response=await failedResponse,data=await response.json();assert.equal(response.status(),500);assert.match(data.request_id,/^[a-f0-9-]{36}$/);
+  await failurePage.getByRole('alert').filter({hasText:`Reference: ${data.request_id}`}).waitFor();assert.ok(await failurePage.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert.equal(await failurePage.getByText('private exception detail must not appear').count(),0);
+  const unfinished=await failurePage.evaluate(()=>JSON.parse(localStorage.getItem('flow.pendingAnalysis')));assert.notEqual(unfinished.request_id,data.request_id);
+  failAnalysis=false;await failurePage.getByRole('button',{name:'Retry saved analysis'}).click();await failurePage.getByRole('status').filter({hasText:'Analysis saved. Review the proposals below.'}).waitFor();
+  assert.equal((await (await fetch(base+`/api/runs/${unfinished.request_id}`)).json()).id,unfinished.request_id);assert.equal(await failurePage.evaluate(()=>localStorage.getItem('flow.pendingAnalysis')),null);await context.close();
+  assert.deepEqual(errors,[]);console.log('Reliability browser passed: lost-response recovery, reload/same-ID retry, complete export, keyboard confirmation, transcript deletion, erased browser cache, mobile dark layout, rejected incomplete download, and safe failure references with same-request recovery.');
 }finally{await browser?.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));await rm(folder,{recursive:true,force:true});}

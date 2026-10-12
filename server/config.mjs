@@ -36,6 +36,9 @@ export function loadConfig(env=process.env) {
   }
   const port=Number(env.PORT || 3001);
   if(!Number.isInteger(port)||port<1||port>65535)throw new Error('PORT must be between 1 and 65535.');
-  return {production,authMode,host,port,publicOrigin,supabaseUrl,supabaseKey,supabaseSecret,emailEnabled:env.FLOW_EMAIL_SIGNIN==='true',databaseUrl:env.FLOW_DATABASE_URL,
+  const maxWorkers=Number(env.FLOW_MAX_WORKERS || (production?1:2));
+  if(!Number.isInteger(maxWorkers)||maxWorkers<1||maxWorkers>4)throw new Error('FLOW_MAX_WORKERS must be between 1 and 4.');
+  if(env.FLOW_TELEMETRY && !['true','false'].includes(env.FLOW_TELEMETRY))throw new Error('FLOW_TELEMETRY must be true or false.');
+  return {production,authMode,host,port,publicOrigin,supabaseUrl,supabaseKey,supabaseSecret,maxWorkers,telemetry:env.FLOW_TELEMETRY?env.FLOW_TELEMETRY==='true':production,emailEnabled:env.FLOW_EMAIL_SIGNIN==='true',databaseUrl:env.FLOW_DATABASE_URL,
     historyPath:env.FLOW_HISTORY_PATH || path.resolve('data/history.sqlite3')};
 }

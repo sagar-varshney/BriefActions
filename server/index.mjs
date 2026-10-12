@@ -5,13 +5,14 @@ import { stat } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {loadConfig} from './config.mjs';
-import {accountVerifier,accountDeleter,rateLimiter,UUID} from './auth.mjs';
+import {accountVerifier,accountDeleter,rateLimiter,credentialKey,UUID} from './auth.mjs';
+import {createTelemetry,requestId} from './telemetry.mjs';
 
 const ROOT = fileURLToPath(new URL('../', import.meta.url));
 const DIST = path.join(ROOT, 'dist');
 const MAX_BODY = 1_000_000;
 export class HttpError extends Error {
-  constructor(status, message) { super(message); this.status = status; }
+  constructor(status, message, code='request.failed', retryAfter=null) { super(message); this.status = status; this.code=code; this.retryAfter=retryAfter; }
 }
 export function pythonBinary() {
   if (process.env.PYTHON_BIN) return process.env.PYTHON_BIN;
@@ -24,42 +25,43 @@ export function engine(request, {historyPath, databaseUrl, accountId, timeout = 
       cwd: ROOT, env: {...process.env, FLOW_ACCOUNT_ID:accountId || '', FLOW_DATABASE_URL:databaseUrl || '', ...(historyPath ? {FLOW_HISTORY_PATH:historyPath} : {}),
         PYTHONIOENCODING:'utf-8', LOKY_MAX_CPU_COUNT:'2'}, stdio:['pipe','pipe','pipe'],
     });
-    let output = '', diagnostics = '', settled = false;
+    let output = '', settled = false;
     const finish = (error, data) => {
       if (settled) return;
       settled = true; clearTimeout(timer);
       error ? reject(error) : resolve(data);
     };
     const timer = setTimeout(() => {
-      worker.kill('SIGKILL'); finish(new HttpError(504, 'The extraction engine timed out. Try a shorter transcript.'));
+      worker.kill('SIGKILL'); finish(new HttpError(504, 'The analysis took too long. Try a shorter transcript.', 'worker.timeout'));
     }, timeout);
-    worker.on('error', () => finish(new HttpError(503, 'Python could not start. Install requirements.txt and configure PYTHON_BIN.')));
+    worker.on('error', () => finish(new HttpError(503, 'Analysis is temporarily unavailable. Please try again later.', 'worker.unavailable')));
     worker.stdin.on('error', () => {}); // close/error is reported by the worker lifecycle
     worker.stdout.on('data', chunk => {
       output += chunk;
       if (Buffer.byteLength(output) > 8_000_000) {
-        worker.kill('SIGKILL'); finish(new HttpError(502, 'Engine response exceeded the size limit.'));
+        worker.kill('SIGKILL'); finish(new HttpError(502, 'The result is too large to return. Try a shorter transcript.', 'worker.output_limit'));
       }
     });
-    worker.stderr.on('data', chunk => { if (diagnostics.length < 4000) diagnostics += chunk; });
+    // Drain stderr without retaining or logging potential private exception text.
+    worker.stderr.resume();
     worker.on('close', code => {
       if (settled) return;
       try {
         const response = JSON.parse(output);
         if (!response.ok) {
-          if (response.status >= 500) console.error(diagnostics);
-          finish(new HttpError(response.status || 500, response.error));
+          const code=['runtime.dependencies','storage.failed'].includes(response.code)?response.code:'worker.failed';
+          finish(new HttpError(response.status || 500, response.status>=500?'Your request could not be completed. Please try again.':response.error, code));
         } else if (code !== 0) throw new Error('Worker exited unexpectedly');
         else finish(null, response.data);
       } catch {
-        console.error(diagnostics || 'Invalid Python worker response');
-        finish(new HttpError(502, 'The extraction engine returned an invalid response. Check Python dependencies.'));
+        finish(new HttpError(502, 'Analysis is temporarily unavailable. Please try again later.', 'worker.invalid_response'));
       }
     });
     worker.stdin.end(JSON.stringify(request));
   });
 }
 function json(res, status, data) {
+  if(res.destroyed || res.writableEnded)return;
   res.writeHead(status, {'Content-Type':'application/json; charset=utf-8', 'Cache-Control':'no-store'});
   res.end(JSON.stringify(data));
 }
@@ -78,25 +80,29 @@ async function body(req) {
   } catch { throw new HttpError(400, 'Request must be a JSON object.'); }
 }
 const TYPES = {'.html':'text/html', '.js':'text/javascript', '.css':'text/css', '.svg':'image/svg+xml', '.png':'image/png', '.ico':'image/x-icon'};
-export function createApp({historyPath, maxWorkers = 2, config=loadConfig(), verifyAccount=accountVerifier(config), deleteAccount=accountDeleter(config)} = {}) {
+export function createApp({historyPath, config=loadConfig(), maxWorkers=config.maxWorkers ?? 2, verifyAccount=accountVerifier(config), deleteAccount=accountDeleter(config), execute=engine, checkHealth=null, telemetry=createTelemetry({enabled:config.telemetry}), queueTimeout=15_000, healthTtl=10_000, healthNow=()=>Date.now(), maxAuthChecks=8} = {}) {
   historyPath ||= config.historyPath;
+  if(!Number.isInteger(maxWorkers)||maxWorkers<1||maxWorkers>4)throw new Error('Invalid worker limit.');
+  if(!Number.isInteger(maxAuthChecks)||maxAuthChecks<1||maxAuthChecks>32)throw new Error('Invalid authentication concurrency limit.');
+  let authChecks=0;
+  const runtime=()=>({active_workers:workers,queued_requests:waiting.length,auth_checks:authChecks,worker_limit:maxWorkers});
   let workers = 0;
   const waiting=[];
   const acquire=()=>{
     if(workers<maxWorkers){workers++;return Promise.resolve();}
-    if(waiting.length>=10)throw new HttpError(503,'The engine is busy. Please try again shortly.');
+    if(waiting.length>=10)throw new HttpError(503,'The engine is busy. Please try again shortly.','engine.busy',2);
     return new Promise((resolve,reject)=>{
       const wake=()=>{clearTimeout(timer);workers++;resolve();};
-      const timer=setTimeout(()=>{const i=waiting.indexOf(wake);if(i>=0)waiting.splice(i,1);reject(new HttpError(503,'The engine is busy. Please try again shortly.'));},15_000);
+      const timer=setTimeout(()=>{const i=waiting.indexOf(wake);if(i>=0)waiting.splice(i,1);reject(new HttpError(503,'The engine is busy. Please try again shortly.','engine.busy',2));},queueTimeout);
       waiting.push(wake);
     });
   };
   const allow=rateLimiter(),allowAnalysis=rateLimiter({limit:10}),allowAuth=rateLimiter({limit:120});
-  let healthPromise=null,healthUntil=0;
+  let healthPromise=null,healthUntil=0,deepChecked=false;
   const workerOptions=accountId=>({historyPath:accountId && !config.databaseUrl ? path.join(historyPath+'.accounts',accountId+'.sqlite3') : historyPath,databaseUrl:config.databaseUrl,accountId});
   const runWorker = async (request,accountId) => {
     await acquire();
-    try { return await engine(request, workerOptions(accountId)); } finally { workers--;waiting.shift()?.(); }
+    try { return await execute(request, workerOptions(accountId)); } finally { workers--;waiting.shift()?.(); }
   };
   async function exportWorkspace(res,accountId){
     await acquire();
@@ -115,12 +121,16 @@ export function createApp({historyPath, maxWorkers = 2, config=loadConfig(), ver
         });
         res.on('drain',()=>worker.stdout.resume());
         const complete=(error)=>{if(finished)return;finished=true;clearTimeout(timer);res.off('close',disconnected);error?reject(error):(res.end(),resolve());};
-        worker.on('error',()=>complete(new HttpError(503,'Workspace export is temporarily unavailable.')));
-        worker.on('close',code=>complete(code===0?null:new HttpError(503,'Workspace export did not finish. Retry the download.')));
+        worker.on('error',()=>complete(new HttpError(503,'Workspace export is temporarily unavailable.','export.failed')));
+        worker.on('close',code=>complete(code===0?null:new HttpError(503,'Workspace export did not finish. Retry the download.','export.failed')));
       });
     }finally{workers--;waiting.shift()?.();}
   }
-  return http.createServer(async (req, res) => {
+  const server=http.createServer(async (req, res) => {
+    const id=requestId(),started=performance.now();let failureCode='request.failed',recorded=false;
+    res.setHeader('X-Request-ID',id);
+    const record=aborted=>{if(recorded)return;recorded=true;telemetry.observe({id,route:req.url,method:req.method,status:aborted?499:res.statusCode,duration:performance.now()-started,code:aborted?'request.aborted':failureCode,aborted});};
+    res.once('finish',()=>record(false));res.once('close',()=>record(!res.writableFinished));
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Referrer-Policy','no-referrer');
     res.setHeader('X-Frame-Options','DENY');
@@ -137,19 +147,30 @@ export function createApp({historyPath, maxWorkers = 2, config=loadConfig(), ver
         if(origin.origin!==expected && !localDev)throw new HttpError(403,'Origin does not match this app.');
       }
       if(req.method==='GET' && pathname==='/api/auth-config')return json(res,200,{mode:config.authMode,url:config.supabaseUrl,key:config.supabaseKey,emailEnabled:config.emailEnabled});
+      if(req.method==='GET' && pathname==='/api/live')return json(res,200,{status:'alive'});
       if(req.method==='GET' && pathname==='/api/health') {
-        if(!healthPromise || Date.now()>healthUntil){healthUntil=Date.now()+10_000;healthPromise=runWorker({operation:'health'},config.databaseUrl?'00000000-0000-0000-0000-000000000000':null).then(()=>({status:'ready'})).catch(e=>{healthPromise=null;throw e;});}
+        // One independent probe: busy analysis queues cannot starve host checks.
+        // After the initial ML dependency check, storage probes avoid heavy imports.
+        if(!healthPromise || healthNow()>healthUntil){
+          healthUntil=Infinity;
+          const deep=!deepChecked,options={...workerOptions(config.databaseUrl?'00000000-0000-0000-0000-000000000000':null),timeout:deep?60_000:5_000};
+          healthPromise=Promise.resolve().then(()=>checkHealth?checkHealth(deep,options):engine({operation:deep?'health':'health_light'},options)).then(()=>{deepChecked=true;healthUntil=healthNow()+healthTtl;return {status:'ready'};}).catch(e=>{healthPromise=null;throw e;});
+        }
         return json(res,200,await healthPromise);
       }
       let accountId=null;
       if(pathname.startsWith('/api/') && config.authMode==='supabase') {
-        if(!allowAuth(req.socket.remoteAddress || 'unknown'))throw new HttpError(429,'Too many requests. Try again in a minute.');
         const token=req.headers.authorization?.match(/^Bearer ([^\s]{1,8192})$/)?.[1];
-        if(!token)throw new HttpError(401,'Sign in to use your workspace.');
-        try{accountId=await verifyAccount(token);}catch{throw new HttpError(503,'Authentication is temporarily unavailable.');}
-        if(!UUID.test(accountId || ''))throw new HttpError(401,'Your session has expired. Sign in again.');
-        if(!allow(accountId))throw new HttpError(429,'Too many requests. Try again in a minute.');
-        if(req.method==='POST' && pathname==='/api/runs' && !allowAnalysis(accountId))throw new HttpError(429,'Analysis limit reached. Try again in a minute.');
+        if(!token)throw new HttpError(401,'Sign in to use your workspace.','auth.invalid');
+        // Credential hashes guard provider checks; account UUIDs guard app usage.
+        // Neither socket addresses nor caller-supplied proxy headers select limits.
+        if(!allowAuth(credentialKey(token)))throw new HttpError(429,'Too many sign-in checks. Try again in a minute.','auth.throttled',60);
+        if(authChecks>=maxAuthChecks)throw new HttpError(503,'Sign-in verification is busy. Please try again shortly.','auth.busy',2);
+        authChecks++;
+        try{accountId=await verifyAccount(token);}catch{throw new HttpError(503,'Authentication is temporarily unavailable.','auth.unavailable',2);}finally{authChecks--;}
+        if(!UUID.test(accountId || ''))throw new HttpError(401,'Your session has expired. Sign in again.','auth.invalid');
+        if(!allow(accountId))throw new HttpError(429,'Too many requests. Try again in a minute.','account.throttled',60);
+        if(req.method==='POST' && pathname==='/api/runs' && !allowAnalysis(accountId))throw new HttpError(429,'Analysis limit reached. Try again in a minute.','analysis.throttled',60);
       }
       const call=request=>runWorker(request,accountId);
       let match;
@@ -236,15 +257,22 @@ export function createApp({historyPath, maxWorkers = 2, config=loadConfig(), ver
       if (req.method === 'HEAD') return res.end();
       createReadStream(file).on('error', () => res.destroy()).pipe(res);
     } catch (error) {
-      if (!res.headersSent) json(res, error.status || 500, {error: error.status ? error.message : 'Unexpected server error.'});
+      const expected=error instanceof HttpError;failureCode=expected?error.code:'request.failed';
+      if(!res.headersSent && expected && error.retryAfter)res.setHeader('Retry-After',String(error.retryAfter));
+      if (!res.headersSent) json(res, expected?error.status:500, {error: expected?error.message:'Something went wrong. Please try again.',request_id:id});
       else res.destroy();
     }
   });
+  const metrics=setInterval(()=>{void telemetry.sample(runtime());},60_000);metrics.unref();
+  server.once('close',()=>{clearInterval(metrics);void telemetry.sample(runtime());});
+  return server;
 }
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  try {
   const config=loadConfig(),{port,host}=config;
   const server = createApp({config});
-  server.on('error', error => { console.error(`Server could not start: ${error.message}`); process.exitCode = 1; });
+  server.on('error', error => { console.error(JSON.stringify({event:'server_start_failed',code:['EADDRINUSE','EACCES'].includes(error.code)?error.code:'START_FAILED'})); process.exitCode = 1; });
   server.listen(port, host, () => console.log(`Productivity Flow Engine listening on ${host}:${port}`));
   for (const signal of ['SIGINT','SIGTERM']) process.on(signal, () => server.close(() => process.exit(0)));
+  }catch{console.error(JSON.stringify({event:'server_config_failed',code:'CONFIG_INVALID'}));process.exitCode=1;}
 }

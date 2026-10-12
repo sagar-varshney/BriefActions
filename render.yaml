@@ -3,7 +3,7 @@ services:
     name: productivity-flow-engine
     runtime: docker
     plan: free
-    healthCheckPath: /api/health
+    healthCheckPath: /api/live
     envVars:
       - key: PUBLIC_ORIGIN
         sync: false
@@ -17,3 +17,7 @@ services:
         sync: false
       - key: FLOW_EMAIL_SIGNIN
         value: 'false'
+      - key: FLOW_MAX_WORKERS
+        value: '1'
+      - key: FLOW_TELEMETRY
+        value: 'true'
