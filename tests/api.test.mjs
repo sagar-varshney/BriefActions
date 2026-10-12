@@ -120,3 +120,38 @@ test('Bundled corpus import copies 84 input-only cases and repeated imports reus
   response=await request('/api/annotations/import-corpus',{corpus_id:'all'});
   assert.deepEqual(Object.fromEntries(Object.entries(await response.json()).filter(([k])=>k!=='case_ids')),{imported:0,existing:84});
 });
+
+test('User-added proposals keep original extraction intact and require explicit confirmation',async()=>{
+  const transcript="Maya will send the report tomorrow.\nAlex: I'll approve the invoice 📄 by Friday.";
+  const run=await (await request('/api/runs',{transcript,reference_date:'2026-09-15'})).json();
+  const start=transcript.indexOf('Alex:');const quote=transcript.slice(start);
+  const item={task:'approve the invoice 📄',owner:'Alex',deadline:'2026-09-18',evidence:[{text:quote,start,end:Array.from(transcript).length}]};
+  assert.equal((await request(`/api/runs/${run.id}/manual-actions`,{item:{...item,evidence:[]},request_id:'a'.repeat(32)})).status,400);
+  const response=await request(`/api/runs/${run.id}/manual-actions`,{item,request_id:'a'.repeat(32)});assert.equal(response.status,200);
+  const updated=await response.json();assert.equal(updated.proposals.length,2);assert.equal(updated.proposals[1].source,'manual');
+  assert.equal(updated.events[0].payload.proposals.length,1);
+  const retry=await (await request(`/api/runs/${run.id}/manual-actions`,{item,request_id:'a'.repeat(32)})).json();assert.equal(retry.events.length,updated.events.length);
+  assert.equal((await request(`/api/runs/${run.id}/finalize`,{decisions:[{...updated.proposals[0],accept:false}]})).status,400);
+  const final=await (await request(`/api/runs/${run.id}/finalize`,{decisions:updated.proposals.map((p,i)=>({...p,accept:i===1}))})).json();
+  assert.equal(final.final_tasks.length,1);assert.equal(final.final_tasks[0].source,'manual');
+  assert.equal((await request(`/api/runs/${run.id}/manual-actions`,{item,request_id:'b'.repeat(32)})).status,409);
+});
+test('Only frozen reviewed snapshots can be compared and held-out scoring is explicit',async()=>{
+  const create=async(group,transcript)=>{
+    const c=await (await request('/api/annotations',{transcript,reference_date:'2026-09-15',source:'synthetic',group,permission:true,anonymized:true})).json();
+    const items=[{task:'approve the invoice',owner:'Alex',deadline:'2026-09-18',evidence:[{text:transcript,start:0,end:transcript.length}]}];
+    for(const reviewer of ['fixture-one','fixture-two'])assert.equal((await request(`/api/annotations/${c.id}/submit`,{reviewer,items,independent:true})).status,200);
+    return c;
+  };
+  const c=await create('reviewed-1','Alex will approve the invoice by Friday.');
+  await create('reviewed-2','Alex: I will approve the invoice by Friday.');
+  assert.equal((await request('/api/reviewed-benchmarks',{snapshot:c.id})).status,404);
+  const frozen=await (await request('/api/annotations/freeze',{seed:'api-fixture',test_fraction:.3})).json();assert.ok(frozen.snapshot);
+  const list=await (await fetch(base+'/api/reviewed-snapshots')).json();assert.equal(list[0].id,frozen.snapshot);
+  assert.equal((await request('/api/reviewed-benchmarks',{snapshot:frozen.snapshot,split:'test'})).status,400);
+  const response=await request('/api/reviewed-benchmarks',{snapshot:frozen.snapshot,split:'all',acknowledge_heldout:true,request_id:'c'.repeat(32)});assert.equal(response.status,200);
+  const report=await response.json();assert.equal(report.reports.length,2);assert.ok(report.case_count>=2);
+  assert.equal(report.reports[0].label,'Original rules');assert.equal(report.reports[1].label,'Current rules');
+  assert.equal((await (await fetch(base+`/api/reviewed-benchmarks/${report.id}`)).json()).dataset_sha256,report.dataset_sha256);
+  assert.equal((await (await fetch(base+'/api/reviewed-benchmarks')).json()).length,1);
+});

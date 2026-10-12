@@ -2,6 +2,10 @@ import React, {useEffect, useRef, useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import './styles.css';
 import AnnotationReviewer from './AnnotationReviewer.jsx';
+import ReviewedBenchmarks from './ReviewedBenchmarks.jsx';
+import MissedActionForm from './MissedActionForm.jsx';
+
+function reviewDrafts(proposals,decisions=[]){const byId=new Map(decisions.map(d=>[d.proposal_id,d]));return proposals.map(p=>byId.get(p.proposal_id)||{proposal_id:p.proposal_id,task:p.task,owner:p.owner,deadline:p.deadline,accept:false});}
 
 async function api(url, options = {}) {
   const response = await fetch(`/api${url}`, {headers:{'Content-Type':'application/json'}, ...options});
@@ -89,10 +93,11 @@ function App() {
     const compatible=cached && (cached.version===(saved?.version || 0) || saved?.client_id===draftClient && (saved?.edit_id || 0)<=(cached.edit_id || 0));
     const restored=compatible ? cached.decisions : saved?.decisions;
     editEpoch.current=Math.max(editEpoch.current,cached?.edit_id || 0,saved?.edit_id || 0);
-    setDrafts(restored || snapshot.proposals.map(p=>({proposal_id:p.proposal_id,task:p.task,owner:p.owner,deadline:p.deadline,accept:false})));
+    const merged=reviewDrafts(snapshot.proposals,restored);
+    setDrafts(merged);
     setSaveStatus(restored?'Restored unfinished review.':'');
     if(snapshot.status==='confirmed')localStorage.removeItem(draftKey(snapshot.id));
-    else if(cached?.dirty && restored===cached.decisions)scheduleSave(snapshot.id,cached.decisions,cached.edit_id);
+    else if(cached?.dirty && restored===cached.decisions){const edit_id=++editEpoch.current;cacheDraft(snapshot.id,{...cached,decisions:merged,edit_id});scheduleSave(snapshot.id,merged,edit_id);}
     else if(cached?.dirty && !compatible)setSaveStatus('History changed in another tab. Your browser copy is preserved; use Restore browser copy to recover it.');
     localStorage.setItem('flow.activeRun',snapshot.id);
   }
@@ -133,6 +138,11 @@ function App() {
     clearTimeout(saveTimer.current);
     try {await saveQueue.current.catch(()=>{});adopt(await api(`/runs/${run.id}/finalize`,{method:'POST',body:JSON.stringify({decisions:drafts})}));}
     catch(e){setError(e.message);}finally{setBusy(false);}
+  }
+  async function addMissed(payload){
+    setBusy(true);clearTimeout(saveTimer.current);
+    try{await saveQueue.current.catch(()=>{});adopt(await api(`/runs/${run.id}/manual-actions`,{method:'POST',body:JSON.stringify(payload)}));}
+    finally{setBusy(false);}
   }
   async function openRun(id) {
     setError('');setBusy(true);
@@ -187,10 +197,10 @@ function App() {
             {run.status==='confirmed'?<>
               <div className="section-heading"><div><h2>Your confirmed plan</h2><p>{run.final_tasks.length} task{run.final_tasks.length===1?'':'s'} saved. This result is immutable.</p></div><Download href={`/api/runs/${run.id}/tasks.csv`}>Export CSV</Download></div>
               {run.final_tasks.length===0&&<div className="notice">You confirmed a plan with no tasks. All proposals were rejected.</div>}
-              {run.final_tasks.map((task,i)=><article className="panel confirmed-card" key={task.proposal_id}><span className="check-circle"><Icon name="check" size={18}/></span><div className="confirmed-content"><h3>{task.task}</h3><div className="task-meta"><span>Owner: <strong>{task.owner}</strong></span><span>Deadline: <strong>{task.deadline}</strong></span></div><Evidence passages={task.evidence}/></div></article>)}
+              {run.final_tasks.map((task,i)=><article className="panel confirmed-card" key={task.proposal_id}><span className="check-circle"><Icon name="check" size={18}/></span><div className="confirmed-content"><h3>{task.task}</h3>{task.source==='manual'&&<span className="badge purple">User added</span>}<div className="task-meta"><span>Owner: <strong>{task.owner}</strong></span><span>Deadline: <strong>{task.deadline}</strong></span></div><Evidence passages={task.evidence}/></div></article>)}
             </>:<form onSubmit={finalize}>
               <div className="section-heading"><div><h2>Review action proposals <span className="count">{run.proposals.length}</span></h2><p>Correct the fields and select each task to keep. Nothing is accepted by default.</p></div></div>
-              <p role="status" className="form-hint">{saveStatus}</p><button type="button" className="text-button" onClick={()=>{try{const cached=JSON.parse(localStorage.getItem(draftKey(run.id))||'null');if(cached){setDrafts(cached.decisions);scheduleSave(run.id,cached.decisions);}}catch{setError('Browser draft could not be restored.');}}}>Restore browser copy</button>
+              <p role="status" className="form-hint">{saveStatus}</p><button type="button" className="text-button" onClick={()=>{try{const cached=JSON.parse(localStorage.getItem(draftKey(run.id))||'null');if(cached){const merged=reviewDrafts(run.proposals,cached.decisions);setDrafts(merged);scheduleSave(run.id,merged);}}catch{setError('Browser draft could not be restored.');}}}>Restore browser copy</button>
               <div className="review-note">Supporting passages describe the original proposal. Your corrections are recorded separately.</div>
               {run.proposals.length===0&&<div className="notice">No committed actions or direct requests detected. You can confirm an empty plan or analyze another transcript.</div>}
               {run.proposals.map((p,i)=><article className={`panel proposal-card ${drafts[i]?.accept?'selected':''}`} key={p.proposal_id}>
@@ -198,10 +208,11 @@ function App() {
                 <label className="field-label">Task {i+1}<textarea aria-label={`Task ${i+1}`} className="task-input" required value={drafts[i]?.task || ''} disabled={busy} onChange={e=>edit(i,'task',e.target.value)}/></label>
                 <div className="field-row"><label className="field-label">Owner {i+1}<input aria-label={`Owner ${i+1}`} required value={drafts[i]?.owner || ''} disabled={busy} onChange={e=>edit(i,'owner',e.target.value)}/></label><label className="field-label">Deadline {i+1}<input aria-label={`Deadline ${i+1}`} required placeholder="YYYY-MM-DD or Unknown" value={drafts[i]?.deadline || ''} disabled={busy} onChange={e=>edit(i,'deadline',e.target.value)}/><span className="field-hint">YYYY-MM-DD or Unknown</span></label></div>
                 <Evidence passages={p.evidence}/>
-                <details className="suggestions"><summary>Proposal suggestions · {p.priority} priority · Group {p.cluster}</summary><p>Suggested slot: {p.suggested_slot || 'Unknown'}<br/>Workstream classifier probability: {p['confidence_%'] ?? 'Unknown'}%</p><p>Priority and scheduling use heuristics. Classifier probability is not extraction confidence. These suggestions are not included in the confirmed plan.</p></details>
+                {p.source!=='manual'&&<details className="suggestions"><summary>Proposal suggestions · {p.priority} priority · Group {p.cluster}</summary><p>Suggested slot: {p.suggested_slot || 'Unknown'}<br/>Workstream classifier probability: {p['confidence_%'] ?? 'Unknown'}%</p><p>Priority and scheduling use heuristics. Classifier probability is not extraction confidence. These suggestions are not included in the confirmed plan.</p></details>}
               </article>)}
               <div className="confirm-bar"><div><strong>{selected} of {run.proposals.length} selected</strong><span>{run.proposals.length-selected} proposal{run.proposals.length-selected===1?'':'s'} will be rejected.</span></div><button className="button primary" disabled={busy}>{busy?'Saving…':selected?'Confirm selected tasks':'Confirm empty plan'}<Icon name="check" size={17}/></button></div>
             </form>}
+            {run.status==='review'&&<MissedActionForm key={run.id} run={run} busy={busy} onAdd={addMissed}/>}
             {run.settings?.conversation_changes?.length>0&&<details className="disclosure" open><summary>Conversation revisions & cancellations</summary><Json value={run.settings.conversation_changes}/></details>}
             <HistoryEvents run={run}/>
           </section>}
@@ -226,6 +237,7 @@ function App() {
           {report&&<section className="panel case-panel"><div className="panel-heading"><div><h2>Inspect: {report.report.label}</h2><p>Compare annotations with the exact retained output.</p></div><button className="button secondary" onClick={()=>downloadJson(report.report,`${report.report.label}-${report.report.dataset}.json`)}><Icon name="download" size={16}/>Full report</button></div><label className="case-select">Transcript case<select aria-label="Transcript case" value={caseId} onChange={e=>setCaseId(e.target.value)}>{report.report.runs.map(c=><option key={c.id}>{c.id}</option>)}</select></label>
             {activeCase&&<><div className="eyebrow">TRANSCRIPT · {activeCase.reference_date}</div><pre className="saved-transcript">{activeCase.transcript}</pre></>}
             <div className="case-columns"><div><h3>Annotated gold items</h3><Json value={activeCase?.items || []}/></div><div><h3>Predictions, usage & failures</h3><Json value={prediction}/></div></div><details className="disclosure"><summary>Matches and missed tasks</summary><Json value={caseScore}/></details><details className="disclosure"><summary>Experiment fingerprints & configuration</summary><Json value={Object.fromEntries(Object.entries(report.report).filter(([key])=>!['runs','details','metrics','counts'].includes(key)))}/></details></section>}
+          <ReviewedBenchmarks api={api} downloadJson={downloadJson} onAnnotate={()=>setPage('annotations')}/>
           {bench&&<><details className="disclosure"><summary>Corpus provenance</summary><Json value={bench.manifest}/></details><details className="disclosure"><summary>Illustrative workstream classifier seed data</summary><p>This small seed set trains workstream classification. It does not train action extraction.</p><Json value={bench.training_data}/></details></>}
         </>}
         <footer className="page-footer">Productivity Flow Engine <span>Evidence → Review → Action</span></footer>
@@ -234,6 +246,6 @@ function App() {
   </div>;
 }
 function HistoryEvents({run}) {
-  return <div className="audit"><div className="section-heading"><div><h2>Inspectable history</h2><p>Original evidence stays attached. Edits and rejected tasks are recorded.</p></div><Download href={`/api/runs/${run.id}/history.json`}>History JSON</Download></div>{run.events.map(event=><details key={event.event_id} className="disclosure"><summary><span className="event-label">{event.kind}</span><span className="event-time">{stamp(event.created_at)}</span></summary><Json value={event.payload}/></details>)}</div>;
+  return <div className="audit"><div className="section-heading"><div><h2>Inspectable history</h2><p>Original evidence stays attached. Edits and rejected tasks are recorded.</p></div><Download href={`/api/runs/${run.id}/history.json`}>History JSON</Download></div>{run.events.map(event=><details key={event.event_id} className="disclosure"><summary><span className="event-label">{event.kind==='manual_proposal'?'User-added action':event.kind}</span><span className="event-time">{stamp(event.created_at)}</span></summary><Json value={event.payload}/></details>)}</div>;
 }
 createRoot(document.getElementById('root')).render(<App/>);

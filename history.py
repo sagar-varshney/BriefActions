@@ -7,11 +7,17 @@ from __future__ import annotations
 from contextlib import contextmanager
 from datetime import datetime, timezone, date
 import json
+import re
 from pathlib import Path
 import sqlite3
 from uuid import uuid4
 
-from extraction import UNKNOWN
+from extraction import UNKNOWN, normalize_task
+
+
+def proposals_from_events(events):
+    if not events or events[0]["kind"]!="extraction":raise KeyError("extraction")
+    return events[0]["payload"]["proposals"]+[e["payload"]["proposal"] for e in events if e["kind"]=="manual_proposal"]
 
 
 class HistoryStore:
@@ -69,7 +75,7 @@ class HistoryStore:
             current=drafts[-1]['version'] if drafts else 0
             if type(version) is not int or version!=current:
                 raise ValueError('Draft changed in another tab; reopen the run before editing')
-            ids={p['proposal_id'] for p in json.loads(rows[0][1])['proposals']}
+            ids={p['proposal_id'] for p in proposals_from_events([{'kind':k,'payload':json.loads(p)} for k,p in rows])}
             if not isinstance(decisions,list) or len(decisions)!=len(ids) or any(not isinstance(d,dict) for d in decisions):
                 raise ValueError('Draft must include every proposal once')
             if {d.get('proposal_id') for d in decisions}!=ids:
@@ -85,6 +91,39 @@ class HistoryStore:
             self._append(conn,run_id,'draft',payload)
         return payload
 
+    def add_manual(self,run_id,item,request_id):
+        from evaluate import validate_item
+        if not isinstance(request_id,str) or not re.fullmatch(r'[a-f0-9]{32}',request_id):
+            raise ValueError('Use a stable request ID when adding an action')
+        if not isinstance(item,dict) or not isinstance(item.get('evidence'),list) or not 1<=len(item['evidence'])<=20 or any(not isinstance(e,dict) for e in item['evidence']):
+            raise ValueError('Highlight at least one exact supporting passage (at most 20)')
+        with self.connection() as conn:
+            conn.execute('BEGIN IMMEDIATE')
+            rows=conn.execute('SELECT kind,payload FROM events WHERE run_id=? ORDER BY event_id',(run_id,)).fetchall()
+            events=[{'kind':k,'payload':json.loads(p)} for k,p in rows]
+            proposals=proposals_from_events(events)
+            if any(e['kind']=='final' for e in events):raise ValueError('This plan is already confirmed')
+            clean={}
+            for name in ('task','owner','deadline'):
+                value=item.get(name)
+                if not isinstance(value,str) or not value.strip() or len(value)>10000:raise ValueError('Task, owner, and deadline must be nonempty; use Unknown for missing fields')
+                clean[name]=value.strip()
+            if clean['deadline']!=UNKNOWN and not re.fullmatch(r'\d{4}-\d{2}-\d{2}',clean['deadline']):raise ValueError('Deadlines must be YYYY-MM-DD or Unknown')
+            clean['evidence']=[{k:e.get(k) for k in ('text','start','end')} for e in item['evidence']]
+            validate_item(clean,events[0]['payload']['transcript'])
+            clean['proposal_id']='manual-'+request_id
+            prior=next((p for p in proposals if p['proposal_id']==clean['proposal_id']),None)
+            if prior:
+                if any(prior[k]!=clean[k] for k in ('task','owner','deadline','evidence')):raise ValueError('Request ID belongs to another action')
+                return prior
+            if len(proposals)>=200:raise ValueError('A run supports at most 200 proposals')
+            for p in proposals:
+                if normalize_task(p['task'])==normalize_task(clean['task']) and (p['owner'].casefold()==clean['owner'].casefold() or UNKNOWN in (p['owner'],clean['owner'])) and (p['deadline']==clean['deadline'] or UNKNOWN in (p['deadline'],clean['deadline'])):
+                    raise ValueError('This action already appears in the proposals; edit that proposal instead')
+            clean.update(source='manual',category='User added')
+            self._append(conn,run_id,'manual_proposal',{'proposal':clean})
+        return clean
+
     def finalize(self, run_id, decisions):
         """Commit all corrections/decisions and the final result atomically, once."""
         with self.connection() as conn:
@@ -94,7 +133,7 @@ class HistoryStore:
                 raise KeyError(run_id)
             if any(kind == 'final' for kind,_ in rows):
                 raise ValueError('This run is already finalized; analyze again for a new review')
-            original = json.loads(rows[0][1])['proposals']
+            original = proposals_from_events([{'kind':k,'payload':json.loads(p)} for k,p in rows])
             proposals = {p['proposal_id']:p for p in original}
             if len(decisions) != len(proposals) or {d['proposal_id'] for d in decisions} != set(proposals):
                 raise ValueError('Review must decide each proposal exactly once')
@@ -117,7 +156,8 @@ class HistoryStore:
                 if decision['accept']:
                     # Scheduling/classification are proposals based on original values;
                     # discard them so consumers recompute them from accepted corrections.
-                    final.append({k:after[k] for k in ('proposal_id','task','owner','deadline','evidence')})
+                    final.append({k:after[k] for k in ('proposal_id','task','owner','deadline','evidence')} | ({'source':'manual'} if before.get('source')=='manual' else {}))
+                if before.get('source')=='manual':changes[-1]['source']='manual'
             self._append(conn,run_id,'review',{'decisions':changes})
             self._append(conn,run_id,'final',{'tasks':final})
         return final

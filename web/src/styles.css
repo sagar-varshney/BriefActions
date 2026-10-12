@@ -23,3 +23,8 @@
 .annotation-panel select {width:100%;}
 .annotation-panel h2,.annotation-panel strong,.annotation-panel p,.annotation-panel small {overflow-wrap:anywhere;}
 @media(max-width:600px){.annotation-panel .field-row{grid-template-columns:minmax(0,1fr);}.annotation-panel .button{max-width:100%;white-space:normal;overflow-wrap:anywhere;}}
+
+.reviewed-item{border:1px solid var(--line);border-radius:8px;padding:15px;margin:12px 0;overflow-wrap:anywhere;}
+.reviewed-item strong{font-size:13px;color:#52617b;}.reviewed-item p{font-size:11px;margin-top:7px;}
+.reviewed-item blockquote{white-space:pre-wrap;overflow-wrap:anywhere;margin:12px 0;border-left:2px solid #c4c8ee;padding-left:12px;font-size:11px;}
+.reviewed-item small{display:block;font-size:9px;margin-top:5px;}

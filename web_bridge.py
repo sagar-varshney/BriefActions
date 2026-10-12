@@ -9,7 +9,7 @@ from pathlib import Path
 import re
 import sys
 
-from history import HistoryStore
+from history import HistoryStore, proposals_from_events
 
 ROOT = Path(__file__).resolve().parent
 MAX_TRANSCRIPT = 100_000
@@ -32,10 +32,15 @@ def run_snapshot(run_id):
     if events[0]['kind'] != 'extraction':
         raise KeyError(run_id)
     original = events[0]['payload']
+    proposals=proposals_from_events(events)
+    draft=next((e['payload'] for e in reversed(events) if e['kind']=='draft'),None)
+    if draft:
+        decisions={d['proposal_id']:d for d in draft['decisions']}
+        draft={**draft,'decisions':[decisions.get(p['proposal_id'],{k:p[k] for k in ('proposal_id','task','owner','deadline')}|{'accept':False}) for p in proposals]}
     final = next((e['payload']['tasks'] for e in events if e['kind'] == 'final'), None)
-    return {'id':run_id, 'created_at':events[0]['created_at'], **original,
+    return {'id':run_id, 'created_at':events[0]['created_at'], **original,'proposals':proposals,
             'summary':original.get('settings',{}).get('summary',''),
-            'status':'confirmed' if final is not None else 'review', 'final_tasks':final, 'events':events, 'draft':next((e['payload'] for e in reversed(events) if e['kind']=='draft'),None)}
+            'status':'confirmed' if final is not None else 'review', 'final_tasks':final, 'events':events, 'draft':draft}
 
 
 def report_paths():
@@ -46,6 +51,20 @@ def report_paths():
 
 def handle(request):
     op = request.get('operation')
+    if op in ('reviewed_snapshots','reviewed_reports','reviewed_report','reviewed_run'):
+        from reviewed_benchmarks import ReviewedBenchmarks
+        reviewed=ReviewedBenchmarks(store())
+        if op=='reviewed_snapshots':return reviewed.snapshots()
+        if op=='reviewed_reports':return reviewed.listing()
+        if op=='reviewed_report':return reviewed.get(request.get('report_id'))
+        return reviewed.run(request.get('snapshot'),request.get('split','dev'),request.get('acknowledge_heldout',False),request.get('request_id'))
+    if op=='manual_action':
+        run_snapshot(request.get('run_id'))
+        try:store().add_manual(request.get('run_id'),request.get('item'),request.get('request_id'))
+        except ValueError as error:
+            if 'already' in str(error) or 'Request ID' in str(error):raise ApiError(str(error),409) from error
+            raise
+        return run_snapshot(request.get('run_id'))
     if op.startswith('annotation_'):
         from annotations import AnnotationStore
         annotations=AnnotationStore(store())
@@ -109,12 +128,12 @@ def handle(request):
     if op == 'runs':
         # One query, including old Streamlit runs, without loading every transcript.
         with store().connection() as conn:
-            rows = conn.execute("SELECT e.run_id,e.created_at,e.payload,EXISTS(SELECT 1 FROM events f WHERE f.run_id=e.run_id AND f.kind='final') FROM events e WHERE e.kind='extraction' ORDER BY e.event_id DESC").fetchall()
+            rows = conn.execute("SELECT e.run_id,e.created_at,e.payload,EXISTS(SELECT 1 FROM events f WHERE f.run_id=e.run_id AND f.kind='final'),(SELECT COUNT(*) FROM events m WHERE m.run_id=e.run_id AND m.kind='manual_proposal') FROM events e WHERE e.kind='extraction' ORDER BY e.event_id DESC").fetchall()
         result = []
-        for run_id, stamp, payload, confirmed in rows:
+        for run_id, stamp, payload, confirmed, manual_count in rows:
             original = json.loads(payload)
             result.append({'id':run_id,'created_at':stamp,'reference_date':original['reference_date'],
-                           'preview':original['transcript'][:140],'proposal_count':len(original['proposals']),
+                           'preview':original['transcript'][:140],'proposal_count':len(original['proposals'])+manual_count,
                            'status':'confirmed' if confirmed else 'review'})
         return result
     if op == 'run':
@@ -143,11 +162,11 @@ def handle(request):
         if snapshot['final_tasks'] is None:
             raise ApiError('Confirm the plan before exporting tasks.',409)
         output = io.StringIO()
-        fields = ['proposal_id','task','owner','deadline','supporting_transcript_passages']
+        fields = ['proposal_id','task','owner','deadline','source','supporting_transcript_passages']
         writer = csv.DictWriter(output,fieldnames=fields)
         writer.writeheader()
         for task in snapshot['final_tasks']:
-            writer.writerow({k:task[k] for k in fields[:-1]} | {'supporting_transcript_passages':'\n\n'.join(e['text'] for e in task['evidence'])})
+            writer.writerow({k:task[k] for k in fields[:4]} | {'source':task.get('source','extraction')} | {'supporting_transcript_passages':'\n\n'.join(e['text'] for e in task['evidence'])})
         return output.getvalue()
     if op == 'benchmarks':
         reports = []

@@ -103,8 +103,12 @@ export function createApp({historyPath, maxWorkers = 4} = {}) {
         const input = await body(req);
         return json(res, 201, await call({transcript:input.transcript,reference_date:input.reference_date,clusters:input.clusters ?? 3,operation:'analyze'}));
       }
-      if ((match = pathname.match(/^\/api\/runs\/([a-f0-9]{32})(?:\/(finalize|draft|history.json|tasks.csv))?$/))) {
+      if ((match = pathname.match(/^\/api\/runs\/([a-f0-9]{32})(?:\/(finalize|draft|manual-actions|history.json|tasks.csv))?$/))) {
         const [, run_id, action] = match;
+        if (req.method === 'POST' && action === 'manual-actions') {
+          const input=await body(req);
+          return json(res,200,await call({operation:'manual_action',run_id,item:input.item,request_id:input.request_id}));
+        }
         if (req.method === 'POST' && action === 'draft') {
           const input=await body(req);
           return json(res,200,await call({operation:'draft',run_id,decisions:input.decisions,version:input.version,client_id:input.client_id,edit_id:input.edit_id}));
@@ -139,6 +143,10 @@ export function createApp({historyPath, maxWorkers = 4} = {}) {
         if(req.method==='GET') return json(res,200,await call(action==='export'?{operation:'annotation_export',snapshot:case_id}:{operation:'annotation_get',case_id}));
         if(req.method==='POST' && action==='submit') return json(res,200,await call({...await body(req),operation:'annotation_submit',case_id}));
       }
+      if(req.method==='GET' && pathname==='/api/reviewed-snapshots') return json(res,200,await call({operation:'reviewed_snapshots'}));
+      if(req.method==='GET' && pathname==='/api/reviewed-benchmarks') return json(res,200,await call({operation:'reviewed_reports'}));
+      if(req.method==='POST' && pathname==='/api/reviewed-benchmarks') return json(res,200,await call({...await body(req),operation:'reviewed_run'}));
+      if(req.method==='GET' && (match=pathname.match(/^\/api\/reviewed-benchmarks\/([a-f0-9]{32})$/))) return json(res,200,await call({operation:'reviewed_report',report_id:match[1]}));
       if (req.method === 'GET' && pathname === '/api/benchmarks') return json(res, 200, await call({operation:'benchmarks'}));
       if (req.method === 'GET' && (match = pathname.match(/^\/api\/benchmarks\/([a-f0-9]{16})$/)))
         return json(res, 200, await call({operation:'benchmark',report_id:match[1]}));

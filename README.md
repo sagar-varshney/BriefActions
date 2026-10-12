@@ -39,7 +39,14 @@ commands are unavailable. Python requirements must still be installed.
 Paste a transcript, set its meeting date, and select **Analyze transcript**.
 Inspect the exact supporting passages, edit tasks/owners/deadlines, select the
 items to keep, and choose **Confirm selected tasks**. CSV export becomes available
-for the confirmed plan. Confirmation saves a local plan; external task-system
+for the confirmed plan. If an action is missing, use **Add a missed action**, highlight
+the saved transcript, and enter task/owner/deadline fields (Unknown where absent).
+The action is saved as a separate unchecked user-added proposal, while the original
+extraction remains intact. Corrections, acceptance/rejection, and original passages
+are retained; CSV identifies user-added tasks with `source=manual`. Duplicate actions
+with compatible metadata are rejected; edit the existing proposal instead. Confirmed
+plans cannot receive additions. Network retries reuse a stable request ID.
+Confirmation saves a local plan; external task-system
 integration is not implemented.
 
 Missing owners and exact deadlines are explicitly `Unknown`. Vague timing stays
@@ -145,6 +152,35 @@ Mean ± sample standard deviation is descriptive, not a confidence interval. Lat
 includes adapter/startup/model-load time. Original and new corpus results are filtered
 by dataset hash in the Evaluation lab so same-named JSONL files cannot be mixed.
 
+## Benchmark frozen reviewed snapshots
+
+Open **Evaluation lab → Benchmark reviewed snapshots** after freezing agreed or
+resolved labels in Annotation reviewer. Select a snapshot and run the original
+and current rules on the same inputs. **Development** is the default; scoring
+held-out cases or both splits requires an explicit acknowledgment. Viewing test
+errors makes them unsuitable for further tuning; prepare a new snapshot for later
+validation. Previously evaluated bundled cases are identified and remain previously seen.
+
+The comparison shows detection precision/recall/F1, owner/date accuracy on matched
+actions, known-metadata end-to-end accuracy, exact-span validity, annotated support
+proxy, latency, and failures. Inspect each transcript's frozen labels versus output,
+including missed actions, extra predictions, wrong owners/dates and supporting spans.
+Task matching is lexical and support is an annotated-span proxy, not semantic entailment.
+Undefined metrics display Unknown. Reviewer identities and independence are self-attested.
+
+Each comparison is saved locally in SQLite with the scored cases, gold labels,
+per-case predictions/errors, snapshot manifest, and corpus/evaluator/extractor hashes.
+Reload or select a saved comparison to reopen it; download the full JSON for analysis.
+Original evaluation files, rule baselines and retained model reports are not rewritten.
+No LLM or paid API call is made. Latency covers extraction only; zero API fees exclude
+compute. A request supports at most 200 cases and 1,000,000 transcript characters.
+Oversized reports are rejected before persistence. Retrying the same request ID
+returns the existing comparison instead of adding another history record.
+
+No independently reviewed human snapshot is fabricated by the app. The local library
+starts with input-only synthetic cases; users must submit reviews and freeze labels
+before this workflow can measure extraction against reviewed data.
+
 ## What the pipeline implements
 
 - Evidence-grounded rule extraction for commitments and direct requests, with
@@ -193,6 +229,7 @@ latency; benchmark timings continue to describe extraction only.
 | `GET /api/health`, `/api/config` | Runtime readiness and sample input |
 | `POST /api/runs` | Analyze `{transcript, reference_date, clusters}` |
 | `GET /api/runs`, `/api/runs/:id` | List and inspect saved runs |
+| `POST /api/runs/:id/manual-actions` | Add an evidence-backed user proposal with an idempotent request ID |
 | `POST /api/runs/:id/draft` | Save incomplete edits with an optimistic draft version |
 | `POST /api/runs/:id/finalize` | Save `{decisions}` with explicit acceptance |
 | `GET /api/runs/:id/tasks.csv`, `/history.json` | Confirmed tasks and full audit exports |
@@ -201,6 +238,8 @@ latency; benchmark timings continue to describe extraction only.
 | `GET/POST /api/annotations/:id/draft` | Save/resume reviewer- and mode-specific partial labels |
 | `POST /api/annotations/:id/submit` | Submit an independent review or reasoned resolution |
 | `POST /api/annotations/freeze`, `GET /api/annotations/:snapshot/export` | Freeze grouped splits and export hashed files |
+| `GET /api/reviewed-snapshots` | List frozen reviewed dataset manifests |
+| `GET/POST /api/reviewed-benchmarks`, `GET /api/reviewed-benchmarks/:id` | Run/reopen local original/current rule comparisons |
 | `GET /api/benchmarks`, `/api/benchmarks/:id` | Measured reports and annotated cases |
 
 ## Continuous integration
@@ -288,7 +327,8 @@ reload recovery, history, benchmark case inspection, empty plans, and mobile ove
 - `extraction.py`: improved structured rules and evidence/deduplication contract.
 - `evaluate.py`: task, metadata, evidence, latency, cost and failure measurement.
 - `ollama_runner.py`, `compare_models.py`: actual LLM adapter and experiment matrix.
-- `history.py`: append-only local review persistence.
+- `history.py`: append-only extraction, user-added proposals, decisions, and final plans.
+- `reviewed_benchmarks.py`: frozen-snapshot scoring and local comparison persistence.
 - `annotations.py`, `annotation_drafts.py`: immutable submitted reviews and separate mutable drafts.
 - `corpus_library.py`: fingerprint-verified, input-only bundled corpus registry.
 - `flow_engine.py`: existing ML classification/grouping and heuristic suggestions.
