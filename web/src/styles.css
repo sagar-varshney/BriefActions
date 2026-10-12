@@ -44,6 +44,7 @@ textarea{background:var(--surface)}.topbar-actions{display:flex;align-items:cent
 input,select,textarea,.secondary{border-color:var(--control-border)}
 input::placeholder,textarea::placeholder{color:var(--muted);opacity:1}
 .skip-link{position:fixed;left:12px;top:12px;z-index:20;padding:12px 18px;background:var(--surface);color:var(--text);border:2px solid var(--accent);border-radius:8px;transform:translateY(-160%)}
+.skip-link:not(:focus){clip-path:inset(50%);width:1px;height:1px;overflow:hidden;padding:0;border:0;white-space:nowrap}
 .skip-link:focus{transform:translateY(0)}
 main.auth-shell{margin:0;width:100%}.auth-card{min-width:0}
 .transcript-import p{margin:10px 0}.transcript-import input{max-width:100%;width:100%}.transcript-import textarea{width:100%;min-height:180px;margin-top:8px;font-size:13px}

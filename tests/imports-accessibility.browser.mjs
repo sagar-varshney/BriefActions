@@ -69,7 +69,11 @@ try{
     }
   }
   const annotation=await (await fetch(base+'/api/annotations',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({transcript:'Maya will send the report tomorrow.',reference_date:'2026-10-12',source:'synthetic',permission:true,anonymized:true,group:'Accessibility fixture'})})).json();
-  await page.getByRole('button',{name:'Annotation reviewer',exact:true}).click();await page.getByRole('button',{name:`Label case ${annotation.id.slice(0,6)}`,exact:true}).click();
+  await page.getByRole('button',{name:'Annotation reviewer',exact:true}).click();
+  const permission=page.getByLabel('I have permission to use this material for evaluation'),privacy=page.getByLabel('I checked the preview for identifying or sensitive information');await permission.check();await privacy.check();
+  await page.locator('summary').filter({hasText:'Import a transcript file'}).click();await page.getByLabel('Transcript file',{exact:true}).setInputFiles({name:'annotation.txt',mimeType:'text/plain',buffer:Buffer.from('Jon will send the notes tomorrow.')});await page.getByLabel('Transcript import preview').waitFor();await page.getByRole('button',{name:'Use this transcript'}).click();
+  assert.equal(await page.getByLabel('Transcript to import',{exact:true}).inputValue(),'Jon will send the notes tomorrow.');assert.equal(await page.getByLabel('Annotation meeting date').inputValue(),'');assert.equal(await permission.isChecked(),false);assert.equal(await privacy.isChecked(),false);assert.equal((await (await fetch(base+'/api/annotations')).json()).length,1);
+  await page.getByRole('button',{name:`Label case ${annotation.id.slice(0,6)}`,exact:true}).click();
   await page.getByLabel('Reviewer identity').fill('Accessibility fixture');await page.getByRole('button',{name:'Start or resume review',exact:true}).click();await page.getByText('Independent review',{exact:false}).first().waitFor();
   for(const theme of ['light','dark']){await page.getByLabel('Color theme').selectOption(theme);await scan(page,`active-annotation-${theme}`);}
   await page.emulateMedia({reducedMotion:'reduce'});assert.equal(await page.evaluate(()=>matchMedia('(prefers-reduced-motion: reduce)').matches),true);
