@@ -43,7 +43,7 @@ try:
     bob_run=other.create_run('Account erased after backup.','2026-10-12',[])
     annotations=AnnotationStore(store);cases=[]
     for group in ['one','two','three']:
-        case=annotations.create(text,'2026-10-12','synthetic',True,True,group);cases.append(case['id'])
+        case=annotations.create(text+'\nContext: '+group+'.','2026-10-12','synthetic',True,True,group);cases.append(case['id'])
         items=[{k:proposals[0][k] for k in ('task','owner','deadline','evidence')}]
         for reviewer in ['fixture-one','fixture-two']:annotations.submit(case['id'],reviewer,items,True)
     snapshot=annotations.freeze('backup-fixture',.3)['snapshot']
