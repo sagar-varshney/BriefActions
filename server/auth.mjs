@@ -12,7 +12,7 @@ export function accountVerifier(config) {
     global:{fetch:(url,options)=>fetch(url,{...options,signal:AbortSignal.timeout(10_000)})}});
   return async token=>{
     const {data,error}=await client.auth.getUser(token);
-    if(error && (error.status>=500 || error.name==='AuthRetryableFetchError'))throw new Error('Authentication unavailable');
+    if(error && ([408,429].includes(error.status) || error.status>=500 || error.name==='AuthRetryableFetchError'))throw new Error('Authentication unavailable');
     if(error || !UUID.test(data.user?.id || '') || data.user?.is_anonymous)return null;
     return data.user.id;
   };

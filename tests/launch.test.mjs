@@ -4,10 +4,14 @@ import {mkdtemp,rm,writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {randomUUID} from 'node:crypto';
-import {createApp,engine} from '../server/index.mjs';
+import http from 'node:http';
+import {spawnSync} from 'node:child_process';
+import {fileURLToPath} from 'node:url';
+import {createApp,engine,pythonBinary} from '../server/index.mjs';
 import {loadConfig} from '../server/config.mjs';
-import {rateLimiter,credentialKey} from '../server/auth.mjs';
+import {rateLimiter,credentialKey,accountVerifier} from '../server/auth.mjs';
 import {createTelemetry,routeName} from '../server/telemetry.mjs';
+import {createStorageProbe} from '../server/readiness.mjs';
 
 const hosted=()=>({...loadConfig(),authMode:'supabase',supabaseUrl:'https://fixture.supabase.co',supabaseKey:'sb_publishable_fixture'});
 async function running(options,action){
@@ -89,6 +93,13 @@ test('Limits expire predictably, credentials are hashed, and the production work
   for(const value of ['0','5','two'])assert.throws(()=>loadConfig({...env,FLOW_MAX_WORKERS:value}));
 });
 
+test('An upstream authentication quota is temporary unavailability, not an expired user session',async()=>{
+  const provider=http.createServer((_req,res)=>{res.writeHead(429,{'Content-Type':'application/json'});res.end('{"message":"Provider quota exceeded"}');});
+  await new Promise(resolve=>provider.listen(0,'127.0.0.1',resolve));
+  try{const verify=accountVerifier({...hosted(),supabaseUrl:`http://127.0.0.1:${provider.address().port}`});await assert.rejects(verify('fixture-token'),/Authentication unavailable/);}
+  finally{provider.closeAllConnections();await new Promise(resolve=>provider.close(resolve));}
+});
+
 test('Worker stdout failures and stderr cannot leak private exception text',async()=>{
   const folder=await mkdtemp(path.join(tmpdir(),'flow-private-errors-')),original=process.env.PYTHON_BIN,secret='private-'+randomUUID(),wrapper=path.join(folder,'python-fixture.sh');
   const originalError=console.error,logs=[];console.error=(...args)=>logs.push(args);
@@ -96,4 +107,15 @@ test('Worker stdout failures and stderr cannot leak private exception text',asyn
     await writeFile(wrapper,`#!/bin/sh\nprintf '%s\\n' '${JSON.stringify({ok:false,status:500,error:secret,code:'runtime.dependencies'})}'\nprintf '%s\\n' '${secret}' >&2\n`,{mode:0o700});process.env.PYTHON_BIN=wrapper;
     await assert.rejects(engine({operation:'health'}),error=>error.status===500&&error.code==='runtime.dependencies'&&!error.message.includes(secret));assert.deepEqual(logs,[]);
   }finally{console.error=originalError;if(original)process.env.PYTHON_BIN=original;else delete process.env.PYTHON_BIN;await rm(folder,{recursive:true,force:true});}
+});
+
+test('Persistent storage probes share work, recover after a process timeout, and stop with the server',async()=>{
+  const folder=await mkdtemp(path.join(tmpdir(),'flow-storage-probe-')),historyPath=path.join(folder,'private # history.sqlite3'),stall=path.join(folder,'stall.py');
+  const seeded=spawnSync(pythonBinary(),['-B','-c','from history import HistoryStore; import sys; HistoryStore(sys.argv[1])',historyPath],{cwd:fileURLToPath(new URL('../',import.meta.url))});assert.equal(seeded.status,0);
+  await writeFile(stall,'#!/usr/bin/env python3\nimport time\ntime.sleep(60)\n',{mode:0o700});let stalled=true;
+  const probe=createStorageProbe({python:()=>stalled?stall:pythonBinary(),historyPath,timeout:1000});
+  try{
+    await assert.rejects(probe.check(),/unavailable/);stalled=false;
+    await Promise.all([probe.check(),probe.check()]);await probe.check();probe.stop();await assert.rejects(probe.check(),/unavailable/);
+  }finally{probe.stop();await rm(folder,{recursive:true,force:true});}
 });

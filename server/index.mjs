@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import {loadConfig} from './config.mjs';
 import {accountVerifier,accountDeleter,rateLimiter,credentialKey,UUID} from './auth.mjs';
 import {createTelemetry,requestId} from './telemetry.mjs';
+import {createStorageProbe} from './readiness.mjs';
 
 const ROOT = fileURLToPath(new URL('../', import.meta.url));
 const DIST = path.join(ROOT, 'dist');
@@ -99,6 +100,7 @@ export function createApp({historyPath, config=loadConfig(), maxWorkers=config.m
   };
   const allow=rateLimiter(),allowAnalysis=rateLimiter({limit:10}),allowAuth=rateLimiter({limit:120});
   let healthPromise=null,healthUntil=0,deepChecked=false;
+  const storageProbe=createStorageProbe({python:pythonBinary,historyPath,databaseUrl:config.databaseUrl});
   const workerOptions=accountId=>({historyPath:accountId && !config.databaseUrl ? path.join(historyPath+'.accounts',accountId+'.sqlite3') : historyPath,databaseUrl:config.databaseUrl,accountId});
   const runWorker = async (request,accountId) => {
     await acquire();
@@ -154,7 +156,11 @@ export function createApp({historyPath, config=loadConfig(), maxWorkers=config.m
         if(!healthPromise || healthNow()>healthUntil){
           healthUntil=Infinity;
           const deep=!deepChecked,options={...workerOptions(config.databaseUrl?'00000000-0000-0000-0000-000000000000':null),timeout:deep?60_000:5_000};
-          healthPromise=Promise.resolve().then(()=>checkHealth?checkHealth(deep,options):engine({operation:deep?'health':'health_light'},options)).then(()=>{deepChecked=true;healthUntil=healthNow()+healthTtl;return {status:'ready'};}).catch(e=>{healthPromise=null;throw e;});
+          healthPromise=Promise.resolve().then(async()=>{
+            if(checkHealth)return checkHealth(deep,options);
+            if(deep)await engine({operation:'health'},options);
+            try{await storageProbe.check();}catch{throw new HttpError(503,'Workspace storage is temporarily unavailable. Please try again.','storage.failed',2);}
+          }).then(()=>{deepChecked=true;healthUntil=healthNow()+healthTtl;return {status:'ready'};}).catch(e=>{healthPromise=null;throw e;});
         }
         return json(res,200,await healthPromise);
       }
@@ -252,7 +258,7 @@ export function createApp({historyPath, config=loadConfig(), maxWorkers=config.m
         file = path.join(DIST, 'index.html');
         info = await stat(file).catch(() => null);
       }
-      if (!info?.isFile()) throw new HttpError(503, 'Build the React app first with pnpm build, or use pnpm dev.');
+      if (!info?.isFile()) throw new HttpError(503, config.production?'Workspace is temporarily unavailable. Please try again.':'Build the React app first with pnpm build, or use pnpm dev.', 'web.assets_unavailable');
       res.writeHead(200, {'Content-Type':TYPES[path.extname(file)] || 'application/octet-stream','Cache-Control':'no-cache'});
       if (req.method === 'HEAD') return res.end();
       createReadStream(file).on('error', () => res.destroy()).pipe(res);
@@ -264,7 +270,7 @@ export function createApp({historyPath, config=loadConfig(), maxWorkers=config.m
     }
   });
   const metrics=setInterval(()=>{void telemetry.sample(runtime());},60_000);metrics.unref();
-  server.once('close',()=>{clearInterval(metrics);void telemetry.sample(runtime());});
+  server.once('close',()=>{clearInterval(metrics);storageProbe.stop();void telemetry.sample(runtime());});
   return server;
 }
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
@@ -272,7 +278,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   const config=loadConfig(),{port,host}=config;
   const server = createApp({config});
   server.on('error', error => { console.error(JSON.stringify({event:'server_start_failed',code:['EADDRINUSE','EACCES'].includes(error.code)?error.code:'START_FAILED'})); process.exitCode = 1; });
-  server.listen(port, host, () => console.log(`Productivity Flow Engine listening on ${host}:${port}`));
+  server.listen(port, host, () => console.log(JSON.stringify({event:'server_started',mode:config.production?'production':'local',port,worker_limit:config.maxWorkers})));
   for (const signal of ['SIGINT','SIGTERM']) process.on(signal, () => server.close(() => process.exit(0)));
   }catch{console.error(JSON.stringify({event:'server_config_failed',code:'CONFIG_INVALID'}));process.exitCode=1;}
 }

@@ -88,11 +88,13 @@ try{
     const foreign=items.find(item=>item.user!==user);assert.equal((await fetch(base+`/api/runs/${foreign.input.request_id}`,{headers:{Authorization:`Bearer ${user.token}`}})).status,404);
   }
   monitoring=false;await Promise.all([liveMonitor,readyMonitor]);
-  for(const [kind,samples] of Object.entries(report.health)){assert.ok(samples.length>0);assert.ok(samples.every(sample=>sample.status===200),`${kind} failed under analysis load`);}
-  const memory=await command('docker',['exec',name,'node','--input-type=module','-e',"import{readFile}from'node:fs/promises';const r={};for(const f of ['memory.peak','memory.max','memory.events'])r[f]=(await readFile('/sys/fs/cgroup/'+f,'utf8')).trim();console.log(JSON.stringify(r));"]);
+  const memory=await command('docker',['exec',name,'node','--input-type=module','-e',"import{readFile}from'node:fs/promises';const r={};for(const f of ['memory.peak','memory.max','memory.events','cpu.max'])r[f]=(await readFile('/sys/fs/cgroup/'+f,'utf8')).trim();console.log(JSON.stringify(r));"]);
   const values=JSON.parse(memory);report.container_peak_memory_bytes=Number(values['memory.peak']);assert.equal(Number(values['memory.max']),report.profile.memory_bytes);assert.equal(Number(values['memory.events'].match(/^oom_kill (\d+)$/m)?.[1]),0);
+  const [quota,period]=values['cpu.max'].split(' ').map(Number);report.container_cpu_limit=quota/period;assert.equal(report.container_cpu_limit,report.profile.cpu);
   const state=JSON.parse(await command('docker',['inspect',name,'--format','{{json .State}}']));assert.equal(state.Running,true);assert.equal(state.OOMKilled,false);
+  report.oom_killed=state.OOMKilled;
   assert.ok(report.container_peak_memory_bytes<=report.profile.memory_bytes);
+  for(const [kind,samples] of Object.entries(report.health)){assert.ok(samples.length>0);assert.ok(samples.every(sample=>sample.status===200),`${kind} failed under analysis load`);}
   timings.sort((a,b)=>a-b);report.analysis_ms={p50:Math.round(timings[Math.floor((timings.length-1)*.5)]),p95:Math.round(timings[Math.ceil((timings.length-1)*.95)]),maximum:Math.round(timings.at(-1))};
   report.duration_ms=Math.round(performance.now()-started);report.status='passed';
   console.log('Hosting profile passed: 512 MiB / 0.1 CPU, bounded burst/retries, exact evidence, account isolation, duplicate prevention, responsive liveness/readiness, and no OOM kill.');

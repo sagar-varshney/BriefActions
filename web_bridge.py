@@ -107,10 +107,9 @@ def handle(request):
             return store().save_draft(request.get('run_id'),request.get('decisions'),request.get('version'),request.get('client_id'),request.get('edit_id'))
         except ValueError as error:
             raise ApiError(str(error),409 if 'another tab' in str(error) or 'finalized' in str(error) else 400) from error
-    if op in ('health','health_light'):
+    if op == 'health':
         # Import now so readiness checks the extraction runtime, not just Python.
-        if op=='health':
-            import flow_engine
+        import flow_engine
         with store().connection() as conn:
             conn.execute('SELECT COUNT(*) FROM events').fetchone()
         return {'status':'ready', 'engine':'rules-v3', 'python_version':sys.version.split()[0]}

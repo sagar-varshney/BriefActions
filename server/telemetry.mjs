@@ -9,7 +9,7 @@ const ROUTES=new Map([
   ['/api/benchmarks','benchmarks'],['/api/reviewed-snapshots','reviewed.snapshots'],['/api/reviewed-benchmarks','reviewed.reports'],
 ]);
 const ACTIONS=new Set(['finalize','draft','manual-actions','history.json','tasks.csv','delete','submit','export']);
-const CODES=new Set(['request.failed','request.aborted','worker.unavailable','worker.timeout','worker.output_limit','worker.invalid_response','worker.failed','runtime.dependencies','storage.failed','engine.busy','auth.busy','auth.unavailable','auth.invalid','auth.throttled','account.throttled','analysis.throttled','export.failed']);
+const CODES=new Set(['request.failed','request.aborted','worker.unavailable','worker.timeout','worker.output_limit','worker.invalid_response','worker.failed','runtime.dependencies','storage.failed','engine.busy','auth.busy','auth.unavailable','auth.invalid','auth.throttled','account.throttled','analysis.throttled','export.failed','web.assets_unavailable']);
 export const requestId=()=>randomUUID();
 export function routeName(url){
   let pathname;try{pathname=new URL(url,'http://localhost').pathname;}catch{return 'unknown';}

@@ -16,8 +16,10 @@ original run. This does not promise that every simultaneous request is accepted.
 - `/api/health` checks Python/ML dependencies on its first successful probe and
   the storage connection on subsequent probes. Probes share one in-flight promise
   and cache successful results for ten seconds. They run independently of the
-  analysis queue; later probes avoid importing the large ML libraries and have a
-  five-second timeout. A failed probe returns an error, not a cached healthy value.
+  analysis queue. A small persistent Python checker handles later read-only storage
+  probes, avoiding repeated interpreter/dependency startup under CPU limits. The
+  checker has a five-second timeout, restarts after a failed process, and is stopped
+  with the HTTP server. A failed probe returns an error, not a cached healthy value.
 
 Liveness does not establish that analysis or storage is ready. Check `/api/health`
 before opening the deployment to users, and monitor readiness separately from
