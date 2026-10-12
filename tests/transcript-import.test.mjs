@@ -9,7 +9,7 @@ test('text decoding preserves names, Unicode and literal text, normalizing newli
   assert.equal(decodeTranscript(Buffer.from([254,255,0,65])),'A');
 });
 test('VTT strips header, metadata, styles, timestamps and preserves voices/entities',()=>{
-  const value=parseTranscript('meeting.vtt','WEBVTT\nKind: captions\n\nNOTE source\nignore this\n\nSTYLE\n::cue {color: red}\n\nREGION\nid:one\n\ncue-one\n00:01.000 --> 00:03.000 align:start\n<v Maya><b>I’ll send</b> the report &amp; invoice tomorrow.</v>\n<v Jon>Thanks &#x1F44D; &lt;literal&gt;</v>\n\n00:04.000 --> 00:06.000\nMaya: Actually, make that Monday.');
+  const value=parseTranscript('meeting.vtt','WEBVTT\nKind: captions\n\nNOTE source\nignore this\n\nNOTE\nignore a multiline comment without a title\n\nSTYLE\n::cue {color: red}\n\nREGION\nid:one\n\ncue-one\n00:01.000 --> 00:03.000 align:start\n<v Maya><b>I’ll send</b> the report &amp; invoice tomorrow.</v>\n<v Jon>Thanks &#x1F44D; &lt;literal&gt;</v>\n\n00:04.000 --> 00:06.000\nMaya: Actually, make that Monday.');
   assert.equal(value.cues,2);assert.equal(value.transcript,'Maya: I’ll send the report & invoice tomorrow.\nJon: Thanks 👍 <literal>\nMaya: Actually, make that Monday.');
 });
 test('SRT preserves caption order and repeated text for extraction to interpret',()=>{

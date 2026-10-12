@@ -44,7 +44,7 @@ export function parseTranscript(filename, text) {
     }
     const passages = [];
     for (const block of blocks) {
-      if (format === 'vtt' && /^(?:NOTE(?:[ \t]|$)|STYLE(?:\n|$)|REGION(?:\n|$))/.test(block)) continue;
+      if (format === 'vtt' && /^(?:NOTE(?:[ \t\n]|$)|STYLE(?:\n|$)|REGION(?:\n|$))/.test(block)) continue;
       const lines = block.split('\n');
       const index = lines[0].includes('-->') ? 0 : 1;
       const match = /^(\S+)\s+-->\s+(\S+)(?:\s+.*)?$/.exec(lines[index] || '');
