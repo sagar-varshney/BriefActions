@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 import sys
 import unittest
+from concurrent.futures import ThreadPoolExecutor
 from uuid import uuid4, uuid5, NAMESPACE_URL
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -52,4 +53,16 @@ with one.connection() as conn:
 with psycopg.connect(url) as conn:
     conn.execute('SET LOCAL ROLE flow_app')
     assert conn.execute('SELECT COUNT(*) FROM flow.events').fetchone()[0]==0
-print('Postgres: workflow regression suite, RLS isolation, forged-owner rejection, missing-owner denial, and append-only permissions passed.')
+
+# Concurrent saves must not both accept version 0.
+one.create_run('No actions.','2026-09-15',[])
+def save_racing():
+    try:return one.save_draft(run,[],0,'client',1)['version']
+    except ValueError:return 'conflict'
+with ThreadPoolExecutor(max_workers=2) as pool:
+    assert sorted(pool.map(lambda _:save_racing(),range(2)),key=str)==[1,'conflict']
+with one.connection() as conn:
+    try:conn.execute('INSERT INTO events(run_id,kind,created_at,payload) VALUES (?,?,?,?)',('budget','extraction','now','x'*25_000_001))
+    except psycopg.errors.RaiseException as error:assert str(error).startswith('Workspace history storage limit reached')
+    else:raise AssertionError('History storage quota bypassed')
+print('Postgres: workflow regression suite, RLS isolation, forged/missing-owner denial, append-only permissions, concurrent draft conflict, and history quota passed.')

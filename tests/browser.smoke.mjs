@@ -84,6 +84,11 @@ try {
   assert.equal(await page.locator('.history-card').count(),1);
   await page.getByRole('button',{name:'Open run'}).click();await page.getByRole('heading',{name:'Your confirmed plan'}).waitFor();
   await page.getByRole('button',{name:'Evaluation lab'}).click();
+  const provenance=page.locator('details').filter({has:page.getByText('Benchmark provenance & metric limitations',{exact:true})});
+  assert.equal(await provenance.getAttribute('open'),null);
+  await provenance.locator('summary').click();
+  assert.ok(await provenance.getByText(/Annotations were authored by Codex/).isVisible());
+  await provenance.locator('summary').click();
   await page.getByRole('button',{name:'rules',exact:false}).last().waitFor();
   assert.equal(await page.locator('.benchmark-panel').first().locator('tbody tr').count(),8);
   await page.locator('.experiment').filter({hasText:/^rules/}).click();
@@ -333,6 +338,9 @@ try {
   await page.setViewportSize({width:390,height:844});
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Mobile reviewed benchmark overflows');
   await page.screenshot({path:path.join(screenshotDir,'mobile-reviewed-comparison.png'),fullPage:true});
+  await page.getByLabel('Color theme').selectOption('dark');
+  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+  await page.screenshot({path:path.join(screenshotDir,'mobile-reviewed-dark.png'),fullPage:true});
   assert.deepEqual(errors,[]);
   console.log('Browser smoke passed: user-added missed actions, preserved prior edits, confirmation/audit/CSV, reviewed snapshot comparison/default dev/explicit held-out scoring/report reload; annotation draft reload/navigation/SQLite recovery, failed-save recovery, reviewer isolation, stale-write recovery, 84-case input-only import/dedup/filtering; autosaved reviews, annotation import/anonymization, Unicode spans, independent review, disagreement resolution, frozen exports; dedup, review validation, corrections, confirmation, CSV/JSON, reload, history, benchmark cases, empty plans, mobile layout.');
   console.log(`Screenshots: ${screenshotDir}`);

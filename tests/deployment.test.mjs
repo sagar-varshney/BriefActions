@@ -31,7 +31,7 @@ test('Managed auth SDK verifies tokens with the authoritative provider',async()=
 });
 test('Authenticated routes isolate all private state and authenticated downloads',async()=>{
   const folder=await mkdtemp(path.join(tmpdir(),'flow-accounts-'));
-  const config={...loadConfig(),authMode:'supabase',supabaseUrl:'https://test-project.supabase.co',supabaseKey:'sb_publishable_test',publicOrigin:'https://flow.example'};
+  const config={...loadConfig(),authMode:'supabase',supabaseUrl:'https://test-project.supabase.co',supabaseKey:'sb_publishable_test',publicOrigin:'https://flow.example',databaseUrl:process.env.FLOW_TEST_DATABASE_URL};
   const server=createApp({config,historyPath:path.join(folder,'local.sqlite3'),verifyAccount:async token=>({alice,bob})[token] || null});
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
   const base=`http://127.0.0.1:${server.address().port}`;

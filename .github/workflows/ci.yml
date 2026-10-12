@@ -84,6 +84,8 @@ jobs:
           python scripts/check_benchmark.py artifacts/revision-dev.json --dataset evaluation/revision-v1/dev.jsonl --baseline evaluation/results/revision-v1/rules-dev.json | tee -a artifacts/revision-benchmark.log
 
       - name: Run Node API tests
+        env:
+          FLOW_TEST_DATABASE_URL: postgresql://postgres:flow-ci-only@127.0.0.1:5432/flow
         run: pnpm test 2>&1 | tee artifacts/api-tests.log
 
       - name: Build React application
