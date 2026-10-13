@@ -39,6 +39,8 @@ try:
     keep=store.create_run(text,'2026-10-12',proposals)
     decisions=[dict(p,accept=True) for p in proposals];decisions[0]['task']='Send reviewed report'
     store.save_draft(keep,decisions,0,'fixture',1);store.finalize(keep,decisions)
+    from meeting_history import rename,search
+    rename(store,keep,'Reviewed planning meeting',0)
     erased=store.create_run('Erased after backup.','2026-10-12',[])
     bob_run=other.create_run('Account erased after backup.','2026-10-12',[])
     annotations=AnnotationStore(store);cases=[]
@@ -75,6 +77,7 @@ try:
         assert counts['events']>=10
         restored=HistoryStore('/unused',database_url=target,owner=alice)
         self_snapshot=restored.get_run(keep)
+        assert search(restored,'Reviewed planning')['items'][0]['title']=='Reviewed planning meeting'
         assert self_snapshot==store.get_run(keep), 'Original input, evidence, corrections, final plan or IDs changed'
         for rid in [erased,cases[0]]:
             try:restored.get_run(rid)

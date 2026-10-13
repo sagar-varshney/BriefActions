@@ -34,7 +34,10 @@ try{
   await page.getByRole('button',{name:'Try an example',exact:true}).click();
   await page.getByRole('status').filter({hasText:'Synthetic example meeting'}).waitFor();
   assert.equal((await (await fetch(base+'/api/runs')).json()).length,0);
-  await page.reload();await page.getByRole('button',{name:'Try an example',exact:true}).waitFor();
+  await page.reload();await page.getByRole('status').filter({hasText:'Restored transcript draft'}).waitFor();
+  assert.ok((await page.getByLabel('Meeting transcript',{exact:true}).inputValue()).length>0);
+  await page.getByRole('button',{name:'Discard transcript draft',exact:true}).click();
+  await page.getByRole('button',{name:'Try an example',exact:true}).waitFor();
   assert.equal(await page.getByLabel('Meeting transcript',{exact:true}).inputValue(),'');
   for(const width of [1440,320]){await page.setViewportSize({width,height:800});for(const theme of ['light','dark']){await page.getByLabel('Color theme').selectOption(theme);await scan(page,`welcome-${width}-${theme}`);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await page.screenshot({path:path.join(shots,`welcome-${width}-${theme}.png`),fullPage:true});}}
   await page.getByLabel('Meeting transcript',{exact:true}).fill('Ready.');

@@ -29,6 +29,13 @@ test('Data controls isolate exports, protect deletions, prevent resurrection, an
     assert.equal((await (await get('/api/runs')).json()).length,1);
     assert.equal((await post('/api/runs',{...input,clusters:2})).status,409);
     await post('/api/runs',{transcript:'Bob will send the confidential invoice.',reference_date:'2026-09-15'},'bob');
+    assert.equal((await (await get('/api/runs/search?query=confidential')).json()).total,0);
+    assert.equal((await (await get('/api/runs/search?query=private')).json()).total,1);
+    assert.equal((await post(`/api/runs/${first.id}/title`,{title:'Stolen name',version:0},'bob')).status,404);
+    assert.equal((await post(`/api/runs/${first.id}/title`,{title:'Private planning',version:0})).status,200);
+    assert.equal((await (await get('/api/runs/search?query=Private%20planning')).json()).items[0].title,'Private planning');
+    assert.equal((await get('/api/runs/search?query=a&query=b')).status,400);
+    assert.equal((await get('/api/runs/search?owner=bob')).status,400);
     const aliceUsage=(await (await get('/api/account')).json()).storage;
     const bobUsage=(await (await get('/api/account','bob')).json()).storage;
     assert.ok(aliceUsage.history.used_bytes>0);assert.ok(bobUsage.history.used_bytes>0);

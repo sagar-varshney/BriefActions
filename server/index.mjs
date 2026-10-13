@@ -140,7 +140,7 @@ export function createApp({historyPath, config=loadConfig(), maxWorkers=config.m
     res.setHeader('Content-Security-Policy',`default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' ${config.authMode==='supabase'?new URL(config.supabaseUrl).origin:''}; frame-ancestors 'none'; base-uri 'self'; form-action 'self'`);
     if(config.production)res.setHeader('Strict-Transport-Security','max-age=31536000');
     try {
-      const pathname = new URL(req.url, 'http://localhost').pathname;
+      const url = new URL(req.url, 'http://localhost'),pathname=url.pathname;
       // Browser writes must originate from this app. No permissive CORS.
       if (req.method === 'POST' && req.headers.origin) {
         let origin;try{origin=new URL(req.headers.origin);}catch{throw new HttpError(403,'Invalid request origin.');}
@@ -196,13 +196,21 @@ export function createApp({historyPath, config=loadConfig(), maxWorkers=config.m
         return json(res,200,await call({operation:'delete_input',run_id:match[2],kind:match[1]==='runs'?'extraction':'annotation_input'}));
       }
       if (req.method === 'GET' && pathname === '/api/config') return json(res, 200, await call({operation:'config'}));
+      if(req.method==='GET' && pathname==='/api/runs/search'){
+        const keys=new Set(['query','status','date_from','date_to','page','page_size']);
+        for(const key of url.searchParams.keys())if(!keys.has(key) || url.searchParams.getAll(key).length!==1)throw new HttpError(400,'Invalid history search parameter.');
+        const input=Object.fromEntries(url.searchParams);
+        for(const key of ['page','page_size'])if(key in input){if(!/^\d{1,6}$/.test(input[key]))throw new HttpError(400,'Invalid history page or page size.');input[key]=Number(input[key]);}
+        return json(res,200,await call({...input,operation:'meeting_search'}));
+      }
       if (req.method === 'GET' && pathname === '/api/runs') return json(res, 200, await call({operation:'runs'}));
       if (req.method === 'POST' && pathname === '/api/runs') {
         const input = await body(req);
-        return json(res, 201, await call({transcript:input.transcript,reference_date:input.reference_date,clusters:input.clusters ?? 3,request_id:input.request_id,operation:'analyze'}));
+        return json(res, 201, await call({transcript:input.transcript,reference_date:input.reference_date,clusters:input.clusters ?? 3,request_id:input.request_id,title:input.title ?? '',operation:'analyze'}));
       }
-      if ((match = pathname.match(/^\/api\/runs\/([a-f0-9]{32})(?:\/(finalize|draft|manual-actions|history.json|tasks.csv))?$/))) {
+      if ((match = pathname.match(/^\/api\/runs\/([a-f0-9]{32})(?:\/(finalize|draft|title|manual-actions|history.json|tasks.csv))?$/))) {
         const [, run_id, action] = match;
+        if(req.method==='POST' && action==='title'){const input=await body(req);return json(res,200,await call({operation:'meeting_title',run_id,title:input.title,version:input.version}));}
         if (req.method === 'POST' && action === 'manual-actions') {
           const input=await body(req);
           return json(res,200,await call({operation:'manual_action',run_id,item:input.item,request_id:input.request_id}));

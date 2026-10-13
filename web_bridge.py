@@ -40,7 +40,9 @@ def run_snapshot(run_id):
         decisions={d['proposal_id']:d for d in draft['decisions']}
         draft={**draft,'decisions':[decisions.get(p['proposal_id'],{k:p[k] for k in ('proposal_id','task','owner','deadline')}|{'accept':False}) for p in proposals]}
     final = next((e['payload']['tasks'] for e in events if e['kind'] == 'final'), None)
+    name=next((e['payload'] for e in reversed(events) if e['kind']=='meeting_title'),None)
     return {'id':run_id, 'created_at':events[0]['created_at'], **original,'proposals':proposals,
+            'title':name['title'] if name else original.get('title',''),'title_version':name['version'] if name else 0,
             'summary':original.get('settings',{}).get('summary',''),
             'status':'confirmed' if final is not None else 'review', 'final_tasks':final, 'events':events, 'draft':draft}
 
@@ -53,6 +55,13 @@ def report_paths():
 
 def handle(request):
     op = request.get('operation')
+    if op=='meeting_search':
+        from meeting_history import search
+        return search(store(),request.get('query',''),request.get('status',''),request.get('date_from',''),request.get('date_to',''),request.get('page',0),request.get('page_size',12))
+    if op=='meeting_title':
+        from meeting_history import rename
+        rename(store(),request.get('run_id'),request.get('title'),request.get('version'))
+        return run_snapshot(request.get('run_id'))
     if op=='account_status':
         from data_controls import account_status
         return account_status(store())
@@ -131,7 +140,10 @@ def handle(request):
         if type(clusters) is not int or not 1 <= clusters <= 6:
             raise ApiError('Maximum groups must be an integer from 1 to 6.')
         request_id=request.get('request_id')
-        fingerprint=hashlib.sha256(json.dumps([transcript,reference,clusters],ensure_ascii=False).encode()).hexdigest()
+        from meeting_history import clean_title
+        title=clean_title(request.get('title',''))
+        # Empty names preserve fingerprints for interrupted requests from older clients.
+        fingerprint=hashlib.sha256(json.dumps([transcript,reference,clusters]+([title] if title else []),ensure_ascii=False).encode()).hexdigest()
         if request_id is not None and store().existing_analysis(request_id,fingerprint):return run_snapshot(request_id)
         from flow_engine import run_pipeline
         frame, summary, silhouette = run_pipeline(transcript, clusters, meeting_date)
@@ -142,7 +154,7 @@ def handle(request):
                     'clusters':clusters,'summary':summary,'silhouette':silhouette,'interface':'react-node-v1','request_fingerprint':fingerprint}
         if len(json.dumps({'transcript':transcript,'proposals':frame.to_dict('records'),'settings':settings}).encode())>3_000_000:
             raise ApiError('The analysis result is too large. Split the transcript into smaller meetings.',413)
-        run_id = store().create_run(transcript,reference,frame.to_dict('records'),settings,request_id=request_id)
+        run_id = store().create_run(transcript,reference,frame.to_dict('records'),settings,request_id=request_id,title=title)
         return run_snapshot(run_id)
     if op == 'runs':
         # One query, including old Streamlit runs, without loading every transcript.

@@ -82,7 +82,7 @@ class HistoryStore:
             return request_id
         return None
 
-    def create_run(self, transcript, reference_date, proposals, settings=None,request_id=None):
+    def create_run(self, transcript, reference_date, proposals, settings=None,request_id=None,title=""):
         run_id = request_id or uuid4().hex
         with self.connection() as conn:
             conn.execute('BEGIN IMMEDIATE')
@@ -94,7 +94,7 @@ class HistoryStore:
                     if row[0]!='extraction' or json.loads(row[1]).get('settings',{}).get('request_fingerprint')!=settings.get('request_fingerprint'):raise DataError('This request ID belongs to different input.',409)
                     return run_id
             self._append(conn,run_id,'extraction',{'transcript':transcript,'reference_date':reference_date,
-                          'settings':settings or {},'proposals':proposals})
+                          'settings':settings or {},'proposals':proposals,**({'title':title} if title else {})})
         return run_id
 
     def get_run(self, run_id):

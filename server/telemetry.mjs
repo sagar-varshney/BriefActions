@@ -5,10 +5,10 @@ const BOUNDS=[50,100,250,500,1000,2500,5000,10000,30000,60000,90000];
 const ROUTES=new Map([
   ['/api/live','live'],['/api/health','readiness'],['/api/auth-config','auth.config'],
   ['/api/config','workspace.config'],['/api/account','account.status'],['/api/account/export','account.export'],['/api/account/delete','account.delete'],
-  ['/api/runs','runs'],['/api/annotations','annotations'],['/api/annotations/corpora','annotations.corpora'],['/api/annotations/import-corpus','annotations.import'],['/api/annotations/freeze','annotations.freeze'],
+  ['/api/runs','runs'],['/api/runs/search','runs.search'],['/api/annotations','annotations'],['/api/annotations/corpora','annotations.corpora'],['/api/annotations/import-corpus','annotations.import'],['/api/annotations/freeze','annotations.freeze'],
   ['/api/benchmarks','benchmarks'],['/api/reviewed-snapshots','reviewed.snapshots'],['/api/reviewed-benchmarks','reviewed.reports'],
 ]);
-const ACTIONS=new Set(['finalize','draft','manual-actions','history.json','tasks.csv','delete','submit','export']);
+const ACTIONS=new Set(['title','finalize','draft','manual-actions','history.json','tasks.csv','delete','submit','export']);
 const CODES=new Set(['request.failed','request.aborted','worker.unavailable','worker.timeout','worker.output_limit','worker.invalid_response','worker.failed','runtime.dependencies','storage.failed','engine.busy','auth.busy','auth.unavailable','auth.invalid','auth.throttled','account.throttled','analysis.throttled','export.failed','web.assets_unavailable']);
 export const requestId=()=>randomUUID();
 export function routeName(url){

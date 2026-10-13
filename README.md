@@ -25,7 +25,8 @@ Fresh workspaces start with an empty transcript and meeting date. Choose **Try a
 example**, **Paste my transcript**, or **Import a file**. The example is labeled as
 synthetic and loading it does not save a run. **Analyze transcript** saves the
 approved input and proposals; existing unfinished reviews and interrupted analyses
-still restore before the welcome choices appear.
+still restore before the welcome choices appear. Example inputs also autosave in
+the browser; **Discard transcript draft** returns a fresh workspace to empty inputs.
 
 The public `/privacy` page is available before
 sign-in, without requesting private APIs. It explains stored inputs, browser
@@ -42,6 +43,41 @@ is not just transcript size. Local SQLite shows measured usage without claiming
 to enforce hosted quotas. Browser copies, exported files, backups, database row
 metadata, and physical database overhead are excluded. Deletion frees measured
 space; limits and usage are always scoped by the verified account.
+
+## Transcript drafts and searchable meetings
+
+Transcript text, meeting name, date, and grouping settings autosave in this
+browser as you edit, before analysis. Drafts are separated by account, tab, and
+saved run. Reloading restores that tab's inputs without overwriting proposal
+review edits. **New meeting** parks the current run and resumes that tab's separate
+new-meeting draft, or starts empty. Opening a saved run keeps a new-meeting draft
+available for later. **Discard transcript draft** clears the current browser copy
+and restores the saved input, or empties a new meeting. Successful analysis clears
+the matching input draft; unfinished analysis requests retain their existing
+explicit retry flow. If browser storage fails, the app warns and prevents opening
+another run over the unsaved text.
+
+These drafts do not upload transcript edits before analysis and are excluded from
+workspace exports and server storage meters. They are not cross-device sync:
+a fresh tab has a separate draft, and browser storage clearing removes them.
+Input/account erasure clears matching browser copies and open tabs. The privacy
+page documents this behavior.
+
+Name a new meeting before analysis, or use **Save meeting name** on an existing
+run. Names accept up to 120 characters on one line. Renaming appends an audited,
+versioned event; original extraction and confirmed tasks remain unchanged. A
+conflicting name change in another tab is rejected; reopen the run to review it.
+Legacy unnamed runs display their meeting date without requiring a migration.
+Names survive workspace export and encrypted backup/restore.
+
+**Run history** searches current meeting names and original transcript text,
+with case-insensitive literal matching (percent signs and underscores are not
+wildcards). Filter by meeting date range and Awaiting review/Confirmed status.
+The private server endpoint returns twelve meetings per UI page, newest first,
+and never returns another account's matches or totals. An obsolete response is
+ignored when filters change. Empty results and invalid date ranges have explicit
+messages. Searches do not include later task corrections, annotation cases, or
+older meeting names; those remain in their respective audit/history views.
 
 ## Data controls and interrupted analyses
 
@@ -334,6 +370,8 @@ latency; benchmark timings continue to describe extraction only.
 | `GET /api/live`, `/api/health`, `/api/config` | Process liveness, runtime/storage readiness, and private sample input |
 | `POST /api/runs` | Analyze `{transcript, reference_date, clusters, request_id}`; reuse saved results for matching retries |
 | `GET /api/runs`, `/api/runs/:id` | List and inspect saved runs |
+| `GET /api/runs/search` | Account-scoped meeting search and bounded pagination |
+| `POST /api/runs/:id/title` | Versioned, append-only meeting rename |
 | `GET /api/account` | Workspace lifecycle, account-deletion availability, and scoped payload storage usage |
 | `GET /api/account/export` | Streaming, complete workspace JSONL export |
 | `POST /api/account/delete` | Confirmed workspace erasure and sign-in account deletion |

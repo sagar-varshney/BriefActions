@@ -11,6 +11,8 @@ import MissedActionForm from './MissedActionForm.jsx';
 import DataControls from './DataControls.jsx';
 import TranscriptImport from './TranscriptImport.jsx';
 import PrivacyPage from './PrivacyPage.jsx';
+import MeetingHistory from './MeetingHistory.jsx';
+import {readInputDraft,saveInputDraft,removeInputDraft} from './inputDraft.js';
 
 function loadPending(){try{const value=JSON.parse(accountStorage.getItem('flow.pendingAnalysis') || 'null');return value && /^[a-f0-9]{32}$/.test(value.request_id) && typeof value.transcript==='string'?value:null;}catch{return null;}}
 
@@ -53,20 +55,18 @@ function App({account,signOut,completeAccountDeletion,authError}) {
   const [config,setConfig] = useState(null);
   const [transcript,setTranscript] = useState('');
   const [meetingDate,setMeetingDate] = useState('');
+  const [meetingTitle,setMeetingTitle]=useState(''),[inputSaveStatus,setInputSaveStatus]=useState('');
   const [clusters,setClusters] = useState(3);
   const [run,setRun] = useState(null);
   const [drafts,setDrafts] = useState([]);
   const [busy,setBusy] = useState(false);
   const [error,setError] = useState('');
-  const [runs,setRuns] = useState([]);
-  const [historyLoading,setHistoryLoading] = useState(false);
   const [bench,setBench] = useState(null);
   const [report,setReport] = useState(null);
   const [reportId,setReportId] = useState('');
   const [split,setSplit] = useState('test.jsonl');
   const [caseId,setCaseId] = useState('');
   const reportEpoch = useRef(0);
-  const historyEpoch = useRef(0);
   const [saveStatus,setSaveStatus]=useState('');
   const saveQueue=useRef(Promise.resolve()),saveTimer=useRef(null),draftVersions=useRef({}),activeRun=useRef(null);
   const [draftClient]=useState(()=>{const value=sessionStorage.getItem('flow.draftClient')||crypto.randomUUID();sessionStorage.setItem('flow.draftClient',value);return value;});
@@ -91,6 +91,21 @@ function App({account,signOut,completeAccountDeletion,authError}) {
   }
 
 
+  function showInput(value,restored=false){setTranscript(value.transcript || '');setMeetingDate(value.reference_date || '');setClusters(value.clusters || value.settings?.clusters || 3);setMeetingTitle(value.title || '');setInputSaveStatus(restored?'Restored transcript draft from this browser.':'');}
+  function inputValue(patch={}){return {transcript,reference_date:meetingDate,clusters,title:meetingTitle,...patch};}
+  function stashInput(value=inputValue(),context=run?.id || 'new'){
+    try{saveInputDraft(draftClient,context,value);setInputSaveStatus('Transcript draft saved in this browser.');return true;}
+    catch{setInputSaveStatus('Transcript draft could not be saved in this browser. Keep this page open or copy your text before leaving.');return false;}
+  }
+  function changeInput(patch){const value=inputValue(patch);showInput(value);stashInput(value);}
+  function restoreInput(snapshot){const cached=readInputDraft(draftClient,snapshot?.id || 'new');showInput(cached || snapshot || {transcript:'',reference_date:'',clusters:3,title:''},!!cached);}
+  function newMeeting(){
+    if(busy || restoring || pending || !stashInput())return;
+    clearTimeout(saveTimer.current);activeRun.current=null;setRun(null);setDrafts([]);accountStorage.removeItem('flow.activeRun');setPending(null);setAnalysisStatus('');restoreInput(null);setPage('extract');
+  }
+  function discardInput(){try{removeInputDraft(draftClient,run?.id || 'new');showInput(run || {transcript:'',reference_date:'',clusters:3,title:''});}catch{setInputSaveStatus('Browser draft could not be discarded. Keep this page open.');}}
+  async function saveName(){setError('');setBusy(true);try{const value=await api(`/runs/${run.id}/title`,{method:'POST',body:JSON.stringify({title:meetingTitle,version:run.title_version})});adopt(value);setMeetingTitle(value.title);stashInput(inputValue({title:value.title}));}catch(e){setError(e.message);}finally{setBusy(false);}}
+
   function adopt(snapshot) {
     setRun(snapshot);
     clearTimeout(saveTimer.current);activeRun.current=snapshot.id;
@@ -114,7 +129,7 @@ function App({account,signOut,completeAccountDeletion,authError}) {
       try {
         const status=await api('/account');
         if(!alive)return;
-        if(status.state==='deleting'){setClosing(true);setPage('data');return;}
+        if(status.state==='deleting'){accountStorage.clearWorkspace(false);setPending(null);setClosing(true);setPage('data');return;}
         const value=await api('/config');
         if(!alive)return;
         setConfig(value);
@@ -122,16 +137,17 @@ function App({account,signOut,completeAccountDeletion,authError}) {
         if(saved) {
           try {
             const snapshot=await api(`/runs/${saved}`);
-            if(alive){adopt(snapshot);setTranscript(snapshot.transcript);setMeetingDate(snapshot.reference_date);setClusters(snapshot.settings?.clusters || 3);}
+            if(alive){adopt(snapshot);restoreInput(snapshot);}
           } catch(e){if([404,410].includes(e.status))accountStorage.removeItem('flow.activeRun');else throw e;}
         }
+        if(alive && !accountStorage.getItem('flow.activeRun'))restoreInput(null);
         const unfinished=loadPending();
         if(unfinished && alive){
-          setTranscript(unfinished.transcript);setMeetingDate(unfinished.reference_date);setClusters(unfinished.clusters);
-          try{const saved=await api(`/runs/${unfinished.request_id}`);if(alive){adopt(saved);accountStorage.removeItem('flow.pendingAnalysis');setPending(null);setAnalysisStatus('Recovered your saved analysis.');}}
+          showInput(unfinished);
+          try{const saved=await api(`/runs/${unfinished.request_id}`);if(alive){removeInputDraft(draftClient,unfinished.source_context || accountStorage.getItem('flow.activeRun') || 'new');adopt(saved);showInput(saved);accountStorage.removeItem('flow.pendingAnalysis');setPending(null);setAnalysisStatus('Recovered your saved analysis.');}}
           catch(e){if(alive)setAnalysisStatus('An unfinished analysis is saved. Retry it to recover or finish the same request.');}
         }
-      } catch(e){if(alive)setError(e.message);}finally{if(alive)setRestoring(false);}
+      } catch(e){if(alive){setError(e.message);if(!accountStorage.getItem('flow.activeRun'))restoreInput(null);const unfinished=loadPending();if(unfinished)showInput(unfinished);}}finally{if(alive)setRestoring(false);}
     })();
     return ()=>{alive=false;};
   },[]);
@@ -140,27 +156,23 @@ function App({account,signOut,completeAccountDeletion,authError}) {
     window.addEventListener('storage',erased);return()=>window.removeEventListener('storage',erased);
   },[]);
   useEffect(()=>{
-    if(page==='history') {
-      const epoch=++historyEpoch.current;
-      setHistoryLoading(true);
-      api('/runs').then(value=>{if(epoch===historyEpoch.current)setRuns(value);})
-        .catch(e=>setError(e.message)).finally(()=>{if(epoch===historyEpoch.current)setHistoryLoading(false);});
-    }
     if(page==='benchmark' && !bench) api('/benchmarks').then(setBench).catch(e=>setError(e.message));
   },[page,bench]);
   async function analyze(event) {
     event.preventDefault();
-    const input={transcript,reference_date:meetingDate,clusters};
+    const input=inputValue();
     const saved=loadPending();
-    const same=saved && saved.transcript===transcript && saved.reference_date===meetingDate && saved.clusters===clusters;
+    const same=saved && saved.transcript===transcript && saved.reference_date===meetingDate && saved.clusters===clusters && (saved.title || '')===meetingTitle;
     await submitAnalysis(same?saved:{...input,request_id:crypto.randomUUID().replaceAll('-','')});
   }
   async function submitAnalysis(input){
     if(analysisBusy.current)return;
+    const sourceContext=input.source_context || run?.id || 'new';
+    input={...input,source_context:sourceContext};
     try{accountStorage.setItem('flow.pendingAnalysis',JSON.stringify(input));}catch{setError('Browser storage is unavailable. Enable storage before starting a recoverable analysis.');return;}
     analysisBusy.current=true;setPending(input);setError('');setBusy(true);setAnalysisStatus('Analyzing your saved request…');
-    setTranscript(input.transcript);setMeetingDate(input.reference_date);setClusters(input.clusters);
-    const finish=value=>{adopt(value);accountStorage.removeItem('flow.pendingAnalysis');setPending(null);setAnalysisStatus('Analysis saved. Review the proposals below.');};
+    showInput(input);
+    const finish=value=>{removeInputDraft(draftClient,sourceContext);adopt(value);showInput(value);accountStorage.removeItem('flow.pendingAnalysis');setPending(null);setAnalysisStatus('Analysis saved. Review the proposals below.');};
     try{finish(await api('/runs',{method:'POST',body:JSON.stringify(input)}));}
     catch(e){
       if(e.retryable){
@@ -169,7 +181,7 @@ function App({account,signOut,completeAccountDeletion,authError}) {
         catch{setError(e.message);setAnalysisStatus('Your input and request ID are saved. Retry the same analysis below; a completed result will be reused.');}
       }else{
         setError(e.message);setAnalysisStatus('');
-        accountStorage.removeItem('flow.pendingAnalysis');setPending(null);
+        accountStorage.removeItem('flow.pendingAnalysis');setPending(null);stashInput(input,sourceContext);
       }
     }finally{analysisBusy.current=false;setBusy(false);}
   }
@@ -185,10 +197,11 @@ function App({account,signOut,completeAccountDeletion,authError}) {
     finally{setBusy(false);}
   }
   async function openRun(id) {
+    if(pending){setError('Finish the saved analysis before opening another meeting.');return;}
+    if(!stashInput()){setError('Browser storage is unavailable. Return to Extract & review and copy your unsaved transcript before opening another run.');return;}
     setError('');setBusy(true);
     try {
-      const value=await api(`/runs/${id}`);adopt(value);
-      setTranscript(value.transcript);setMeetingDate(value.reference_date);setClusters(value.settings?.clusters || 3);setPage('extract');
+      const value=await api(`/runs/${id}`);adopt(value);restoreInput(value);setPage('extract');
     }catch(e){setError(e.message);}finally{setBusy(false);}
   }
   async function inspect(id) {
@@ -223,21 +236,25 @@ function App({account,signOut,completeAccountDeletion,authError}) {
         {page==='extract'&&<>
           <div className="page-intro"><div><div className="eyebrow accent">FROM CONVERSATION TO ACTION</div><h1 tabIndex={-1}>Make your next move clear.</h1><p>Extract action items, check the evidence, and confirm your plan.</p></div><span className="intro-icon"><Icon name="flow" size={38}/></span></div>
           <div className="steps"><span className="current"><b>1</b> Add transcript</span><span className={run?'current':''}><b>2</b> Review proposals</span><span className={run?.status==='confirmed'?'current':''}><b>3</b> Confirm plan</span></div>
+          <div className="meeting-actions">{run&&<button className="button secondary" disabled={busy || restoring || !!pending} onClick={newMeeting}>New meeting</button>}<button className="text-button" disabled={busy || restoring || !!pending} onClick={discardInput}>Discard transcript draft</button></div>
           <form className="panel transcript-panel" onSubmit={analyze}>
-            {!run&&!pending&&!restoring&&config&&!transcript&&<section className="welcome-panel" aria-labelledby="welcome-title"><h2 id="welcome-title">Start with a conversation</h2><p>Try a sample meeting, paste your own text, or import a transcript file. You’ll review every proposed task before confirming a plan.</p><div className="welcome-actions"><button type="button" className="button primary" onClick={()=>{setTranscript(config.sample_transcript);setMeetingDate(config.sample_reference_date);setAnalysisStatus('Example loaded. Analyze it to try reviewing a plan.');}}>Try an example</button><button type="button" className="button secondary" onClick={()=>document.getElementById('transcript').focus()}>Paste my transcript</button><button type="button" className="button secondary" onClick={()=>{const details=document.querySelector('.transcript-import');details.open=true;document.getElementById('transcript-file').focus();}}>Import a file</button></div><p className="form-hint">Choosing an option saves nothing to history. Analyze transcript saves your input and proposals. <a href="/privacy">Read how your data is handled.</a></p></section>}
-            <div className="panel-heading"><div><h2>Meeting transcript</h2><p>Paste the conversation. Keep speaker names where available.</p></div><button type="button" className="text-button" disabled={!config || busy || restoring} onClick={()=>{setTranscript(config.sample_transcript);setMeetingDate(config.sample_reference_date);}}>Load example</button></div>
-            <TranscriptImport disabled={busy || restoring} onUse={value=>{setTranscript(value);setMeetingDate('');setAnalysisStatus('Transcript imported. Choose the meeting date, then analyze.');document.getElementById('meeting-date').focus();}}/>
-            <label className="sr-only" htmlFor="transcript">Meeting transcript</label><textarea id="transcript" className="transcript" disabled={busy || restoring} value={transcript} onChange={e=>setTranscript(e.target.value)} maxLength={config?.max_transcript || 100000} required placeholder="Maya: I’ll send the report tomorrow…"/>
-            <div className="input-footer"><div className="settings"><label>Meeting date<input id="meeting-date" type="date" disabled={busy || restoring} value={meetingDate} onChange={e=>setMeetingDate(e.target.value)} required/></label><label>Maximum groups<select aria-label="Maximum groups" disabled={busy || restoring} value={clusters} onChange={e=>setClusters(Number(e.target.value))}>{[1,2,3,4,5,6].map(n=><option key={n}>{n}</option>)}</select></label></div><button className="button primary" disabled={busy || !config || restoring}>{busy?'Working…':'Analyze transcript'}{!busy&&<Icon name="arrow" size={17}/>}</button></div>
+            {!run&&!pending&&!restoring&&config&&!transcript&&<section className="welcome-panel" aria-labelledby="welcome-title"><h2 id="welcome-title">Start with a conversation</h2><p>Try a sample meeting, paste your own text, or import a transcript file. You’ll review every proposed task before confirming a plan.</p><div className="welcome-actions"><button type="button" className="button primary" onClick={()=>{changeInput({transcript:config.sample_transcript,reference_date:config.sample_reference_date,title:'Example meeting'});setAnalysisStatus('Example loaded. Analyze it to try reviewing a plan.');}}>Try an example</button><button type="button" className="button secondary" onClick={()=>document.getElementById('transcript').focus()}>Paste my transcript</button><button type="button" className="button secondary" onClick={()=>{const details=document.querySelector('.transcript-import');details.open=true;document.getElementById('transcript-file').focus();}}>Import a file</button></div><p className="form-hint">Choosing an option saves nothing to history. Analyze transcript saves your input and proposals. <a href="/privacy">Read how your data is handled.</a></p></section>}
+            <div className="panel-heading"><div><h2>Meeting transcript</h2><p>Paste the conversation. Keep speaker names where available.</p></div><button type="button" className="text-button" disabled={!config || busy || restoring} onClick={()=>{changeInput({transcript:config.sample_transcript,reference_date:config.sample_reference_date,title:'Example meeting'});}}>Load example</button></div>
+            <label className="field-label meeting-name">Meeting name (optional)<input aria-label="Meeting name" maxLength={120} value={meetingTitle} disabled={busy || restoring} placeholder="e.g. Product planning" onChange={e=>changeInput({title:e.target.value})}/></label>
+            {run&&<button type="button" className="text-button" disabled={busy || restoring || !!pending || meetingTitle===run.title} onClick={saveName}>Save meeting name</button>}
+            <TranscriptImport disabled={busy || restoring} onUse={value=>{changeInput({transcript:value,reference_date:'',title:''});setAnalysisStatus('Transcript imported. Choose the meeting date, then analyze.');document.getElementById('meeting-date').focus();}}/>
+            <label className="sr-only" htmlFor="transcript">Meeting transcript</label><textarea id="transcript" className="transcript" disabled={busy || restoring} value={transcript} onChange={e=>changeInput({transcript:e.target.value})} maxLength={config?.max_transcript || 100000} required placeholder="Maya: I’ll send the report tomorrow…"/>
+            <div className="input-footer"><div className="settings"><label>Meeting date<input id="meeting-date" type="date" disabled={busy || restoring} value={meetingDate} onChange={e=>changeInput({reference_date:e.target.value})} required/></label><label>Maximum groups<select aria-label="Maximum groups" disabled={busy || restoring} value={clusters} onChange={e=>changeInput({clusters:Number(e.target.value)})}>{[1,2,3,4,5,6].map(n=><option key={n}>{n}</option>)}</select></label></div><button className="button primary" disabled={busy || !config || restoring}>{busy?'Working…':'Analyze transcript'}{!busy&&<Icon name="arrow" size={17}/>}</button></div>
             <div className="form-hint">Relative deadlines use the meeting date. Missing people and exact dates stay <strong>Unknown</strong>.</div>
             {config&&transcript===config.sample_transcript&&meetingDate===config.sample_reference_date&&<p className="notice" role="status">Synthetic example meeting · {config.sample_reference_date}. Use your actual meeting date for your own transcript.</p>}
           </form>
+          {inputSaveStatus&&<p className="form-hint" role="status">{inputSaveStatus} Browser drafts are separated by account and tab. Only analysis sends transcript edits to the server.</p>}
           {analysisStatus&&<p className="notice" role="status">{analysisStatus}</p>}
           {pending&&!busy&&!restoring&&<button className="button secondary" onClick={()=>submitAnalysis(pending)}>Retry saved analysis</button>}
           {!run&&<div className="empty-state"><span className="empty-icon"><Icon name="extract" size={28}/></span><h3>Your action plan starts here.</h3><p>Analyze a transcript to see proposals with their supporting passages.</p></div>}
           {run&&<section aria-label="Extraction result">
             {inputChanged&&<div className="notice warning">These proposals belong to the saved input. Analyze your edited transcript or settings to create a new run.</div>}
-            <div className="result-meta"><span>Run <code>{run.id.slice(0,8)}</code> · Meeting {run.reference_date}</span><span className={`badge ${run.status==='confirmed'?'green':'purple'}`}>{run.status==='confirmed'?'Confirmed':'Needs your review'}</span></div>
+            <div className="result-meta"><span><strong>{run.title || `Meeting ${run.reference_date}`}</strong> · Run <code>{run.id.slice(0,8)}</code></span><span className={`badge ${run.status==='confirmed'?'green':'purple'}`}>{run.status==='confirmed'?'Confirmed':'Needs your review'}</span></div>
             {run.summary&&<div className="summary"><div className="eyebrow accent">MEETING SUMMARY</div><p>{run.summary}</p></div>}
             <details className="disclosure"><summary>Saved input & extraction settings</summary><pre className="saved-transcript">{run.transcript}</pre><p>Extractor: {run.settings?.extractor || 'rules'} · Maximum groups: {run.settings?.clusters || 3}</p><small>Extractor fingerprint: {run.settings?.extractor_sha256 || 'Unavailable for this run'}</small></details>
             {run.status==='confirmed'?<>
@@ -264,12 +281,8 @@ function App({account,signOut,completeAccountDeletion,authError}) {
           </section>}
         </>}
         {page==='annotations'&&<AnnotationReviewer api={api} downloadJson={downloadJson}/>}
-        {page==='data'&&<DataControls completeAccountDeletion={completeAccountDeletion} onClosing={()=>{clearTimeout(saveTimer.current);activeRun.current=null;setClosing(true);setRun(null);setDrafts([]);setTranscript('');setRuns([]);setReport(null);setPending(null);setAnalysisStatus('');}}/>}
-        {page==='history'&&<>
-          <div className="page-intro"><div><div className="eyebrow accent">EVERY DECISION, TRACEABLE</div><h1 tabIndex={-1}>Your run history.</h1><p>Revisit the input, original proposals, corrections, and final results.</p></div></div>
-          <div className="notice">{account?'History is saved to your account and is available across devices.':'History is saved in this local workspace.'} JSON exports include the complete transcript and review decisions.</div>
-          {historyLoading?<div className="empty-state">Loading history…</div>:runs.length===0?<div className="empty-state"><h3>No saved runs yet.</h3><p>Analyze your first transcript to start a history.</p><button className="button primary" onClick={()=>setPage('extract')}>Extract a transcript</button></div>:<div className="history-list">{runs.map(r=><article className="panel history-card" key={r.id}><div className="history-symbol"><Icon name="history"/></div><div className="history-copy"><div className="history-title"><h3>{stamp(r.created_at)}</h3><span className={`badge ${r.status==='confirmed'?'green':'purple'}`}>{r.status==='confirmed'?'Confirmed':'Awaiting review'}</span></div><p>{r.preview}</p><small>Meeting {r.reference_date} · {r.proposal_count} proposals · Run {r.id.slice(0,8)}</small></div><button className="button secondary" disabled={busy} onClick={()=>openRun(r.id)}>Open run <Icon name="arrow" size={16}/></button></article>)}</div>}
-        </>}
+        {page==='data'&&<DataControls completeAccountDeletion={completeAccountDeletion} onClosing={()=>{clearTimeout(saveTimer.current);activeRun.current=null;setClosing(true);setRun(null);setDrafts([]);setTranscript('');setMeetingTitle('');setInputSaveStatus('');setReport(null);setPending(null);setAnalysisStatus('');}}/>}
+        {page==='history'&&<MeetingHistory onOpen={openRun} busy={busy || !!pending}/> }
         {page==='benchmark'&&<>
           <div className="page-intro"><div><div className="eyebrow accent">QUALITY BEFORE GUESSWORK</div><h1 tabIndex={-1}>The evaluation lab.</h1><p>Compare retained extraction experiments and inspect individual cases.</p></div></div>
           <div className="stat-grid"><div className="stat"><span>ANNOTATED TRANSCRIPTS</span><strong>84</strong><small>Synthetic cases across two versions</small></div><div className="stat"><span>DEVELOPMENT / HELD OUT</span><strong>42 / 42</strong><small>30 + 12 per split; related scenarios</small></div><div className="stat"><span>HELD-OUT RULES F1</span><strong>{pct(bench?.reports.find(r=>r.label==='rules' && r.dataset==='test.jsonl')?.metrics.task_f1)}</strong><small>Lexical task matching</small></div></div>
