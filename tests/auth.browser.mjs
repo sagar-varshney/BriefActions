@@ -25,7 +25,7 @@ try{
   await page.goto(base);await page.getByRole('button',{name:'Continue with GitHub'}).waitFor();assert.equal(await page.getByLabel('Meeting transcript',{exact:true}).count(),0);
   await page.getByLabel('Color theme').selectOption('dark');await page.screenshot({path:path.join(screenshotDir,'sign-in-dark.png'),fullPage:true});
   await page.evaluate(value=>localStorage.setItem('sb-test-project-auth-token',JSON.stringify(value)),first);await page.reload();
-  await page.getByText('alice@example.test',{exact:true}).waitFor();await page.getByRole('button',{name:'Analyze transcript'}).click();await page.getByRole('heading',{name:/Review action proposals/}).waitFor();
+  await page.getByText('alice@example.test',{exact:true}).waitFor();await page.getByRole('button',{name:'Try an example',exact:true}).click();await page.getByRole('button',{name:'Analyze transcript'}).click();await page.getByRole('heading',{name:/Review action proposals/}).waitFor();
   const active=await page.evaluate(id=>localStorage.getItem(`flow.account.${id}.flow.activeRun`),alice);assert.match(active,/^[a-f0-9]{32}$/);
   await page.getByLabel('Keep task 1',{exact:true}).check();await page.getByRole('button',{name:'Confirm selected tasks'}).click();await page.getByRole('heading',{name:'Your confirmed plan'}).waitFor();
   const download=page.waitForEvent('download');await page.getByRole('button',{name:'Export CSV'}).click();assert.ok((await readFile(await (await download).path(),'utf8')).includes('Arjun'));
@@ -37,7 +37,7 @@ try{
   await page.getByRole('button',{name:'Extract & review',exact:true}).click();await page.setViewportSize({width:390,height:844});
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await page.screenshot({path:path.join(screenshotDir,'mobile-account-dark.png'),fullPage:true});
   await page.getByLabel('Color theme').selectOption('light');await page.screenshot({path:path.join(screenshotDir,'mobile-account-light.png'),fullPage:true});
-  await page.getByRole('button',{name:'Analyze transcript',exact:true}).click();await page.getByRole('heading',{name:/Review action proposals/}).waitFor();
+  await page.getByRole('button',{name:'Try an example',exact:true}).click();await page.getByRole('button',{name:'Analyze transcript',exact:true}).click();await page.getByRole('heading',{name:/Review action proposals/}).waitFor();
   await page.evaluate(id=>localStorage.setItem(`flow.account.${id}.flow.draft.fake`,'private unfinished text'),bob);
   await page.getByRole('button',{name:'Data & account',exact:true}).click();await page.getByRole('button',{name:'Delete my account',exact:true}).waitFor();
   await page.getByRole('button',{name:'Delete my account',exact:true}).click();await page.getByLabel('Deletion confirmation').fill('DELETE MY ACCOUNT');

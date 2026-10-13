@@ -14,9 +14,17 @@ def identifier(value):
     return value
 
 def account_status(history):
+    # Match the database quotas: UTF-8 payload bytes, not physical disk size.
+    size='octet_length(payload)' if history.database_url else 'length(CAST(payload AS BLOB))'
     with history.connection(allow_closing=True) as conn:
-        row=conn.execute('SELECT state FROM account_lifecycle').fetchone()
-    return {'state':row[0] if row else 'active'}
+        state,events,drafts=conn.execute(f"""SELECT
+            COALESCE((SELECT state FROM account_lifecycle),'active'),
+            (SELECT COALESCE(SUM({size}),0) FROM events),
+            (SELECT COALESCE(SUM({size}),0) FROM annotation_drafts)""").fetchone()
+    return {'state':state,'storage':{
+        'history':{'used_bytes':events,'limit_bytes':25_000_000 if history.database_url else None},
+        'drafts':{'used_bytes':drafts,'limit_bytes':5_000_000 if history.database_url else None},
+        'measured':'utf8_payload_bytes'}}
 
 def delete_input(history,run_id,kind):
     identifier(run_id)

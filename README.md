@@ -19,6 +19,30 @@ Hosting credentials and live OAuth configuration must be supplied before launch;
 the production server refuses an unprotected or ephemeral storage configuration.
 Benchmark provenance is available in an expandable details section.
 
+## Getting started and privacy
+
+Fresh workspaces start with an empty transcript and meeting date. Choose **Try an
+example**, **Paste my transcript**, or **Import a file**. The example is labeled as
+synthetic and loading it does not save a run. **Analyze transcript** saves the
+approved input and proposals; existing unfinished reviews and interrupted analyses
+still restore before the welcome choices appear.
+
+The public `/privacy` page is available before
+sign-in, without requesting private APIs. It explains stored inputs, browser
+copies, service-operator access, exports, deletion, operational logs, and separate
+backup retention. Sign-in and workspace footers link to it. Operators should keep
+this explanation aligned with their actual deployment and backup configuration.
+
+**Data & account → Workspace storage** shows UTF-8 payload bytes separately for
+saved history and current annotation drafts, with a refresh button. Hosted limits
+match the existing database enforcement: **25 MB history / 5 MB annotation drafts
+per account** (decimal MB). At 80% usage, the app suggests exporting and deleting
+saved inputs. History includes every saved review version and evaluation, so usage
+is not just transcript size. Local SQLite shows measured usage without claiming
+to enforce hosted quotas. Browser copies, exported files, backups, database row
+metadata, and physical database overhead are excluded. Deletion frees measured
+space; limits and usage are always scoped by the verified account.
+
 ## Data controls and interrupted analyses
 
 **Data & account** downloads a complete workspace JSONL export and lets users
@@ -310,7 +334,7 @@ latency; benchmark timings continue to describe extraction only.
 | `GET /api/live`, `/api/health`, `/api/config` | Process liveness, runtime/storage readiness, and private sample input |
 | `POST /api/runs` | Analyze `{transcript, reference_date, clusters, request_id}`; reuse saved results for matching retries |
 | `GET /api/runs`, `/api/runs/:id` | List and inspect saved runs |
-| `GET /api/account` | Workspace lifecycle and account-deletion availability |
+| `GET /api/account` | Workspace lifecycle, account-deletion availability, and scoped payload storage usage |
 | `GET /api/account/export` | Streaming, complete workspace JSONL export |
 | `POST /api/account/delete` | Confirmed workspace erasure and sign-in account deletion |
 | `POST /api/runs/:id/delete`, `/api/annotations/:id/delete` | Confirmed permanent input erasure |

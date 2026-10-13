@@ -36,7 +36,8 @@ try {
   const visible=async (text)=>assert.ok(await page.getByText(text,{exact:true}).isVisible());
   await page.goto(base);
   await page.getByRole('button',{name:'Analyze transcript'}).waitFor();
-  await page.waitForFunction(()=>document.querySelector('#transcript').value.includes('Maya'));
+  await page.getByRole('button',{name:'Try an example',exact:true}).waitFor();
+  assert.equal(await page.getByLabel('Meeting transcript',{exact:true}).inputValue(),'');
   await page.screenshot({path:path.join(screenshotDir,'desktop-home.png'),fullPage:true});
   await page.getByLabel('Meeting transcript',{exact:true}).fill('Maya will review the risks tomorrow.\nMaya will review the risks tomorrow.\nJon will send the invoice.');
   await page.getByLabel('Meeting date',{exact:true}).fill('2026-09-15');

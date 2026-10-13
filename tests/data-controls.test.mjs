@@ -29,8 +29,15 @@ test('Data controls isolate exports, protect deletions, prevent resurrection, an
     assert.equal((await (await get('/api/runs')).json()).length,1);
     assert.equal((await post('/api/runs',{...input,clusters:2})).status,409);
     await post('/api/runs',{transcript:'Bob will send the confidential invoice.',reference_date:'2026-09-15'},'bob');
+    const aliceUsage=(await (await get('/api/account')).json()).storage;
+    const bobUsage=(await (await get('/api/account','bob')).json()).storage;
+    assert.ok(aliceUsage.history.used_bytes>0);assert.ok(bobUsage.history.used_bytes>0);
+    assert.equal(aliceUsage.history.limit_bytes,config.databaseUrl?25_000_000:null);
+    assert.equal(aliceUsage.drafts.used_bytes,0);
     const seeded=spawnSync(pythonBinary(),['-B','-c',"import json,sys; from history import HistoryStore; r=json.load(sys.stdin); h=HistoryStore(r['path'],database_url=r.get('database_url'),owner=r['owner']); [h.create_run('Legacy private notes. '+('x'*4100000),'2026-09-15',[]) for _ in range(2)]"],{cwd:fileURLToPath(new URL('../',import.meta.url)),input:JSON.stringify({path:path.join(folder,'history.sqlite3.accounts',alice+'.sqlite3'),database_url:config.databaseUrl,owner:alice}),encoding:'utf8'});
     assert.equal(seeded.status,0,seeded.stderr);
+    assert.ok((await (await get('/api/account')).json()).storage.history.used_bytes>8_000_000);
+    assert.deepEqual((await (await get('/api/account','bob')).json()).storage,bobUsage,'Usage must be scoped to the verified account');
     const download=await get('/api/account/export');assert.equal(download.status,200);assert.equal(download.headers.get('cache-control'),'no-store');
     const text=await download.text(),records=text.trim().split('\n').map(line=>JSON.parse(line));
     assert.ok(Buffer.byteLength(text)>8_000_000,'Large workspace export must bypass the normal worker response limit');
@@ -44,6 +51,7 @@ test('Data controls isolate exports, protect deletions, prevent resurrection, an
     assert.equal((await post('/api/account/delete',{confirmation:'wrong',account_id:bob})).status,400);assert.deepEqual(deleted,[]);
     assert.equal((await post('/api/account/delete',{confirmation:'DELETE MY ACCOUNT',account_id:bob})).status,503);
     assert.deepEqual(deleted,[alice]);assert.equal((await (await get('/api/account')).json()).state,'deleting');
+    assert.equal((await (await get('/api/account')).json()).storage.history.used_bytes,0);
     assert.equal((await get('/api/runs')).status,409);assert.equal((await post('/api/runs',input)).status,409);
     assert.equal((await (await get('/api/runs','bob')).json()).length,1);
     fail=false;assert.equal((await post('/api/account/delete',{confirmation:'DELETE MY ACCOUNT'})).status,200);assert.deepEqual(deleted,[alice,alice]);

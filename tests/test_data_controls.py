@@ -4,6 +4,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 import os
+import json
 
 from history import HistoryStore
 from annotations import AnnotationStore
@@ -56,7 +57,9 @@ class DataControlTests(unittest.TestCase):
     def test_account_erasure_is_idempotent_and_blocks_pending_writes_and_reads(self):
         run=handle(self.input)
         close_account(self.history);close_account(self.history)
-        self.assertEqual(account_status(self.history),{'state':'deleting'})
+        self.assertEqual(account_status(self.history)['state'],'deleting')
+        self.assertEqual(account_status(self.history)['storage']['history']['used_bytes'],0)
+        self.assertEqual(account_status(self.history)['storage']['drafts']['used_bytes'],0)
         for work in [lambda:handle(self.input),lambda:self.history.save_draft(run['id'],[],0),lambda:list(export_lines(self.history)),lambda:self.history.list_runs()]:
             with self.assertRaises(DataError):work()
         with self.history.connection(allow_closing=True) as conn:
@@ -75,3 +78,25 @@ class DataControlTests(unittest.TestCase):
         text='\n'.join(f'Maya will review item {i} tomorrow.' for i in range(201))
         with self.assertRaises(ApiError) as caught:handle(self.input|{'transcript':text})
         self.assertEqual(caught.exception.status,413);self.assertEqual(self.history.list_runs(),[])
+
+    def test_storage_counts_utf8_payload_bytes_and_replaced_drafts_and_erasure(self):
+        empty=account_status(self.history)['storage']
+        self.assertEqual(empty['history']['used_bytes'],0)
+        self.assertEqual(empty['drafts']['used_bytes'],0)
+        self.assertEqual(empty['history']['limit_bytes'],25_000_000 if self.history.database_url else None)
+        self.assertEqual(empty['drafts']['limit_bytes'],5_000_000 if self.history.database_url else None)
+        # Raw non-ASCII JSON verifies bytes rather than characters on both stores.
+        payload=json.dumps({'transcript':'Maya 📝 café 漢字'},ensure_ascii=False)
+        with self.history.connection() as conn:
+            conn.execute('INSERT INTO events(run_id,kind,created_at,payload) VALUES (?,?,?,?)',('d'*32,'annotation_input','now',payload))
+            conn.execute('INSERT INTO annotation_drafts(case_id,reviewer_key,mode,version,updated_at,payload) VALUES (?,?,?,?,?,?)',('d'*32,'reviewer','review',1,'now',payload))
+        usage=account_status(self.history)['storage']
+        self.assertEqual(usage['history']['used_bytes'],len(payload.encode('utf8')))
+        self.assertEqual(usage['drafts']['used_bytes'],len(payload.encode('utf8')))
+        with self.history.connection() as conn:
+            conn.execute('UPDATE annotation_drafts SET payload=? WHERE case_id=?',('{}','d'*32))
+        self.assertEqual(account_status(self.history)['storage']['drafts']['used_bytes'],2)
+        delete_input(self.history,'d'*32,'annotation_input')
+        erased=account_status(self.history)['storage']
+        self.assertEqual(erased['history']['used_bytes'],0)
+        self.assertEqual(erased['drafts']['used_bytes'],0)

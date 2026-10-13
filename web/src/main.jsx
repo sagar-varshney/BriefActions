@@ -10,6 +10,7 @@ import ReviewedBenchmarks from './ReviewedBenchmarks.jsx';
 import MissedActionForm from './MissedActionForm.jsx';
 import DataControls from './DataControls.jsx';
 import TranscriptImport from './TranscriptImport.jsx';
+import PrivacyPage from './PrivacyPage.jsx';
 
 function loadPending(){try{const value=JSON.parse(accountStorage.getItem('flow.pendingAnalysis') || 'null');return value && /^[a-f0-9]{32}$/.test(value.request_id) && typeof value.transcript==='string'?value:null;}catch{return null;}}
 
@@ -116,7 +117,7 @@ function App({account,signOut,completeAccountDeletion,authError}) {
         if(status.state==='deleting'){setClosing(true);setPage('data');return;}
         const value=await api('/config');
         if(!alive)return;
-        setConfig(value);setTranscript(value.sample_transcript);setMeetingDate(value.sample_reference_date);
+        setConfig(value);
         const saved=accountStorage.getItem('flow.activeRun');
         if(saved) {
           try {
@@ -223,11 +224,13 @@ function App({account,signOut,completeAccountDeletion,authError}) {
           <div className="page-intro"><div><div className="eyebrow accent">FROM CONVERSATION TO ACTION</div><h1 tabIndex={-1}>Make your next move clear.</h1><p>Extract action items, check the evidence, and confirm your plan.</p></div><span className="intro-icon"><Icon name="flow" size={38}/></span></div>
           <div className="steps"><span className="current"><b>1</b> Add transcript</span><span className={run?'current':''}><b>2</b> Review proposals</span><span className={run?.status==='confirmed'?'current':''}><b>3</b> Confirm plan</span></div>
           <form className="panel transcript-panel" onSubmit={analyze}>
+            {!run&&!pending&&!restoring&&config&&!transcript&&<section className="welcome-panel" aria-labelledby="welcome-title"><h2 id="welcome-title">Start with a conversation</h2><p>Try a sample meeting, paste your own text, or import a transcript file. You’ll review every proposed task before confirming a plan.</p><div className="welcome-actions"><button type="button" className="button primary" onClick={()=>{setTranscript(config.sample_transcript);setMeetingDate(config.sample_reference_date);setAnalysisStatus('Example loaded. Analyze it to try reviewing a plan.');}}>Try an example</button><button type="button" className="button secondary" onClick={()=>document.getElementById('transcript').focus()}>Paste my transcript</button><button type="button" className="button secondary" onClick={()=>{const details=document.querySelector('.transcript-import');details.open=true;document.getElementById('transcript-file').focus();}}>Import a file</button></div><p className="form-hint">Choosing an option saves nothing to history. Analyze transcript saves your input and proposals. <a href="/privacy">Read how your data is handled.</a></p></section>}
             <div className="panel-heading"><div><h2>Meeting transcript</h2><p>Paste the conversation. Keep speaker names where available.</p></div><button type="button" className="text-button" disabled={!config || busy || restoring} onClick={()=>{setTranscript(config.sample_transcript);setMeetingDate(config.sample_reference_date);}}>Load example</button></div>
             <TranscriptImport disabled={busy || restoring} onUse={value=>{setTranscript(value);setMeetingDate('');setAnalysisStatus('Transcript imported. Choose the meeting date, then analyze.');document.getElementById('meeting-date').focus();}}/>
             <label className="sr-only" htmlFor="transcript">Meeting transcript</label><textarea id="transcript" className="transcript" disabled={busy || restoring} value={transcript} onChange={e=>setTranscript(e.target.value)} maxLength={config?.max_transcript || 100000} required placeholder="Maya: I’ll send the report tomorrow…"/>
             <div className="input-footer"><div className="settings"><label>Meeting date<input id="meeting-date" type="date" disabled={busy || restoring} value={meetingDate} onChange={e=>setMeetingDate(e.target.value)} required/></label><label>Maximum groups<select aria-label="Maximum groups" disabled={busy || restoring} value={clusters} onChange={e=>setClusters(Number(e.target.value))}>{[1,2,3,4,5,6].map(n=><option key={n}>{n}</option>)}</select></label></div><button className="button primary" disabled={busy || !config || restoring}>{busy?'Working…':'Analyze transcript'}{!busy&&<Icon name="arrow" size={17}/>}</button></div>
             <div className="form-hint">Relative deadlines use the meeting date. Missing people and exact dates stay <strong>Unknown</strong>.</div>
+            {config&&transcript===config.sample_transcript&&meetingDate===config.sample_reference_date&&<p className="notice" role="status">Synthetic example meeting · {config.sample_reference_date}. Use your actual meeting date for your own transcript.</p>}
           </form>
           {analysisStatus&&<p className="notice" role="status">{analysisStatus}</p>}
           {pending&&!busy&&!restoring&&<button className="button secondary" onClick={()=>submitAnalysis(pending)}>Retry saved analysis</button>}
@@ -284,7 +287,7 @@ function App({account,signOut,completeAccountDeletion,authError}) {
           <ReviewedBenchmarks api={api} downloadJson={downloadJson} onAnnotate={()=>setPage('annotations')}/>
           {bench&&<><details className="disclosure"><summary>Corpus provenance</summary><Json value={bench.manifest}/></details><details className="disclosure"><summary>Illustrative workstream classifier seed data</summary><p>This small seed set trains workstream classification. It does not train action extraction.</p><Json value={bench.training_data}/></details></>}
         </>}
-        <footer className="page-footer">Productivity Flow Engine <span>Evidence → Review → Action</span></footer>
+        <footer className="page-footer">Productivity Flow Engine <a href="/privacy">Privacy & your data</a><span>Evidence → Review → Action</span></footer>
       </div>
     </main>
   </div>;
@@ -292,4 +295,4 @@ function App({account,signOut,completeAccountDeletion,authError}) {
 function HistoryEvents({run}) {
   return <div className="audit"><div className="section-heading"><div><h2>Inspectable history</h2><p>Original evidence stays attached. Edits and rejected tasks are recorded.</p></div><Download href={`/api/runs/${run.id}/history.json`}>History JSON</Download></div>{run.events.map(event=><details key={event.event_id} className="disclosure"><summary><span className="event-label">{event.kind==='manual_proposal'?'User-added action':event.kind}</span><span className="event-time">{stamp(event.created_at)}</span></summary><Json value={event.payload}/></details>)}</div>;
 }
-createRoot(document.getElementById('root')).render(<AuthShell>{props=><App {...props}/>}</AuthShell>);
+createRoot(document.getElementById('root')).render(location.pathname.replace(/\/$/,'')==='/privacy'?<PrivacyPage/>:<AuthShell>{props=><App {...props}/>}</AuthShell>);

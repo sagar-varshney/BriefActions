@@ -15,6 +15,7 @@ try{
   const page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto(base);await page.getByRole('button',{name:'Analyze transcript',exact:true}).waitFor();
   await page.getByLabel('Meeting transcript',{exact:true}).fill('Maya will send the private report tomorrow.');
+  await page.getByLabel('Meeting date',{exact:true}).fill('2026-09-15');
   let droppedId;
   await page.route('**/api/runs',async route=>{
     if(route.request().method()!=='POST')return route.continue();
@@ -56,6 +57,7 @@ try{
   // original analysis request for an explicit retry after the service recovers.
   const context=await browser.newContext(),failurePage=await context.newPage();await failurePage.setViewportSize({width:320,height:800});await failurePage.goto(base);
   await failurePage.getByLabel('Meeting transcript',{exact:true}).fill('Maya will send the launch notes tomorrow.');
+  await failurePage.getByLabel('Meeting date',{exact:true}).fill('2026-09-15');
   failAnalysis=true;const failedResponse=failurePage.waitForResponse(response=>response.url()===base+'/api/runs'&&response.request().method()==='POST');
   await failurePage.getByRole('button',{name:'Analyze transcript',exact:true}).click();const response=await failedResponse,data=await response.json();assert.equal(response.status(),500);assert.match(data.request_id,/^[a-f0-9-]{36}$/);
   await failurePage.getByRole('alert').filter({hasText:`Reference: ${data.request_id}`}).waitFor();assert.ok(await failurePage.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert.equal(await failurePage.getByText('private exception detail must not appear').count(),0);
