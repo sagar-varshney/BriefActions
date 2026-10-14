@@ -127,7 +127,7 @@ Use the included Dockerfile and Render Blueprint for **Render + Supabase**.
 See [deployment setup, provider limits, and launch verification](docs/deployment.md).
 Hosting credentials and live OAuth configuration must be supplied before launch;
 the production server refuses an unprotected or ephemeral storage configuration.
-Benchmark provenance is available in an expandable details section.
+Benchmark provenance and metric limitations are documented in the evaluation section below.
 
 ## Getting started and privacy
 

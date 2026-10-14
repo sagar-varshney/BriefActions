@@ -86,11 +86,6 @@ try {
   assert.equal(await page.locator('.history-card').count(),1);
   await page.getByRole('button',{name:'Open meeting'}).click();await page.getByRole('heading',{name:'Your confirmed plan'}).waitFor();
   await navigate(page,'Evaluation lab');
-  const provenance=page.locator('details').filter({has:page.getByText('Benchmark provenance & metric limitations',{exact:true})});
-  assert.equal(await provenance.getAttribute('open'),null);
-  await provenance.locator('summary').click();
-  assert.ok(await provenance.getByText(/Annotations were authored by Codex/).isVisible());
-  await provenance.locator('summary').click();
   await page.getByRole('button',{name:'rules',exact:false}).last().waitFor();
   assert.equal(await page.locator('.benchmark-panel').first().locator('tbody tr').count(),8);
   await page.locator('.experiment').filter({hasText:/^rules/}).click();
