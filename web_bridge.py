@@ -11,6 +11,7 @@ import sys
 
 from history import HistoryStore, proposals_from_events
 from data_controls import DataError
+from task_progress import project as project_progress
 
 ROOT = Path(__file__).resolve().parent
 MAX_TRANSCRIPT = 100_000
@@ -44,6 +45,7 @@ def run_snapshot(run_id):
     return {'id':run_id, 'created_at':events[0]['created_at'], **original,'proposals':proposals,
             'title':name['title'] if name else original.get('title',''),'title_version':name['version'] if name else 0,
             'summary':original.get('settings',{}).get('summary',''),
+            'task_progress':project_progress(events),
             'status':'confirmed' if final is not None else 'review', 'final_tasks':final, 'events':events, 'draft':draft}
 
 
@@ -55,6 +57,10 @@ def report_paths():
 
 def handle(request):
     op = request.get('operation')
+    if op=='task_progress':
+        from task_progress import update
+        update(store(),request.get('run_id'),request.get('proposal_id'),request.get('status'),request.get('version'),request.get('request_id'))
+        return run_snapshot(request.get('run_id'))
     if op=='meeting_search':
         from meeting_history import search
         return search(store(),request.get('query',''),request.get('status',''),request.get('date_from',''),request.get('date_to',''),request.get('page',0),request.get('page_size',12))

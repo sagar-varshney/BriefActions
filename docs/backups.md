@@ -3,7 +3,7 @@
 `scripts/backup.py` streams a consistent, repeatable-read PostgreSQL snapshot of
 all application accounts into an authenticated AES-256-GCM file. It includes
 events, original inputs/evidence, corrections, confirmed plans, annotation reviews,
-server-saved drafts, frozen splits, comparisons, and deletion markers. Only encrypted
+server-saved drafts, task progress events, frozen splits, comparisons, and deletion markers. Only encrypted
 bytes are written during backup; output files have mode 0600 and cannot overwrite
 an existing file. Files are limited to 8 GiB and records to 64 MiB.
 
@@ -101,7 +101,7 @@ FLOW_TEST_DATABASE_URL=postgresql://... python scripts/test_backup_postgres.py
 
 Use a disposable PostgreSQL test server with database-creation permission. The
 drill creates and drops two uniquely named test databases. It backs up synthetic
-accounts, restores into an empty target, checks immutable history, drafts, reviews,
+accounts, restores into an empty target, checks immutable history, task progress, drafts, reviews,
 sequences and account isolation, and verifies erasures made after the backup,
 dependent snapshot removal, corruption rejection and nonempty-target protection.
 CI runs this drill on PostgreSQL 17; no live transcripts or credentials are used.

@@ -41,6 +41,8 @@ try:
     store.save_draft(keep,decisions,0,'fixture',1);store.finalize(keep,decisions)
     from meeting_history import rename,search
     rename(store,keep,'Reviewed planning meeting',0)
+    from task_progress import update as track, project as progress
+    track(store,keep,proposals[0]['proposal_id'],'in_progress',0,'a'*32)
     erased=store.create_run('Erased after backup.','2026-10-12',[])
     bob_run=other.create_run('Account erased after backup.','2026-10-12',[])
     annotations=AnnotationStore(store);cases=[]
@@ -78,6 +80,7 @@ try:
         restored=HistoryStore('/unused',database_url=target,owner=alice)
         self_snapshot=restored.get_run(keep)
         assert search(restored,'Reviewed planning')['items'][0]['title']=='Reviewed planning meeting'
+        assert progress(self_snapshot)[proposals[0]['proposal_id']]['status']=='in_progress'
         assert self_snapshot==store.get_run(keep), 'Original input, evidence, corrections, final plan or IDs changed'
         for rid in [erased,cases[0]]:
             try:restored.get_run(rid)

@@ -1,0 +1,2 @@
+import React from 'react';
+export default function WorkspaceLayout({width,onChange}){return <div className="workspace-layout" role="region" aria-label="Workspace layout"><label htmlFor="source-width">Transcript panel width <strong>{width}%</strong></label><input id="source-width" aria-label="Transcript panel width" type="range" aria-valuetext={`${width}%`} min="32" max="55" step="1" value={width} onChange={e=>onChange(Number(e.target.value))}/><button type="button" className="text-button" onClick={()=>onChange(43)}>Reset layout</button></div>;}

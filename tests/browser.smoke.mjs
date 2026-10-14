@@ -1,3 +1,4 @@
+import {navigate} from './browser-helpers.mjs';
 // Run after `pnpm build` and `pnpm exec playwright install chromium`.
 import assert from 'node:assert/strict';
 import {mkdtemp, mkdir, readFile, rm} from 'node:fs/promises';
@@ -84,7 +85,7 @@ try {
   await page.getByRole('button',{name:'Run history'}).click();await page.getByRole('button',{name:'Open run'}).waitFor();
   assert.equal(await page.locator('.history-card').count(),1);
   await page.getByRole('button',{name:'Open run'}).click();await page.getByRole('heading',{name:'Your confirmed plan'}).waitFor();
-  await page.getByRole('button',{name:'Evaluation lab'}).click();
+  await navigate(page,'Evaluation lab');
   const provenance=page.locator('details').filter({has:page.getByText('Benchmark provenance & metric limitations',{exact:true})});
   assert.equal(await provenance.getAttribute('open'),null);
   await provenance.locator('summary').click();
@@ -111,7 +112,7 @@ try {
   await page.getByRole('button',{name:'Run history'}).click();
   await page.waitForFunction(()=>document.querySelectorAll('.history-card').length===2);
   await page.setViewportSize({width:1440,height:1000});
-  await page.getByRole('button',{name:'Annotation reviewer',exact:true}).click();
+  await navigate(page,'Annotation reviewer');
   await page.getByLabel('Source group',{exact:true}).fill('meeting-a');
   await page.getByLabel('Annotation meeting date',{exact:true}).fill('2028-02-28');
   await page.getByLabel('Transcript to import',{exact:true}).fill('Alice will send the report 📊 tomorrow.');
@@ -146,7 +147,7 @@ try {
   await page.getByLabel('Annotation task',{exact:true}).fill('Second unfinished action');
   await page.getByLabel('Annotation owner',{exact:true}).fill('Partial owner');
   await page.getByLabel('Annotation deadline',{exact:true}).fill('2028-');
-  await page.reload();await page.getByRole('button',{name:'Annotation reviewer',exact:true}).click();
+  await page.reload();await navigate(page,'Annotation reviewer');
   await page.getByLabel('Annotation task',{exact:true}).waitFor();
   assert.equal(await page.getByLabel('Annotation task',{exact:true}).inputValue(),'Second unfinished action');
   assert.equal(await page.getByLabel('Annotation owner',{exact:true}).inputValue(),'Partial owner');
@@ -163,7 +164,7 @@ try {
   }
   assert.equal(durable?.state.task,'Second unfinished action','Latest annotation edits must reach SQLite');
   await page.evaluate(()=>{for(const key of Object.keys(localStorage))if(key.startsWith('flow.annotationDraft.'))localStorage.removeItem(key);});
-  await page.reload();await page.getByRole('button',{name:'Annotation reviewer',exact:true}).click();
+  await page.reload();await navigate(page,'Annotation reviewer');
   await page.getByLabel('Annotation task',{exact:true}).waitFor();
   assert.equal(await page.getByLabel('Annotation task',{exact:true}).inputValue(),'Second unfinished action');
   assert.equal(await page.getByLabel('deadline label 1',{exact:true}).inputValue(),'unfinished-date');
@@ -171,12 +172,12 @@ try {
   await page.route('**/api/annotations/*/draft',route=>route.request().method()==='POST'?route.abort():route.continue());
   await page.getByLabel('Annotation task',{exact:true}).fill('Offline unfinished action');
   await page.getByRole('status').filter({hasText:'History save failed'}).waitFor();
-  await page.reload();await page.getByRole('button',{name:'Annotation reviewer',exact:true}).click();
+  await page.reload();await navigate(page,'Annotation reviewer');
   await page.getByLabel('Annotation task',{exact:true}).waitFor();
   assert.equal(await page.getByLabel('Annotation task',{exact:true}).inputValue(),'Offline unfinished action');
   await page.unroute('**/api/annotations/*/draft');
   await page.getByRole('button',{name:'Extract & review',exact:true}).click();
-  await page.getByRole('button',{name:'Annotation reviewer',exact:true}).click();
+  await navigate(page,'Annotation reviewer');
   await page.getByLabel('Annotation task',{exact:true}).waitFor();
   assert.equal(await page.getByLabel('Annotation task',{exact:true}).inputValue(),'Offline unfinished action');
   await page.getByLabel('deadline label 1',{exact:true}).fill('Unknown');
@@ -195,7 +196,7 @@ try {
   await page.getByRole('button',{name:'Open disagreement resolution',exact:true}).click();
   await page.getByRole('button',{name:'Use Reviewer B labels for resolution',exact:true}).click();
   await page.getByLabel('Resolution reason',{exact:true}).fill('Tomorrow is leap day following the meeting date.');
-  await page.reload();await page.getByRole('button',{name:'Annotation reviewer',exact:true}).click();
+  await page.reload();await navigate(page,'Annotation reviewer');
   await page.getByLabel('Resolution reason',{exact:true}).waitFor();
   assert.equal(await page.getByLabel('Resolution reason',{exact:true}).inputValue(),'Tomorrow is leap day following the meeting date.');
   assert.equal(await page.getByLabel('deadline label 1',{exact:true}).inputValue(),'2028-02-29');
@@ -219,7 +220,7 @@ try {
   assert.equal(annotationRows.length,2);assert.ok(annotationRows.every(r=>!r.transcript.includes('Alice')));
   const labeled=annotationRows.find(r=>r.items.length===1);
   assert.equal(labeled.items[0].evidence[0].end,Array.from(labeled.transcript).length,'Unicode evidence must use code points');
-  await page.reload();await page.getByRole('button',{name:'Annotation reviewer',exact:true}).click();
+  await page.reload();await navigate(page,'Annotation reviewer');
   assert.equal(await page.getByLabel('Existing snapshot ID',{exact:true}).inputValue(),frozen.snapshot);
   await page.getByRole('button',{name:'Load frozen snapshot',exact:true}).click();
   await page.getByRole('button',{name:'Download complete snapshot',exact:true}).waitFor();
@@ -313,7 +314,7 @@ try {
   assert.equal(trace.at(-1).payload.tasks[0].source,'manual');
   assert.equal(await page.getByRole('heading',{name:'Add a missed action',exact:true}).count(),0);
   await page.setViewportSize({width:1440,height:1000});
-  await page.getByRole('button',{name:'Evaluation lab',exact:true}).click();
+  await navigate(page,'Evaluation lab');
   await page.getByLabel('Reviewed snapshot',{exact:true}).waitFor();
   await page.getByLabel('Reviewed snapshot',{exact:true}).selectOption(frozen.snapshot);
   assert.equal(await page.getByLabel('Reviewed benchmark split',{exact:true}).inputValue(),'dev');
@@ -332,7 +333,7 @@ try {
   const comparison=JSON.parse(await readFile(await (await reviewedDownload).path(),'utf8'));
   assert.equal(comparison.case_count,2);assert.equal(comparison.snapshot,frozen.snapshot);assert.equal(comparison.reports.length,2);assert.ok(comparison.heldout_acknowledged);
   const savedId=comparison.id;
-  await page.reload();await page.getByRole('button',{name:'Evaluation lab',exact:true}).click();
+  await page.reload();await navigate(page,'Evaluation lab');
   await page.getByRole('heading',{name:'Reviewed comparison result',exact:true}).waitFor();
   assert.equal(await page.getByLabel('Saved reviewed comparison',{exact:true}).inputValue(),savedId);
   await page.screenshot({path:path.join(screenshotDir,'desktop-reviewed-comparison.png'),fullPage:true});

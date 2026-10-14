@@ -29,6 +29,7 @@ try{
   const active=await page.evaluate(id=>localStorage.getItem(`flow.account.${id}.flow.activeRun`),alice);assert.match(active,/^[a-f0-9]{32}$/);
   await page.getByLabel('Keep task 1',{exact:true}).check();await page.getByRole('button',{name:'Confirm selected tasks'}).click();await page.getByRole('heading',{name:'Your confirmed plan'}).waitFor();
   const download=page.waitForEvent('download');await page.getByRole('button',{name:'Export CSV'}).click();assert.ok((await readFile(await (await download).path(),'utf8')).includes('Arjun'));
+  await page.evaluate(()=>sessionStorage.setItem('flow.authReturn','/history'));await page.goto(base);await page.getByRole('heading',{name:'Your run history.',exact:true}).waitFor();assert.equal(new URL(page.url()).pathname,'/history');await page.getByRole('button',{name:'Open run',exact:true}).click();await page.getByRole('heading',{name:'Your confirmed plan',exact:true}).waitFor();
   await page.getByLabel('Meeting transcript',{exact:true}).fill('Alice-only unsubmitted browser draft.');
   await page.getByRole('button',{name:'Sign out',exact:true}).click();await page.getByRole('button',{name:'Continue with GitHub'}).waitFor();assert.equal(await page.getByRole('heading',{name:'Your confirmed plan'}).count(),0);
   // Same browser, different account: the previous run and drafts remain inaccessible.

@@ -47,6 +47,10 @@ test('Authenticated routes isolate all private state and authenticated downloads
     for(const suffix of ['', '/history.json','/tasks.csv'])assert.equal((await get(`/api/runs/${run.id}${suffix}`,'bob')).status,404);
     assert.equal((await post(`/api/runs/${run.id}/finalize`,{decisions:run.proposals.map(p=>({...p,accept:true}))},'bob')).status,404);
     const finalized=await post(`/api/runs/${run.id}/finalize`,{decisions:run.proposals.map(p=>({...p,accept:true}))},'alice');assert.equal(finalized.status,200);
+    const progress={proposal_id:run.proposals[0].proposal_id,status:'done',version:0,request_id:'d'.repeat(32),owner_id:bob};
+    assert.equal((await fetch(base+`/api/runs/${run.id}/progress`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(progress)})).status,401);
+    assert.equal((await post(`/api/runs/${run.id}/progress`,progress,'bob')).status,404);
+    const tracked=await post(`/api/runs/${run.id}/progress`,progress,'alice');assert.equal(tracked.status,200);assert.equal((await tracked.json()).task_progress[progress.proposal_id].status,'done');
     const exported=await get(`/api/runs/${run.id}/tasks.csv`,'alice');assert.equal(exported.status,200);assert.ok((await exported.text()).includes('Maya'));assert.equal(exported.headers.get('cache-control'),'no-store');
     const annotation=await (await post('/api/annotations',{transcript:'No actions.',reference_date:'2026-09-15',source:'synthetic',permission:true,anonymized:true,group:'a'},'alice')).json();
     assert.deepEqual(await (await get('/api/annotations','bob')).json(),[]);assert.equal((await get(`/api/annotations/${annotation.id}`,'bob')).status,404);

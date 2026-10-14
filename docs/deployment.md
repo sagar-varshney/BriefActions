@@ -71,7 +71,11 @@ See [GitHub OAuth setup](https://supabase.com/docs/guides/auth/social-login/auth
    account-scoped database query. It returns no transcripts or credentials.
 5. Verify sign-in using two real accounts: create a run in one, confirm the
    other has empty history and cannot retrieve that run ID or its exports.
-   Sign out, sign back in, and confirm drafts and history survive a redeploy.
+   Sign out, sign back in, and confirm drafts, history, and task progress survive a redeploy.
+   Open a private `/meetings/:id` URL directly, reload it, and exercise browser
+   Back/Forward between history and review. A different account must not load that
+   meeting or update its progress. Ensure the host serves the app shell for section
+   paths; the included Node server and Vite development server already do so.
 
 The production server refuses to run without authentication, persistent database
 configuration, and an HTTPS app origin. Do not force `FLOW_AUTH_MODE=local` on

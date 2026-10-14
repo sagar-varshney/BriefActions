@@ -208,8 +208,10 @@ export function createApp({historyPath, config=loadConfig(), maxWorkers=config.m
         const input = await body(req);
         return json(res, 201, await call({transcript:input.transcript,reference_date:input.reference_date,clusters:input.clusters ?? 3,request_id:input.request_id,title:input.title ?? '',operation:'analyze'}));
       }
-      if ((match = pathname.match(/^\/api\/runs\/([a-f0-9]{32})(?:\/(finalize|draft|title|manual-actions|history.json|tasks.csv))?$/))) {
+      if ((match = pathname.match(/^\/api\/runs\/([a-f0-9]{32})(?:\/(finalize|draft|title|progress|manual-actions|history.json|tasks.csv))?$/))) {
         const [, run_id, action] = match;
+        if(action==='progress' && req.method!=='POST')throw new HttpError(405,'Task progress requires POST.');
+        if(req.method==='POST' && action==='progress'){const input=await body(req);return json(res,200,await call({operation:'task_progress',run_id,proposal_id:input.proposal_id,status:input.status,version:input.version,request_id:input.request_id}));}
         if(req.method==='POST' && action==='title'){const input=await body(req);return json(res,200,await call({operation:'meeting_title',run_id,title:input.title,version:input.version}));}
         if (req.method === 'POST' && action === 'manual-actions') {
           const input=await body(req);

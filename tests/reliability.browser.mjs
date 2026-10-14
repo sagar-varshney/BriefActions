@@ -34,6 +34,7 @@ try{
   await page.getByRole('button',{name:'Analyze transcript',exact:true}).click();await page.getByRole('button',{name:'Retry saved analysis'}).waitFor();
   assert.equal((await (await fetch(base+'/api/runs')).json()).length,1);await page.unroute('**/api/runs');await page.reload();
   await page.getByRole('button',{name:'Retry saved analysis'}).waitFor();assert.equal(await page.getByLabel('Meeting transcript',{exact:true}).inputValue(),'Jon will send the invoice tomorrow.');
+  await page.getByRole('button',{name:'Data & account',exact:true}).click();await page.getByRole('heading',{name:/Saved transcripts/}).waitFor();await page.getByRole('button',{name:'Extract & review',exact:true}).click();
   await page.getByRole('button',{name:'Retry saved analysis'}).click();await page.getByRole('status').filter({hasText:'Analysis saved. Review the proposals below.'}).waitFor();
   const runs=await (await fetch(base+'/api/runs')).json();assert.equal(runs.length,2);assert.equal(runs[0].id,firstId);assert.notEqual(firstId,droppedId);
   await page.getByRole('button',{name:'Data & account',exact:true}).click();await page.getByRole('heading',{name:/Saved transcripts/}).waitFor();

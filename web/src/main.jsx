@@ -15,6 +15,12 @@ import MeetingHistory from './MeetingHistory.jsx';
 import ProductBrand from './ProductBrand.jsx';
 import SourceTranscript from './SourceTranscript.jsx';
 import WorkspaceSummary from './WorkspaceSummary.jsx';
+import ReviewProposals from './ReviewProposals.jsx';
+import TaskFollowThrough from './TaskFollowThrough.jsx';
+import ActivityTimeline,{ConversationChanges} from './ActivityTimeline.jsx';
+import ResearchNavigation from './ResearchNavigation.jsx';
+import WorkspaceLayout from './WorkspaceLayout.jsx';
+import {readRoute,routePath} from './routing.js';
 import {readInputDraft,saveInputDraft,removeInputDraft} from './inputDraft.js';
 
 function loadPending(){try{const value=JSON.parse(accountStorage.getItem('flow.pendingAnalysis') || 'null');return value && /^[a-f0-9]{32}$/.test(value.request_id) && typeof value.transcript==='string'?value:null;}catch{return null;}}
@@ -23,7 +29,6 @@ function reviewDrafts(proposals,decisions=[]){const byId=new Map(decisions.map(d
 
 const pct = value => value == null ? 'Unknown' : `${(value*100).toFixed(1)}%`;
 const duration = value => value == null ? 'Unknown' : value < 1000 ? `${value.toFixed(1)} ms` : `${(value/1000).toFixed(2)} s`;
-const stamp = value => new Date(value).toLocaleString(undefined,{dateStyle:'medium',timeStyle:'short'});
 function Icon({name, size = 20}) {
   const paths = {
     flow:<path d="m14 2-8 11h6l-2 9 8-11h-6z"/>,
@@ -50,9 +55,25 @@ function downloadJson(value, filename) {
 const pages = [{id:'extract',name:'Extract & review',icon:'extract'},{id:'history',name:'Run history',icon:'history'},{id:'benchmark',name:'Evaluation lab',icon:'chart'},{id:'annotations',name:'Annotation reviewer',icon:'quote'},{id:'data',name:'Data & account',icon:'history'}];
 
 function App({account,signOut,completeAccountDeletion,authError}) {
-  const [page,setPage] = useState(location.hash==='#data'?'data':'extract');
+  const [page,setPageState] = useState(()=>readRoute().page);
+  const navigation=useRef(null),deferredNavigation=useRef(null),navigationEpoch=useRef(0),committedURL=useRef(routePath(readRoute()));
+  const [sourceWidth,setSourceWidth]=useState(()=>{try{const width=Number(accountStorage.getItem('flow.workspaceWidth'));return Number.isInteger(width)&&width>=32&&width<=55?width:43;}catch{return 43;}});
+  function resizeSource(width){setSourceWidth(width);try{accountStorage.setItem('flow.workspaceWidth',String(width));}catch{}}
+  function commitRoute(next,mode='push'){const url=routePath(next);if(mode!=='pop' && (location.pathname+location.search+location.hash!==url))history[mode==='replace'?'replaceState':'pushState']({},'',url);committedURL.current=url;setPageState(next.page);}
+  function setPage(next){return navigate({page:next,runId:next==='extract'?run?.id:null});}
+  async function navigate(next,mode='push'){
+    if(restoring && mode==='pop'){deferredNavigation.current=next;return;}
+    if(closing && next.page!=='data' || busy || restoring){if(mode==='pop')history.replaceState({},'',committedURL.current);return;}
+    if(next.invalid){setError('This page does not exist. Choose a section from the navigation.');if(mode==='pop')history.replaceState({},'',committedURL.current);return;}
+    if(next.page==='extract' && next.runId && next.runId!==run?.id)return openRun(next.runId,mode);
+    if(next.page==='extract' && !next.runId && run){if(!resetMeeting()){if(mode==='pop')history.replaceState({},'',committedURL.current);return;}}
+    navigationEpoch.current++;setError('');commitRoute(next,mode);requestAnimationFrame(()=>document.querySelector('main h1')?.focus({preventScroll:true}));
+  }
+  navigation.current=navigate;
+  useEffect(()=>{const pop=()=>navigation.current?.(readRoute(),'pop');window.addEventListener('popstate',pop);return()=>window.removeEventListener('popstate',pop);},[]);
   const [closing,setClosing]=useState(false);
   const [restoring,setRestoring]=useState(true);
+  useEffect(()=>{if(!restoring && deferredNavigation.current){const next=deferredNavigation.current;deferredNavigation.current=null;history.replaceState({},'',routePath(next));void navigation.current?.(next,'pop');}},[restoring]);
   const [pending,setPending]=useState(loadPending),[analysisStatus,setAnalysisStatus]=useState('');
   const analysisBusy=useRef(false);
   const [config,setConfig] = useState(null);
@@ -105,10 +126,11 @@ function App({account,signOut,completeAccountDeletion,authError}) {
   }
   function changeInput(patch){const value=inputValue(patch);showInput(value);stashInput(value);}
   function restoreInput(snapshot){const cached=readInputDraft(draftClient,snapshot?.id || 'new');showInput(cached || snapshot || {transcript:'',reference_date:'',clusters:3,title:''},!!cached);}
-  function newMeeting(){
-    if(busy || restoring || pending || !stashInput())return;
-    clearTimeout(saveTimer.current);activeRun.current=null;setRun(null);setDrafts([]);accountStorage.removeItem('flow.activeRun');setPending(null);setAnalysisStatus('');restoreInput(null);setPage('extract');
+  function resetMeeting(){
+    if(busy || restoring || pending || !stashInput())return false;
+    clearTimeout(saveTimer.current);activeRun.current=null;setRun(null);setDrafts([]);accountStorage.removeItem('flow.activeRun');setPending(null);setAnalysisStatus('');restoreInput(null);return true;
   }
+  function newMeeting(){if(resetMeeting())commitRoute({page:'extract',runId:null});}
   function discardInput(){try{removeInputDraft(draftClient,run?.id || 'new');showInput(run || {transcript:'',reference_date:'',clusters:3,title:''});}catch{setInputSaveStatus('Browser draft could not be discarded. Keep this page open.');}}
   async function saveName(){setError('');setBusy(true);try{const value=await api(`/runs/${run.id}/title`,{method:'POST',body:JSON.stringify({title:meetingTitle,version:run.title_version})});adopt(value);setMeetingTitle(value.title);stashInput(inputValue({title:value.title}));}catch(e){setError(e.message);}finally{setBusy(false);}}
 
@@ -135,22 +157,25 @@ function App({account,signOut,completeAccountDeletion,authError}) {
       try {
         const status=await api('/account');
         if(!alive)return;
-        if(status.state==='deleting'){accountStorage.clearWorkspace(false);setPending(null);setClosing(true);setPage('data');return;}
+        if(status.state==='deleting'){accountStorage.clearWorkspace(false);setPending(null);setClosing(true);commitRoute({page:'data'},'replace');return;}
         const value=await api('/config');
         if(!alive)return;
         setConfig(value);
-        const saved=accountStorage.getItem('flow.activeRun');
+        const initial=readRoute();
+        if(initial.invalid)setError('This page does not exist. Choose a section from the navigation.');
+        const saved=initial.runId || (initial.invalid || location.pathname==='/meetings'?null:accountStorage.getItem('flow.activeRun'));
         if(saved) {
           try {
             const snapshot=await api(`/runs/${saved}`);
-            if(alive){adopt(snapshot);restoreInput(snapshot);}
-          } catch(e){if([404,410].includes(e.status))accountStorage.removeItem('flow.activeRun');else throw e;}
+            if(alive){adopt(snapshot);restoreInput(snapshot);if(initial.page==='extract')commitRoute({page:'extract',runId:snapshot.id},'replace');}
+          } catch(e){if([404,410].includes(e.status)){if(accountStorage.getItem('flow.activeRun')===saved)accountStorage.removeItem('flow.activeRun');if(initial.runId)setError('This meeting is unavailable or does not belong to your account.');}else throw e;}
         }
-        if(alive && !accountStorage.getItem('flow.activeRun'))restoreInput(null);
+        if(alive && !saved){restoreInput(null);if(!initial.invalid)commitRoute(initial,'replace');}
+        else if(alive && initial.page!=='extract')commitRoute(initial,'replace');
         const unfinished=loadPending();
         if(unfinished && alive){
           showInput(unfinished);
-          try{const saved=await api(`/runs/${unfinished.request_id}`);if(alive){removeInputDraft(draftClient,unfinished.source_context || accountStorage.getItem('flow.activeRun') || 'new');adopt(saved);showInput(saved);accountStorage.removeItem('flow.pendingAnalysis');setPending(null);setAnalysisStatus('Recovered your saved analysis.');}}
+          try{const saved=await api(`/runs/${unfinished.request_id}`);if(alive){removeInputDraft(draftClient,unfinished.source_context || accountStorage.getItem('flow.activeRun') || 'new');adopt(saved);showInput(saved);accountStorage.removeItem('flow.pendingAnalysis');setPending(null);setAnalysisStatus('Recovered your saved analysis.');if(initial.page==='extract')commitRoute({page:'extract',runId:saved.id},'replace');}}
           catch(e){if(alive)setAnalysisStatus('An unfinished analysis is saved. Retry it to recover or finish the same request.');}
         }
       } catch(e){if(alive){setError(e.message);if(!accountStorage.getItem('flow.activeRun'))restoreInput(null);const unfinished=loadPending();if(unfinished)showInput(unfinished);}}finally{if(alive)setRestoring(false);}
@@ -178,7 +203,7 @@ function App({account,signOut,completeAccountDeletion,authError}) {
     try{accountStorage.setItem('flow.pendingAnalysis',JSON.stringify(input));}catch{setError('Browser storage is unavailable. Enable storage before starting a recoverable analysis.');return;}
     analysisBusy.current=true;setPending(input);setError('');setBusy(true);setAnalysisStatus('Analyzing your saved request…');
     showInput(input);
-    const finish=value=>{removeInputDraft(draftClient,sourceContext);adopt(value);showInput(value);accountStorage.removeItem('flow.pendingAnalysis');setPending(null);setAnalysisStatus('Analysis saved. Review the proposals below.');};
+    const finish=value=>{removeInputDraft(draftClient,sourceContext);adopt(value);showInput(value);accountStorage.removeItem('flow.pendingAnalysis');setPending(null);setAnalysisStatus('Analysis saved. Review the proposals below.');commitRoute({page:'extract',runId:value.id});};
     try{finish(await api('/runs',{method:'POST',body:JSON.stringify(input)}));}
     catch(e){
       if(e.retryable){
@@ -202,13 +227,13 @@ function App({account,signOut,completeAccountDeletion,authError}) {
     try{await saveQueue.current.catch(()=>{});adopt(await api(`/runs/${run.id}/manual-actions`,{method:'POST',body:JSON.stringify(payload)}));}
     finally{setBusy(false);}
   }
-  async function openRun(id) {
-    if(pending){setError('Finish the saved analysis before opening another meeting.');return;}
-    if(!stashInput()){setError('Browser storage is unavailable. Return to Extract & review and copy your unsaved transcript before opening another run.');return;}
-    setError('');setBusy(true);
+  async function openRun(id,mode='push') {
+    if(pending || busy || restoring){setError('Finish the current request before opening another meeting.');if(mode==='pop')history.replaceState({},'',committedURL.current);return;}
+    if(!stashInput()){setError('Browser storage is unavailable. Return to Extract & review and copy your unsaved transcript before opening another run.');if(mode==='pop')history.replaceState({},'',committedURL.current);return;}
+    const epoch=++navigationEpoch.current;setError('');setBusy(true);
     try {
-      const value=await api(`/runs/${id}`);adopt(value);restoreInput(value);setPage('extract');
-    }catch(e){setError(e.message);}finally{setBusy(false);}
+      const value=await api(`/runs/${id}`);if(epoch!==navigationEpoch.current)return;adopt(value);restoreInput(value);commitRoute({page:'extract',runId:id},mode);requestAnimationFrame(()=>document.querySelector('main h1')?.focus({preventScroll:true}));
+    }catch(e){if(epoch===navigationEpoch.current){setError(e.message);if(mode==='pop')history.replaceState({},'',committedURL.current);}}finally{if(epoch===navigationEpoch.current)setBusy(false);}
   }
   async function inspect(id) {
     const epoch=++reportEpoch.current;
@@ -217,8 +242,7 @@ function App({account,signOut,completeAccountDeletion,authError}) {
     try {const value=await api(`/benchmarks/${id}`);if(epoch===reportEpoch.current){setReport(value);setCaseId(value.report.runs[0]?.id || '');}}
     catch(e){if(epoch===reportEpoch.current)setError(e.message);}
   }
-  function edit(index,field,value) {
-    const next=drafts.map((d,i)=>i===index?{...d,[field]:value}:d);
+  function updateReview(next) {
     const edit_id=++editEpoch.current;setDrafts(next);cacheDraft(run.id,{version:draftVersions.current[run.id] || 0,decisions:next,dirty:true,edit_id});scheduleSave(run.id,next,edit_id);
   }
   const selected=drafts.filter(d=>d.accept).length;
@@ -230,20 +254,20 @@ function App({account,signOut,completeAccountDeletion,authError}) {
   return <div className="app-shell">
     <a className="skip-link" href="#workspace-main">Skip to workspace</a>
     <header className="workspace-header">
-      <ProductBrand href="#" onClick={e=>{e.preventDefault();setPage('extract');}}/>
-      <nav aria-label="Main navigation">{pages.map(p=><button key={p.id} disabled={closing && p.id!=='data'} className={`nav-item ${page===p.id?'active':''}`} aria-current={page===p.id?'page':undefined} onClick={e=>{setPage(p.id);location.hash=p.id==='data'?'data':'';setError('');if(e.detail===0)requestAnimationFrame(()=>document.querySelector('main h1')?.focus());}}><Icon name={p.icon} size={17}/><span>{p.name}</span></button>)}</nav>
+      <ProductBrand href="/meetings" onClick={e=>{e.preventDefault();setPage('extract');}}/>
+      <nav aria-label="Main navigation">{pages.filter(p=>!['benchmark','annotations'].includes(p.id)).map(p=><button key={p.id} disabled={busy || restoring || closing && p.id!=='data'} className={`nav-item ${page===p.id?'active':''}`} aria-current={page===p.id?'page':undefined} onClick={()=>setPage(p.id)}><Icon name={p.icon} size={17}/><span>{p.name}</span></button>)}<ResearchNavigation page={page} disabled={closing || busy || restoring} onNavigate={setPage}/></nav>
       <div className="topbar-actions"><ThemeControl/>{account&&<><span className="account-name" title={account.email}>{account.email || 'Signed in'}</span><button className="text-button" onClick={signOut}>Sign out</button></>}</div>
     </header>
-    <main id="workspace-main" tabIndex={-1}>
+    <main id="workspace-main" tabIndex={-1} aria-busy={restoring || busy}>
       <div className="topbar"><span>Workspace <span className="slash">/</span> {pages.find(p=>p.id===page).name}</span><span className="local-badge"><span/> {account?'Private account':'Local workspace'}</span></div>
       <div className="content">
         {authError&&<div className="notice error" role="alert">{authError}</div>}{error&&<div className="notice error" role="alert">{error}{!config&&<button className="text-button" onClick={()=>location.reload()}>Retry workspace loading</button>}<button aria-label="Dismiss error" onClick={()=>setError('')}>×</button></div>}
         {page==='extract'&&<>
           <div className={`page-intro extraction-intro ${run?'compact':''}`}><div><div className="eyebrow accent">LESS FOLLOW-UP. MORE FOLLOW-THROUGH.</div><h1 tabIndex={-1}>Make your next move <em>clear.</em></h1><p>Turn the conversation into a plan. Every task, grounded in what was said.</p></div><div className="intro-note"><Icon name="check" size={17}/><span>Evidence attached.<br/><strong>You make the final call.</strong></span></div></div>
           <WorkspaceSummary run={run} drafts={drafts} selected={selected}/>
-          <div className="steps"><span className="current"><b>1</b> Add transcript</span><span className={run?'current':''}><b>2</b> Review proposals</span><span className={run?.status==='confirmed'?'current':''}><b>3</b> Confirm plan</span></div>
+          <div className="steps"><span className={!run?'current':''}><b>1</b> Add transcript</span><span className={run?.status==='review'?'current':''}><b>2</b> Review proposals</span><span className={run?.status==='confirmed'?'current':''}><b>3</b> Confirm plan</span></div>
           {(run || transcript || meetingTitle || meetingDate)&&<div className="meeting-actions">{run&&<button className="button secondary" disabled={busy || restoring || !!pending} onClick={newMeeting}>New meeting</button>}<button className="text-button" disabled={busy || restoring || !!pending} onClick={discardInput}>Discard transcript draft</button></div>}
-          <div className={`extraction-grid ${run?'has-result':''}`}><div className="source-column" role="region" aria-label="Transcript workspace" tabIndex={0}>
+          {run&&<WorkspaceLayout width={sourceWidth} onChange={resizeSource}/>}<div className={`extraction-grid ${run?'has-result':''}`} data-source-width={sourceWidth}><div className="source-column" role="region" aria-label="Transcript workspace" tabIndex={0}>
           {run&&<SourceTranscript run={run} passage={activeEvidence} onReturn={returnToTask}/>}
           <form className="panel transcript-panel" onSubmit={analyze}>
             {!run&&!pending&&!restoring&&config&&!transcript&&<section className="welcome-panel" aria-labelledby="welcome-title"><h2 id="welcome-title">Start with a conversation</h2><p>Try a sample, paste a conversation, or import a transcript file.</p><div className="welcome-actions"><button type="button" className="button primary" onClick={()=>{changeInput({transcript:config.sample_transcript,reference_date:config.sample_reference_date,title:'Example meeting'});setAnalysisStatus('Example loaded. Analyze it to try reviewing a plan.');}}>Try an example</button><button type="button" className="button secondary" onClick={()=>document.getElementById('transcript').focus()}>Paste my transcript</button><button type="button" className="button secondary" onClick={()=>{const details=document.querySelector('.transcript-import');details.open=true;document.getElementById('transcript-file').focus();}}>Import a file</button></div><p className="form-hint">Choosing an option saves nothing to history. Analyze transcript saves your input and proposals. <a href="/privacy">Read how your data is handled.</a></p></section>}
@@ -265,29 +289,20 @@ function App({account,signOut,completeAccountDeletion,authError}) {
           {run&&<section className="extraction-result" aria-label="Extraction result">
             {inputChanged&&<div className="notice warning">These proposals belong to the saved input. Analyze your edited transcript or settings to create a new run.</div>}
             <div className="result-meta"><span><strong>{run.title || `Meeting ${run.reference_date}`}</strong> · Run <code>{run.id.slice(0,8)}</code></span><span className={`badge ${run.status==='confirmed'?'green':'purple'}`}>{run.status==='confirmed'?'Confirmed':'Needs your review'}</span></div>
+            <details className="disclosure meeting-overview"><summary>Meeting summary & saved input</summary>
             {run.summary&&<div className="summary"><div className="eyebrow accent">MEETING SUMMARY</div><p>{run.summary}</p></div>}
             <details className="disclosure"><summary>Saved input & extraction settings</summary><pre className="saved-transcript">{run.transcript}</pre><p>Extractor: {run.settings?.extractor || 'rules'} · Maximum groups: {run.settings?.clusters || 3}</p><small>Extractor fingerprint: {run.settings?.extractor_sha256 || 'Unavailable for this run'}</small></details>
+            </details>
             {run.status==='confirmed'?<>
               <div className="section-heading"><div><h2>Your confirmed plan</h2><p>{run.final_tasks.length} task{run.final_tasks.length===1?'':'s'} saved. This result is immutable.</p></div><Download href={`/api/runs/${run.id}/tasks.csv`}>Export CSV</Download></div>
               {run.final_tasks.length===0&&<div className="notice">You confirmed a plan with no tasks. All proposals were rejected.</div>}
-              {run.final_tasks.map((task,i)=><article className="panel confirmed-card" key={task.proposal_id}><span className="check-circle"><Icon name="check" size={18}/></span><div className="confirmed-content"><h3>{task.task}</h3>{task.source==='manual'&&<span className="badge purple">User added</span>}<div className="task-meta"><span>Owner: <strong>{task.owner}</strong></span><span>Deadline: <strong>{task.deadline}</strong></span></div><Evidence passages={task.evidence} onInspect={inspectEvidence} label={`confirmed task ${i+1}`}/></div></article>)}
-            </>:<form onSubmit={finalize}>
-              <div className="section-heading"><div><h2>Review action proposals <span className="count">{run.proposals.length}</span></h2><p>Correct the fields and select each task to keep. Nothing is accepted by default.</p></div></div>
-              <p role="status" className="form-hint">{saveStatus}</p><button type="button" className="text-button" onClick={()=>{try{const cached=JSON.parse(accountStorage.getItem(draftKey(run.id))||'null');if(cached){const merged=reviewDrafts(run.proposals,cached.decisions);setDrafts(merged);scheduleSave(run.id,merged);}}catch{setError('Browser draft could not be restored.');}}}>Restore browser copy</button>
-              <div className="review-note">Supporting passages describe the original proposal. Your corrections are recorded separately.</div>
-              {run.proposals.length===0&&<div className="notice">No committed actions or direct requests detected. You can confirm an empty plan or analyze another transcript.</div>}
-              {run.proposals.map((p,i)=><article className={`panel proposal-card ${drafts[i]?.accept?'selected':''}`} key={p.proposal_id}>
-                <div className="proposal-heading"><span className="proposal-number">{String(i+1).padStart(2,'0')}</span><span className="badge neutral">{p.category || 'Action'}</span><label className="keep"><input type="checkbox" checked={drafts[i]?.accept || false} disabled={busy} onChange={e=>edit(i,'accept',e.target.checked)}/>Keep task {i+1}</label></div>
-                <label className="field-label">Task {i+1}<textarea aria-label={`Task ${i+1}`} className="task-input" required value={drafts[i]?.task || ''} disabled={busy} onChange={e=>edit(i,'task',e.target.value)}/></label>
-                <div className="field-row"><label className="field-label">Owner {i+1}<input aria-label={`Owner ${i+1}`} required value={drafts[i]?.owner || ''} disabled={busy} onChange={e=>edit(i,'owner',e.target.value)}/></label><label className="field-label">Deadline {i+1}<input aria-label={`Deadline ${i+1}`} required placeholder="YYYY-MM-DD or Unknown" value={drafts[i]?.deadline || ''} disabled={busy} onChange={e=>edit(i,'deadline',e.target.value)}/><span className="field-hint">YYYY-MM-DD or Unknown</span></label></div>
-                <Evidence passages={p.evidence} onInspect={inspectEvidence} label={`task ${i+1}`}/>
-                {p.source!=='manual'&&<details className="suggestions"><summary>Proposal suggestions · {p.priority} priority · Group {p.cluster}</summary><p>Suggested slot: {p.suggested_slot || 'Unknown'}<br/>Workstream classifier probability: {p['confidence_%'] ?? 'Unknown'}%</p><p>Priority and scheduling use heuristics. Classifier probability is not extraction confidence. These suggestions are not included in the confirmed plan.</p></details>}
-              </article>)}
-              <div className="confirm-bar"><div><strong>{selected} of {run.proposals.length} selected</strong><span>{run.proposals.length-selected} proposal{run.proposals.length-selected===1?'':'s'} will be rejected.</span></div><button className="button primary" disabled={busy}>{busy?'Saving…':selected?'Confirm selected tasks':'Confirm empty plan'}<Icon name="check" size={17}/></button></div>
-            </form>}
+              <TaskFollowThrough key={`progress-${run.id}`} run={run} onViewChange={()=>{setActiveEvidence(null);evidenceTrigger.current=null;}} onUpdate={value=>{setRun(value);setActiveEvidence(null);evidenceTrigger.current=null;}} renderEvidence={(task,i)=><Evidence passages={task.evidence} onInspect={inspectEvidence} label={`confirmed task ${i+1}`}/>}/>
+            </>:<ReviewProposals key={`review-${run.id}`} run={run} drafts={drafts} busy={busy} onViewChange={()=>{setActiveEvidence(null);evidenceTrigger.current=null;}} onChange={updateReview} onConfirm={finalize} renderEvidence={(p,i)=><Evidence passages={p.evidence} onInspect={inspectEvidence} label={`task ${i+1}`}/>}>
+              <div className="review-save-state"><p role="status" className="form-hint">{saveStatus}</p><details className="review-recovery"><summary>Review recovery</summary><button type="button" className="text-button" onClick={()=>{try{const cached=JSON.parse(accountStorage.getItem(draftKey(run.id))||'null');if(cached){const merged=reviewDrafts(run.proposals,cached.decisions);setDrafts(merged);scheduleSave(run.id,merged);}}catch{setError('Browser draft could not be restored.');}}}>Restore browser copy</button></details></div>
+            </ReviewProposals>}
             {run.status==='review'&&<MissedActionForm key={run.id} run={run} busy={busy} onAdd={addMissed}/>}
-            {run.settings?.conversation_changes?.length>0&&<details className="disclosure" open><summary>Conversation revisions & cancellations</summary><Json value={run.settings.conversation_changes}/></details>}
-            <HistoryEvents run={run}/>
+            <ConversationChanges changes={run.settings?.conversation_changes} renderEvidence={(change,i)=><Evidence passages={change.evidence} onInspect={inspectEvidence} label={`conversation change ${i+1}`}/>}/>
+            <ActivityTimeline key={`activity-${run.id}`} run={run} download={<Download href={`/api/runs/${run.id}/history.json`}>History JSON</Download>}/>
           </section>}
           </div></div>
         </>}
@@ -315,8 +330,5 @@ function App({account,signOut,completeAccountDeletion,authError}) {
       </div>
     </main>
   </div>;
-}
-function HistoryEvents({run}) {
-  return <div className="audit"><div className="section-heading"><div><h2>Inspectable history</h2><p>Original evidence stays attached. Edits and rejected tasks are recorded.</p></div><Download href={`/api/runs/${run.id}/history.json`}>History JSON</Download></div>{run.events.map(event=><details key={event.event_id} className="disclosure"><summary><span className="event-label">{event.kind==='manual_proposal'?'User-added action':event.kind}</span><span className="event-time">{stamp(event.created_at)}</span></summary><Json value={event.payload}/></details>)}</div>;
 }
 createRoot(document.getElementById('root')).render(location.pathname.replace(/\/$/,'')==='/privacy'?<PrivacyPage/>:<AuthShell>{props=><App {...props}/>}</AuthShell>);

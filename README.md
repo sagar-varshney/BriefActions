@@ -8,7 +8,7 @@ history. Extraction improvements are measured against a retained annotated corpu
 
 ![Productivity Flow Engine workspace](docs/screenshots/workspace-light.png)
 
-[Review workspace](docs/screenshots/review-light.png) · [Sign-in page](docs/screenshots/sign-in-light.png)
+[Review workspace](docs/screenshots/review-light.png) · [Dark theme](docs/screenshots/review-dark.png) · [Task progress](docs/screenshots/task-progress-light.png) · [Sign-in page](docs/screenshots/sign-in-light.png)
 
 ## A clearer review workspace
 
@@ -33,6 +33,62 @@ workflow without loading private records. Screenshots use synthetic demo inputs.
 The responsive UI is checked from 320 to 1440 pixels, including keyboard passage
 navigation and automated WCAG checks in both themes. These checks supplement
 manual visual review; they are not a claim of complete accessibility conformance.
+
+## Faster review and task follow-through
+
+**Show proposals** filters the current meeting to all proposals, selected items,
+or items that need attention. **Select visible** and **Clear visible selection**
+change only the rows currently shown; in the single-task layout they affect just
+that task. Filtering never clears edits or selects tasks automatically. Confirmation
+always includes all selected proposals, with an explicit count and a warning when
+selected tasks are outside the current view. Invalid fields are revealed and focused
+before confirmation, even when the offending proposal was filtered out.
+
+Choose **Compact rows**, **Detailed cards**, or **Focus one task** under **Review
+layout**. Compact rows expand for editing and evidence; focus mode keeps edits and
+selections while moving between tasks. Desktop defaults to detailed cards; a fresh
+mobile workspace defaults to focus mode. The layout preference is account-scoped
+in this browser. Attention shortcuts jump to missing owners, missing dates, empty
+tasks, or invalid dates. Unknown metadata is allowed; the app does not invent it.
+
+Desktop **Transcript panel width** adjusts the real columns from 32% to 55%, with
+keyboard support, a saved browser preference, and **Reset layout**. Narrow screens
+stack the panels. Changing review views clears a previous evidence highlight so
+**Back to task** never points to a hidden or removed control. Meeting summaries,
+extraction details, and browser-copy recovery are available through disclosures.
+
+Confirmed tasks have separate **To do**, **In progress**, and **Done** states.
+Filter the current meeting's tasks by status, overdue, due today, next seven days,
+or unknown dates. Date filters use the device's calendar date; overdue, due-today,
+and upcoming views exclude completed tasks. Progress never edits the confirmed
+plan, its evidence, or its CSV. Updates append versioned `task_progress` events,
+which are included in history, complete workspace exports, deletion, and encrypted
+backups. No new database migration is required. Stale writes return a conflict;
+**Refresh task progress** retrieves the current state. Interrupted updates retain
+a stable request ID in account-scoped browser storage and can be retried after
+reload without duplicating an update or rolling newer progress back.
+
+History now shows a readable activity timeline with before/after corrections,
+selections, confirmations, meeting renames, and progress changes. Conversation
+revisions and cancellations display their supporting passages. Raw event JSON and
+the complete history download remain available. The timeline shows the latest 30
+events initially, with **Show earlier activity** for older entries; review autosaves
+appear when the run is next loaded or confirmed.
+
+## Navigation and meeting links
+
+Every meeting has a private `/meetings/:id` URL. Sections use `/meetings`, `/history`,
+`/account`, `/research/evaluation`, and `/research/annotations`. Refresh and browser
+Back/Forward preserve the section or load the requested meeting. The old `/#data`
+link still opens account settings. Opening `/meetings` starts or restores that tab's
+new-meeting draft; opening `/` can resume the last saved run. Unsaved transcript
+protection and interrupted-analysis recovery still apply when opening another run.
+
+Every saved meeting request requires the signed-in account; knowing a URL does not
+grant another account access. The sign-in flow can retain a requested destination
+through the same tab's session storage. The primary navigation keeps extraction,
+history, and account controls visible; **Research tools** contains Evaluation Lab
+and Annotation Reviewer. These research screens remain available to each account.
 
 ## Public deployment and themes
 
@@ -400,6 +456,7 @@ latency; benchmark timings continue to describe extraction only.
 | `GET /api/runs`, `/api/runs/:id` | List and inspect saved runs |
 | `GET /api/runs/search` | Account-scoped meeting search and bounded pagination |
 | `POST /api/runs/:id/title` | Versioned, append-only meeting rename |
+| `POST /api/runs/:id/progress` | Update `{proposal_id, status, version, request_id}` separately from the confirmed plan |
 | `GET /api/account` | Workspace lifecycle, account-deletion availability, and scoped payload storage usage |
 | `GET /api/account/export` | Streaming, complete workspace JSONL export |
 | `POST /api/account/delete` | Confirmed workspace erasure and sign-in account deletion |
@@ -495,6 +552,11 @@ pnpm test:browser
 This uses a temporary SQLite database and covers explicit acceptance, deduplication,
 invalid date recovery, corrections, immutable confirmation, CSV/JSON downloads,
 reload recovery, history, benchmark case inspection, empty plans, and mobile overflow.
+Seven browser suites also cover filtered bulk decisions, compact/focused editing,
+hidden-field validation, private deep links and Back/Forward navigation, resizable
+columns, readable audit events, due-date filters, and lost-response/stale progress
+updates. New progress storage tests run on SQLite and real Postgres in CI; the
+encrypted restore drill verifies progress events too.
 `FLOW_SCREENSHOTS=/absolute/output/path` retains QA screenshots;
 `FLOW_CHROMIUM_PATH=/absolute/path/to/chromium` reuses an installed browser.
 

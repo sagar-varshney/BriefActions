@@ -53,6 +53,18 @@ test('Rejected review does not persist; explicit correction and final exports do
   const history=await (await fetch(base+`/api/runs/${saved.id}/history.json`)).json();assert.deepEqual(history.map(e=>e.kind),['extraction','review','final']);
   const runs=await (await fetch(base+'/api/runs')).json();assert.equal(runs[0].status,'confirmed');
 });
+test('Task progress is versioned, retry-safe, and separate from confirmed CSV',async()=>{
+  const before=await (await fetch(base+`/api/runs/${saved.id}`)).json(),proposal_id=before.final_tasks[0].proposal_id;
+  assert.equal((await fetch(base+`/api/runs/${saved.id}/progress`)).status,405);
+  const csv=await (await fetch(base+`/api/runs/${saved.id}/tasks.csv`)).text(),payload={proposal_id,status:'in_progress',version:0,request_id:'a'.repeat(32)};
+  let response=await request(`/api/runs/${saved.id}/progress`,payload);assert.equal(response.status,200);assert.equal((await response.json()).task_progress[proposal_id].status,'in_progress');
+  response=await request(`/api/runs/${saved.id}/progress`,{...payload,status:'done',version:1,request_id:'b'.repeat(32)});assert.equal(response.status,200);
+  response=await request(`/api/runs/${saved.id}/progress`,payload);assert.equal(response.status,200);const after=await response.json();assert.equal(after.task_progress[proposal_id].status,'done');assert.equal(after.task_progress[proposal_id].version,2);assert.deepEqual(after.final_tasks,before.final_tasks);assert.deepEqual(after.events.slice(0,-2),before.events);
+  assert.equal((await request(`/api/runs/${saved.id}/progress`,{...payload,request_id:'c'.repeat(32)})).status,409);
+  assert.equal((await request(`/api/runs/${saved.id}/progress`,{...payload,status:'invalid',request_id:'c'.repeat(32)})).status,400);
+  assert.equal((await request(`/api/runs/${saved.id}/progress`,{...payload,proposal_id:before.proposals[1].proposal_id,request_id:'c'.repeat(32)})).status,404);
+  assert.equal(await (await fetch(base+`/api/runs/${saved.id}/tasks.csv`)).text(),csv);
+});
 test('Empty extraction can be confirmed explicitly',async()=>{
   const run=await (await request('/api/runs',{transcript:'We already reviewed the report.',reference_date:'2026-09-15'})).json();
   assert.deepEqual(run.proposals,[]);

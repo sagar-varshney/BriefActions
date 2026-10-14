@@ -3,6 +3,7 @@ import {configureApi,request} from './api.js';
 import {scopeStorage} from './accountStorage.js';
 import ThemeControl from './ThemeControl.jsx';
 import ProductBrand from './ProductBrand.jsx';
+import {readRoute} from './routing.js';
 
 export default function AuthShell({children}) {
   const [ready,setReady]=useState(false),[client,setClient]=useState(null),[session,setSession]=useState(null);
@@ -18,6 +19,7 @@ export default function AuthShell({children}) {
       const auth=createClient(config.url,config.key,{auth:{flowType:'pkce'}});
       const {data,error}=await auth.auth.getSession();
       if(error)throw error;
+      if(data.session && location.pathname==='/'){try{const target=sessionStorage.getItem('flow.authReturn');if(target){const destination=new URL(target,location.origin);if(destination.origin===location.origin && !readRoute(destination).invalid)history.replaceState({},'',destination.pathname);}sessionStorage.removeItem('flow.authReturn');}catch{}}
       let current=data.session?.user.id || null;
       configureApi(auth,current);scopeStorage(current);
       if(alive){setClient(auth);setSession(data.session);setReady(true);setEmailEnabled(config.emailEnabled);setAuthUrl(config.url);}
@@ -32,8 +34,9 @@ export default function AuthShell({children}) {
     })().catch(e=>{if(alive)setError(e.message);});
     return()=>{alive=false;subscription?.unsubscribe();};
   },[]);
-  async function signIn(provider){setBusy(true);setError('');try{const {error}=await client.auth.signInWithOAuth({provider,options:{redirectTo:location.origin}});if(error)throw error;}catch(e){setError(e.message);setBusy(false);}}
-  async function emailSignIn(event){event.preventDefault();setBusy(true);setError('');try{const {error}=await client.auth.signInWithOtp({email,options:{emailRedirectTo:location.origin}});if(error)throw error;setNotice('Check your email for a sign-in link.');}catch(e){setError(e.message);}finally{setBusy(false);}}
+  function rememberDestination(){try{if(!readRoute().invalid)sessionStorage.setItem('flow.authReturn',location.pathname);}catch{}}
+  async function signIn(provider){rememberDestination();setBusy(true);setError('');try{const {error}=await client.auth.signInWithOAuth({provider,options:{redirectTo:location.origin}});if(error)throw error;}catch(e){setError(e.message);setBusy(false);}}
+  async function emailSignIn(event){event.preventDefault();rememberDestination();setBusy(true);setError('');try{const {error}=await client.auth.signInWithOtp({email,options:{emailRedirectTo:location.origin}});if(error)throw error;setNotice('Check your email for a sign-in link.');}catch(e){setError(e.message);}finally{setBusy(false);}}
   async function signOut(){setBusy(true);setError('');const {error}=await client.auth.signOut();if(error){setError(error.message);setBusy(false);}}
   async function completeAccountDeletion(){
     setReady(false);

@@ -1,3 +1,4 @@
+import {navigate} from './browser-helpers.mjs';
 import assert from 'node:assert/strict';
 import {mkdtemp,mkdir,rm,writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
@@ -73,7 +74,7 @@ try{
     for(const theme of ['light','dark']){
       await page.getByLabel('Color theme').selectOption(theme);
       for(const name of pages){
-        await page.getByRole('button',{name,exact:true}).click();
+        await navigate(page,name);
         if(name==='Data & account')await page.getByRole('heading',{name:/Saved transcripts/}).waitFor();
         if(name==='Evaluation lab')await page.locator('.experiment').first().waitFor();
         if(name==='Annotation reviewer')await page.getByRole('button',{name:'Import bundled cases',exact:true}).waitFor();
@@ -97,7 +98,7 @@ try{
   for(const theme of ['light','dark']){await page.getByLabel('Color theme').selectOption(theme);await scan(page,`storage-warning-${theme}`);}
   await page.unroute('**/api/account');await page.getByRole('button',{name:'Refresh usage',exact:true}).click();await page.getByText('No account quota is enforced in local mode.',{exact:true}).first().waitFor();assert.equal(await page.getByRole('meter').count(),0);
   const annotation=await (await fetch(base+'/api/annotations',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({transcript:'Maya will send the report tomorrow.',reference_date:'2026-10-12',source:'synthetic',permission:true,anonymized:true,group:'Accessibility fixture'})})).json();
-  await page.getByRole('button',{name:'Annotation reviewer',exact:true}).click();
+  await navigate(page,'Annotation reviewer');
   const permission=page.getByLabel('I have permission to use this material for evaluation'),privacy=page.getByLabel('I checked the preview for identifying or sensitive information');await permission.check();await privacy.check();
   await page.locator('summary').filter({hasText:'Import a transcript file'}).click();await page.getByLabel('Transcript file',{exact:true}).setInputFiles({name:'annotation.txt',mimeType:'text/plain',buffer:Buffer.from('Jon will send the notes tomorrow.')});await page.getByLabel('Transcript import preview').waitFor();await page.getByRole('button',{name:'Use this transcript'}).click();
   assert.equal(await page.getByLabel('Transcript to import',{exact:true}).inputValue(),'Jon will send the notes tomorrow.');assert.equal(await page.getByLabel('Annotation meeting date').inputValue(),'');assert.equal(await permission.isChecked(),false);assert.equal(await privacy.isChecked(),false);assert.equal((await (await fetch(base+'/api/annotations')).json()).length,1);
