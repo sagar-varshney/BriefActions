@@ -1,4 +1,4 @@
-import {navigate} from './browser-helpers.mjs';
+import {navigate,meetingField} from './browser-helpers.mjs';
 // Run after `pnpm build` and `pnpm exec playwright install chromium`.
 import assert from 'node:assert/strict';
 import {mkdtemp, mkdir, readFile, rm} from 'node:fs/promises';
@@ -38,10 +38,10 @@ try {
   await page.goto(base);
   await page.getByRole('button',{name:'Analyze transcript'}).waitFor();
   await page.getByRole('button',{name:'Try an example',exact:true}).waitFor();
-  assert.equal(await page.getByLabel('Meeting transcript',{exact:true}).inputValue(),'');
+  assert.equal(await (await meetingField(page,'Meeting transcript')).inputValue(),'');
   await page.screenshot({path:path.join(screenshotDir,'desktop-home.png'),fullPage:true});
-  await page.getByLabel('Meeting transcript',{exact:true}).fill('Maya will review the risks tomorrow.\nMaya will review the risks tomorrow.\nJon will send the invoice.');
-  await page.getByLabel('Meeting date',{exact:true}).fill('2026-09-15');
+  await (await meetingField(page,'Meeting transcript')).fill('Maya will review the risks tomorrow.\nMaya will review the risks tomorrow.\nJon will send the invoice.');
+  await (await meetingField(page,'Meeting date')).fill('2026-09-15');
   await page.getByRole('button',{name:'Analyze transcript'}).click();
   await page.getByRole('checkbox',{name:'Keep task 1'}).waitFor();
   assert.equal(await page.getByRole('checkbox').count(),2);
@@ -82,9 +82,9 @@ try {
   assert.equal(audit.find(e=>e.kind==='review').payload.decisions[0].corrections.owner.after,'Ravi');
   assert.equal(audit.find(e=>e.kind==='review').payload.decisions[1].accept,false);
   await page.reload();await page.getByRole('heading',{name:'Your confirmed plan'}).waitFor();
-  await page.getByRole('button',{name:'Run history'}).click();await page.getByRole('button',{name:'Open run'}).waitFor();
+  await page.getByRole('button',{name:'Meeting history'}).click();await page.getByRole('button',{name:'Open meeting'}).waitFor();
   assert.equal(await page.locator('.history-card').count(),1);
-  await page.getByRole('button',{name:'Open run'}).click();await page.getByRole('heading',{name:'Your confirmed plan'}).waitFor();
+  await page.getByRole('button',{name:'Open meeting'}).click();await page.getByRole('heading',{name:'Your confirmed plan'}).waitFor();
   await navigate(page,'Evaluation lab');
   const provenance=page.locator('details').filter({has:page.getByText('Benchmark provenance & metric limitations',{exact:true})});
   assert.equal(await provenance.getAttribute('open'),null);
@@ -102,14 +102,14 @@ try {
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Mobile benchmark overflows viewport');
   await page.screenshot({path:path.join(screenshotDir,'mobile-benchmarks.png'),fullPage:true});
   await page.getByRole('button',{name:'Extract & review'}).click();
-  await page.getByLabel('Meeting transcript',{exact:true}).fill('We already reviewed the report.');
+  await (await meetingField(page,'Meeting transcript')).fill('We already reviewed the report.');
   await page.getByRole('button',{name:'Analyze transcript'}).click();
   await page.getByRole('button',{name:'Confirm empty plan'}).waitFor();
   await page.getByRole('button',{name:'Confirm empty plan'}).click();
   await page.getByText('You confirmed a plan with no tasks. All proposals were rejected.',{exact:true}).waitFor();
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Mobile extraction overflows viewport');
   await page.screenshot({path:path.join(screenshotDir,'mobile-confirmed.png'),fullPage:true});
-  await page.getByRole('button',{name:'Run history'}).click();
+  await page.getByRole('button',{name:'Meeting history'}).click();
   await page.waitForFunction(()=>document.querySelectorAll('.history-card').length===2);
   await page.setViewportSize({width:1440,height:1000});
   await navigate(page,'Annotation reviewer');
@@ -273,8 +273,8 @@ try {
   await page.setViewportSize({width:1440,height:1000});
   await page.getByRole('button',{name:'Extract & review',exact:true}).click();
   const missedText="Maya will send the report tomorrow.\nAlex: I'll approve the invoice 📄 by Friday.";
-  await page.getByLabel('Meeting transcript',{exact:true}).fill(missedText);
-  await page.getByLabel('Meeting date',{exact:true}).fill('2026-09-15');
+  await (await meetingField(page,'Meeting transcript')).fill(missedText);
+  await (await meetingField(page,'Meeting date')).fill('2026-09-15');
   await page.getByRole('button',{name:'Analyze transcript',exact:true}).click();
   await page.getByRole('checkbox',{name:'Keep task 1'}).waitFor();
   assert.equal(await page.locator('.proposal-card').count(),1);

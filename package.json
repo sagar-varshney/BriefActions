@@ -14,7 +14,7 @@
     "build": "vite build",
     "start": "node --env-file-if-exists=.env server/index.mjs",
     "test": "node --test tests/api.test.mjs tests/deployment.test.mjs tests/data-controls.test.mjs tests/transcript-import.test.mjs tests/launch.test.mjs tests/review-tools.test.mjs",
-    "test:browser": "node tests/browser.smoke.mjs && node tests/auth.browser.mjs && node tests/reliability.browser.mjs && node tests/imports-accessibility.browser.mjs && node tests/drafts-history.browser.mjs && node tests/interface.browser.mjs && node tests/review-workspace.browser.mjs",
+    "test:browser": "node tests/browser.smoke.mjs && node tests/auth.browser.mjs && node tests/reliability.browser.mjs && node tests/imports-accessibility.browser.mjs && node tests/drafts-history.browser.mjs && node tests/interface.browser.mjs && node tests/review-workspace.browser.mjs && node tests/review-polish.browser.mjs",
     "test:hosting": "node scripts/test_hosting.mjs"
   },
   "dependencies": {

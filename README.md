@@ -34,6 +34,31 @@ The responsive UI is checked from 320 to 1440 pixels, including keyboard passage
 navigation and automated WCAG checks in both themes. These checks supplement
 manual visual review; they are not a claim of complete accessibility conformance.
 
+## A simpler everyday workflow
+
+A saved meeting replaces the welcome headline with its own name and a compact
+summary strip, so tasks are visible higher on the screen. Completing analysis moves
+keyboard focus directly to the task review. **Edit meeting** opens the input editor;
+it starts collapsed after analysis or loading a saved meeting. Closing it preserves
+transcript edits, review corrections, and selections. If the input differs from the
+saved conversation, a visible notice links to **Review changes**. Editing alone
+never replaces the original evidence or reruns analysis.
+
+The original source remains open by default on desktop. On narrower screens it
+starts collapsed; **Locate passage** opens it, highlights the exact text, and moves
+focus there. **Back to task** returns to the originating control. The source can
+also be opened or closed with its summary using the keyboard. The editor and source
+are separate controls, so users can inspect evidence without reopening input setup.
+
+Navigation uses **Meeting history**, saved records open with **Open meeting**, and
+the readable timeline is labeled **Activity**. Repeated explanatory copy is kept
+under **Review help** and **About task progress**. Research tools, technical
+fingerprints, and complete JSON exports remain accessible when needed.
+
+These workflows have automated browser and accessibility checks; first-time human
+usability sessions have not been conducted by the agent. A short
+[first-user feedback checklist](docs/usability-check.md) is ready for those sessions.
+
 ## Faster review and task follow-through
 
 **Show proposals** filters the current meeting to all proposals, selected items,
@@ -51,11 +76,12 @@ mobile workspace defaults to focus mode. The layout preference is account-scoped
 in this browser. Attention shortcuts jump to missing owners, missing dates, empty
 tasks, or invalid dates. Unknown metadata is allowed; the app does not invent it.
 
-Desktop **Transcript panel width** adjusts the real columns from 32% to 55%, with
+Under desktop **Layout options**, **Transcript panel width** adjusts the real columns from 32% to 55%, with
 keyboard support, a saved browser preference, and **Reset layout**. Narrow screens
 stack the panels. Changing review views clears a previous evidence highlight so
-**Back to task** never points to a hidden or removed control. Meeting summaries,
-extraction details, and browser-copy recovery are available through disclosures.
+**Back to task** never points to a hidden or removed control. **Meeting details**
+below the tasks contains the meeting summary and nested **Technical details**;
+**Review help** contains supporting guidance and browser-copy recovery.
 
 Confirmed tasks have separate **To do**, **In progress**, and **Done** states.
 Filter the current meeting's tasks by status, overdue, due today, next seven days,
@@ -154,7 +180,7 @@ conflicting name change in another tab is rejected; reopen the run to review it.
 Legacy unnamed runs display their meeting date without requiring a migration.
 Names survive workspace export and encrypted backup/restore.
 
-**Run history** searches current meeting names and original transcript text,
+**Meeting history** searches current meeting names and original transcript text,
 with case-insensitive literal matching (percent signs and underscores are not
 wildcards). Filter by meeting date range and Awaiting review/Confirmed status.
 The private server endpoint returns twelve meetings per UI page, newest first,
@@ -552,10 +578,12 @@ pnpm test:browser
 This uses a temporary SQLite database and covers explicit acceptance, deduplication,
 invalid date recovery, corrections, immutable confirmation, CSV/JSON downloads,
 reload recovery, history, benchmark case inspection, empty plans, and mobile overflow.
-Seven browser suites also cover filtered bulk decisions, compact/focused editing,
+Eight browser suites also cover filtered bulk decisions, compact/focused editing,
 hidden-field validation, private deep links and Back/Forward navigation, resizable
 columns, readable audit events, due-date filters, and lost-response/stale progress
-updates. New progress storage tests run on SQLite and real Postgres in CI; the
+updates. The polish suite checks the initial task position, collapsed editing and
+draft recovery, nested help, mobile source disclosure, and repeated keyboard
+passage navigation. New progress storage tests run on SQLite and real Postgres in CI; the
 encrypted restore drill verifies progress events too.
 `FLOW_SCREENSHOTS=/absolute/output/path` retains QA screenshots;
 `FLOW_CHROMIUM_PATH=/absolute/path/to/chromium` reuses an installed browser.

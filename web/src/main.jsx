@@ -52,7 +52,7 @@ function downloadJson(value, filename) {
   const link = document.createElement('a'); link.href=url; link.download=filename; link.click();
   setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
-const pages = [{id:'extract',name:'Extract & review',icon:'extract'},{id:'history',name:'Run history',icon:'history'},{id:'benchmark',name:'Evaluation lab',icon:'chart'},{id:'annotations',name:'Annotation reviewer',icon:'quote'},{id:'data',name:'Data & account',icon:'history'}];
+const pages = [{id:'extract',name:'Extract & review',icon:'extract'},{id:'history',name:'Meeting history',icon:'history'},{id:'benchmark',name:'Evaluation lab',icon:'chart'},{id:'annotations',name:'Annotation reviewer',icon:'quote'},{id:'data',name:'Data & account',icon:'history'}];
 
 function App({account,signOut,completeAccountDeletion,authError}) {
   const [page,setPageState] = useState(()=>readRoute().page);
@@ -82,8 +82,10 @@ function App({account,signOut,completeAccountDeletion,authError}) {
   const [meetingTitle,setMeetingTitle]=useState(''),[inputSaveStatus,setInputSaveStatus]=useState('');
   const [clusters,setClusters] = useState(3);
   const [run,setRun] = useState(null);
+  const [editorOpen,setEditorOpen]=useState(false);
   const [activeEvidence,setActiveEvidence]=useState(null),evidenceTrigger=useRef(null);
-  function inspectEvidence(passage,trigger){evidenceTrigger.current=trigger;setActiveEvidence(passage);requestAnimationFrame(()=>{const source=document.getElementById('saved-source');source?.focus({preventScroll:true});(source?.querySelector('mark') || source)?.scrollIntoView({block:'center',behavior:'instant'});});}
+  function inspectEvidence(passage,trigger){evidenceTrigger.current=trigger;setActiveEvidence(passage);requestAnimationFrame(()=>{const source=document.getElementById('saved-source');const disclosure=source?.closest('details');if(disclosure)disclosure.open=true;source?.focus({preventScroll:true});(source?.querySelector('mark') || source)?.scrollIntoView({block:'center',behavior:'instant'});});}
+  function openEditor(field='meeting-name'){setEditorOpen(true);requestAnimationFrame(()=>document.getElementById(field)?.focus());}
   function returnToTask(){if(evidenceTrigger.current?.isConnected)evidenceTrigger.current.focus();}
   const [drafts,setDrafts] = useState([]);
   const [busy,setBusy] = useState(false);
@@ -128,14 +130,14 @@ function App({account,signOut,completeAccountDeletion,authError}) {
   function restoreInput(snapshot){const cached=readInputDraft(draftClient,snapshot?.id || 'new');showInput(cached || snapshot || {transcript:'',reference_date:'',clusters:3,title:''},!!cached);}
   function resetMeeting(){
     if(busy || restoring || pending || !stashInput())return false;
-    clearTimeout(saveTimer.current);activeRun.current=null;setRun(null);setDrafts([]);accountStorage.removeItem('flow.activeRun');setPending(null);setAnalysisStatus('');restoreInput(null);return true;
+    clearTimeout(saveTimer.current);activeRun.current=null;setRun(null);setEditorOpen(false);setDrafts([]);accountStorage.removeItem('flow.activeRun');setPending(null);setAnalysisStatus('');restoreInput(null);return true;
   }
   function newMeeting(){if(resetMeeting())commitRoute({page:'extract',runId:null});}
   function discardInput(){try{removeInputDraft(draftClient,run?.id || 'new');showInput(run || {transcript:'',reference_date:'',clusters:3,title:''});}catch{setInputSaveStatus('Browser draft could not be discarded. Keep this page open.');}}
   async function saveName(){setError('');setBusy(true);try{const value=await api(`/runs/${run.id}/title`,{method:'POST',body:JSON.stringify({title:meetingTitle,version:run.title_version})});adopt(value);setMeetingTitle(value.title);stashInput(inputValue({title:value.title}));}catch(e){setError(e.message);}finally{setBusy(false);}}
 
   function adopt(snapshot) {
-    setActiveEvidence(null);setRun(snapshot);
+    if(activeRun.current!==snapshot.id)setEditorOpen(false);setActiveEvidence(null);setRun(snapshot);
     clearTimeout(saveTimer.current);activeRun.current=snapshot.id;
     const saved=snapshot.draft;
     draftVersions.current[snapshot.id]=saved?.version || 0;
@@ -203,7 +205,7 @@ function App({account,signOut,completeAccountDeletion,authError}) {
     try{accountStorage.setItem('flow.pendingAnalysis',JSON.stringify(input));}catch{setError('Browser storage is unavailable. Enable storage before starting a recoverable analysis.');return;}
     analysisBusy.current=true;setPending(input);setError('');setBusy(true);setAnalysisStatus('Analyzing your saved request…');
     showInput(input);
-    const finish=value=>{removeInputDraft(draftClient,sourceContext);adopt(value);showInput(value);accountStorage.removeItem('flow.pendingAnalysis');setPending(null);setAnalysisStatus('Analysis saved. Review the proposals below.');commitRoute({page:'extract',runId:value.id});};
+    const finish=value=>{removeInputDraft(draftClient,sourceContext);adopt(value);showInput(value);accountStorage.removeItem('flow.pendingAnalysis');setPending(null);setAnalysisStatus('Analysis saved. Review the proposals below.');commitRoute({page:'extract',runId:value.id});requestAnimationFrame(()=>{const heading=document.getElementById('task-review-title') || document.getElementById('confirmed-plan-title');heading?.focus({preventScroll:true});heading?.scrollIntoView({block:'start',behavior:'instant'});});};
     try{finish(await api('/runs',{method:'POST',body:JSON.stringify(input)}));}
     catch(e){
       if(e.retryable){
@@ -247,6 +249,8 @@ function App({account,signOut,completeAccountDeletion,authError}) {
   }
   const selected=drafts.filter(d=>d.accept).length;
   const inputChanged=run && (run.transcript!==transcript || run.reference_date!==meetingDate || (run.settings?.clusters || 3)!==clusters);
+  const editorVisible=!run || editorOpen || !!pending;
+  const nameChanged=run && meetingTitle!==run.title;
   const activeCase=report?.cases.find(c=>c.id===caseId);
   const prediction=report?.report.runs.find(c=>c.id===caseId);
   const caseScore=report?.report.details.find(c=>c.id===caseId);
@@ -260,55 +264,55 @@ function App({account,signOut,completeAccountDeletion,authError}) {
     </header>
     <main id="workspace-main" tabIndex={-1} aria-busy={restoring || busy}>
       <div className="topbar"><span>Workspace <span className="slash">/</span> {pages.find(p=>p.id===page).name}</span><span className="local-badge"><span/> {account?'Private account':'Local workspace'}</span></div>
-      <div className="content">
+      <div className={`content ${run && page==='extract'?'meeting-content':''}`}>
         {authError&&<div className="notice error" role="alert">{authError}</div>}{error&&<div className="notice error" role="alert">{error}{!config&&<button className="text-button" onClick={()=>location.reload()}>Retry workspace loading</button>}<button aria-label="Dismiss error" onClick={()=>setError('')}>×</button></div>}
         {page==='extract'&&<>
-          <div className={`page-intro extraction-intro ${run?'compact':''}`}><div><div className="eyebrow accent">LESS FOLLOW-UP. MORE FOLLOW-THROUGH.</div><h1 tabIndex={-1}>Make your next move <em>clear.</em></h1><p>Turn the conversation into a plan. Every task, grounded in what was said.</p></div><div className="intro-note"><Icon name="check" size={17}/><span>Evidence attached.<br/><strong>You make the final call.</strong></span></div></div>
+          {run?<div className="meeting-heading"><div className="meeting-title"><h1 tabIndex={-1}>{run.title || `Meeting ${run.reference_date}`}</h1><p>{run.reference_date} <span aria-hidden="true">·</span> {run.status==='confirmed'?'Your confirmed plan':'Review your suggested tasks'}</p></div><div className="meeting-heading-actions"><button type="button" className="button secondary" disabled={busy || restoring || !!pending} onClick={newMeeting}>New meeting</button><button type="button" className="text-button" aria-label="Edit meeting input" aria-expanded={editorVisible} aria-controls="meeting-editor" disabled={busy || restoring || !!pending} onClick={()=>editorVisible?setEditorOpen(false):openEditor()}>{editorVisible?'Close editor':'Edit meeting'}</button></div></div>:<div className="page-intro extraction-intro"><div><div className="eyebrow accent">LESS FOLLOW-UP. MORE FOLLOW-THROUGH.</div><h1 tabIndex={-1}>Make your next move <em>clear.</em></h1><p>Turn the conversation into a plan. Every task, grounded in what was said.</p></div><div className="intro-note"><Icon name="check" size={17}/><span>Evidence attached.<br/><strong>You make the final call.</strong></span></div></div>}
           <WorkspaceSummary run={run} drafts={drafts} selected={selected}/>
-          <div className="steps"><span className={!run?'current':''}><b>1</b> Add transcript</span><span className={run?.status==='review'?'current':''}><b>2</b> Review proposals</span><span className={run?.status==='confirmed'?'current':''}><b>3</b> Confirm plan</span></div>
-          {(run || transcript || meetingTitle || meetingDate)&&<div className="meeting-actions">{run&&<button className="button secondary" disabled={busy || restoring || !!pending} onClick={newMeeting}>New meeting</button>}<button className="text-button" disabled={busy || restoring || !!pending} onClick={discardInput}>Discard transcript draft</button></div>}
-          {run&&<WorkspaceLayout width={sourceWidth} onChange={resizeSource}/>}<div className={`extraction-grid ${run?'has-result':''}`} data-source-width={sourceWidth}><div className="source-column" role="region" aria-label="Transcript workspace" tabIndex={0}>
+          <div className="review-flow-bar"><div className="steps"><span className={!run?'current':''}><b>1</b> Add transcript</span><span className={run?.status==='review'?'current':''}><b>2</b> Review proposals</span><span className={run?.status==='confirmed'?'current':''}><b>3</b> Confirm plan</span></div>{run&&<details className="layout-options"><summary>Layout options</summary><WorkspaceLayout width={sourceWidth} onChange={resizeSource}/></details>}</div>
+          {!run&&(transcript || meetingTitle || meetingDate)&&<div className="meeting-actions"><button className="text-button" disabled={busy || restoring || !!pending} onClick={discardInput}>Discard transcript draft</button></div>}
+          {analysisStatus&&<p className="analysis-feedback" role="status">{analysisStatus}</p>}
+          {run&&(inputChanged || nameChanged)&&<p className="input-change-note" role="status">{inputChanged?'Transcript edits are saved in this browser. These tasks still use the original conversation.':'You have an unsaved meeting name.'}<button type="button" className="text-button" onClick={()=>openEditor(inputChanged?'transcript':'meeting-name')}>Review changes</button></p>}
+          <div className={`extraction-grid ${run?'has-result':''}`} data-source-width={sourceWidth}><div className="source-column" role="region" aria-label="Transcript workspace" tabIndex={0}>
           {run&&<SourceTranscript run={run} passage={activeEvidence} onReturn={returnToTask}/>}
-          <form className="panel transcript-panel" onSubmit={analyze}>
-            {!run&&!pending&&!restoring&&config&&!transcript&&<section className="welcome-panel" aria-labelledby="welcome-title"><h2 id="welcome-title">Start with a conversation</h2><p>Try a sample, paste a conversation, or import a transcript file.</p><div className="welcome-actions"><button type="button" className="button primary" onClick={()=>{changeInput({transcript:config.sample_transcript,reference_date:config.sample_reference_date,title:'Example meeting'});setAnalysisStatus('Example loaded. Analyze it to try reviewing a plan.');}}>Try an example</button><button type="button" className="button secondary" onClick={()=>document.getElementById('transcript').focus()}>Paste my transcript</button><button type="button" className="button secondary" onClick={()=>{const details=document.querySelector('.transcript-import');details.open=true;document.getElementById('transcript-file').focus();}}>Import a file</button></div><p className="form-hint">Choosing an option saves nothing to history. Analyze transcript saves your input and proposals. <a href="/privacy">Read how your data is handled.</a></p></section>}
+          <div id="meeting-editor" hidden={!editorVisible}><form className="panel transcript-panel" onSubmit={analyze}>
+            {!run&&!pending&&!restoring&&config&&!transcript&&<section className="welcome-panel" aria-labelledby="welcome-title"><h2 id="welcome-title">Start with a conversation</h2><p>Try a sample, paste a conversation, or import a transcript file.</p><div className="welcome-actions"><button type="button" className="button primary" onClick={()=>{changeInput({transcript:config.sample_transcript,reference_date:config.sample_reference_date,title:'Example meeting'});setAnalysisStatus('Example loaded. Analyze it to try reviewing a plan.');}}>Try an example</button><button type="button" className="button secondary" onClick={()=>document.getElementById('transcript').focus()}>Paste my transcript</button><button type="button" className="button secondary" onClick={()=>{const details=document.querySelector('.transcript-import');details.open=true;document.getElementById('transcript-file').focus();}}>Import a file</button></div><p className="form-hint">Saved when you analyze. <a href="/privacy">How your data is handled</a>.</p></section>}
             <div className="panel-heading"><div><h2>Meeting transcript</h2><p>Paste the conversation. Keep speaker names where available.</p></div><button type="button" className="text-button" disabled={!config || busy || restoring} onClick={()=>{changeInput({transcript:config.sample_transcript,reference_date:config.sample_reference_date,title:'Example meeting'});}}>Load example</button></div>
-            <label className="field-label meeting-name">Meeting name (optional)<input aria-label="Meeting name" maxLength={120} value={meetingTitle} disabled={busy || restoring} placeholder="e.g. Product planning" onChange={e=>changeInput({title:e.target.value})}/></label>
+            <label className="field-label meeting-name">Meeting name (optional)<input id="meeting-name" aria-label="Meeting name" maxLength={120} value={meetingTitle} disabled={busy || restoring} placeholder="e.g. Product planning" onChange={e=>changeInput({title:e.target.value})}/></label>
             {run&&<button type="button" className="text-button" disabled={busy || restoring || !!pending || meetingTitle===run.title} onClick={saveName}>Save meeting name</button>}
             <TranscriptImport disabled={busy || restoring} onUse={value=>{changeInput({transcript:value,reference_date:'',title:''});setAnalysisStatus('Transcript imported. Choose the meeting date, then analyze.');document.getElementById('meeting-date').focus();}}/>
             <label className="sr-only" htmlFor="transcript">Meeting transcript</label><textarea id="transcript" className="transcript" disabled={busy || restoring} value={transcript} onChange={e=>changeInput({transcript:e.target.value})} maxLength={config?.max_transcript || 100000} required placeholder="Maya: I’ll send the report tomorrow…"/>
             <div className="input-footer"><div className="settings"><label>Meeting date<input id="meeting-date" type="date" disabled={busy || restoring} value={meetingDate} onChange={e=>changeInput({reference_date:e.target.value})} required/></label><label>Maximum groups<select aria-label="Maximum groups" disabled={busy || restoring} value={clusters} onChange={e=>changeInput({clusters:Number(e.target.value)})}>{[1,2,3,4,5,6].map(n=><option key={n}>{n}</option>)}</select></label></div><button className="button primary" disabled={busy || !config || restoring}>{busy?'Working…':'Analyze transcript'}{!busy&&<Icon name="arrow" size={17}/>}</button></div>
             <div className="form-hint">Relative deadlines use the meeting date. Missing people and exact dates stay <strong>Unknown</strong>.</div>
             {config&&transcript===config.sample_transcript&&meetingDate===config.sample_reference_date&&<p className="notice" role="status">Synthetic example meeting · {config.sample_reference_date}. Use your actual meeting date for your own transcript.</p>}
+            {run&&<button type="button" className="text-button discard-input" disabled={busy || restoring || !!pending} onClick={discardInput}>Discard transcript draft</button>}
           </form>
-          {inputSaveStatus&&<p className="form-hint" role="status">{inputSaveStatus} Browser drafts are separated by account and tab. Only analysis sends transcript edits to the server.</p>}
-          {analysisStatus&&<p className="notice" role="status">{analysisStatus}</p>}
+          {inputSaveStatus&&<p className="form-hint" role="status">{inputSaveStatus}</p>}
           {pending&&!busy&&!restoring&&<button className="button secondary" onClick={()=>submitAnalysis(pending)}>Retry saved analysis</button>}
-          </div><div className="review-column">
+          </div></div><div className="review-column">
           {!run&&<section className="panel review-placeholder" aria-labelledby="plan-placeholder-title"><div className="eyebrow accent">FROM WORDS TO WHAT’S NEXT</div><h2 id="plan-placeholder-title">Your action plan starts here.</h2><p>Add a conversation on the left. We’ll find proposed tasks and the passages behind them, ready for your review.</p><div className="plan-principles"><div><span>01</span><strong>Know what was said</strong><p>Every proposal keeps its supporting transcript.</p></div><div><span>02</span><strong>Fill in the gaps</strong><p>Missing owners and deadlines stay Unknown.</p></div><div><span>03</span><strong>Make it your plan</strong><p>Correct, select, and confirm only the tasks you want.</p></div></div><span className="badge neutral">Nothing is accepted automatically</span></section>}
 
           {run&&<section className="extraction-result" aria-label="Extraction result">
-            {inputChanged&&<div className="notice warning">These proposals belong to the saved input. Analyze your edited transcript or settings to create a new run.</div>}
-            <div className="result-meta"><span><strong>{run.title || `Meeting ${run.reference_date}`}</strong> · Run <code>{run.id.slice(0,8)}</code></span><span className={`badge ${run.status==='confirmed'?'green':'purple'}`}>{run.status==='confirmed'?'Confirmed':'Needs your review'}</span></div>
-            <details className="disclosure meeting-overview"><summary>Meeting summary & saved input</summary>
-            {run.summary&&<div className="summary"><div className="eyebrow accent">MEETING SUMMARY</div><p>{run.summary}</p></div>}
-            <details className="disclosure"><summary>Saved input & extraction settings</summary><pre className="saved-transcript">{run.transcript}</pre><p>Extractor: {run.settings?.extractor || 'rules'} · Maximum groups: {run.settings?.clusters || 3}</p><small>Extractor fingerprint: {run.settings?.extractor_sha256 || 'Unavailable for this run'}</small></details>
-            </details>
             {run.status==='confirmed'?<>
-              <div className="section-heading"><div><h2>Your confirmed plan</h2><p>{run.final_tasks.length} task{run.final_tasks.length===1?'':'s'} saved. This result is immutable.</p></div><Download href={`/api/runs/${run.id}/tasks.csv`}>Export CSV</Download></div>
+              <div className="section-heading"><div><h2 id="confirmed-plan-title" tabIndex={-1}>Your confirmed plan</h2><p>{run.final_tasks.length} task{run.final_tasks.length===1?'':'s'} ready to follow through.</p></div><Download href={`/api/runs/${run.id}/tasks.csv`}>Export CSV</Download></div>
               {run.final_tasks.length===0&&<div className="notice">You confirmed a plan with no tasks. All proposals were rejected.</div>}
               <TaskFollowThrough key={`progress-${run.id}`} run={run} onViewChange={()=>{setActiveEvidence(null);evidenceTrigger.current=null;}} onUpdate={value=>{setRun(value);setActiveEvidence(null);evidenceTrigger.current=null;}} renderEvidence={(task,i)=><Evidence passages={task.evidence} onInspect={inspectEvidence} label={`confirmed task ${i+1}`}/>}/>
             </>:<ReviewProposals key={`review-${run.id}`} run={run} drafts={drafts} busy={busy} onViewChange={()=>{setActiveEvidence(null);evidenceTrigger.current=null;}} onChange={updateReview} onConfirm={finalize} renderEvidence={(p,i)=><Evidence passages={p.evidence} onInspect={inspectEvidence} label={`task ${i+1}`}/>}>
-              <div className="review-save-state"><p role="status" className="form-hint">{saveStatus}</p><details className="review-recovery"><summary>Review recovery</summary><button type="button" className="text-button" onClick={()=>{try{const cached=JSON.parse(accountStorage.getItem(draftKey(run.id))||'null');if(cached){const merged=reviewDrafts(run.proposals,cached.decisions);setDrafts(merged);scheduleSave(run.id,merged);}}catch{setError('Browser draft could not be restored.');}}}>Restore browser copy</button></details></div>
+              <div className="review-save-state"><p role="status" className="form-hint">{saveStatus}</p><details className="review-recovery"><summary>Review help</summary><p>Missing owners and dates stay Unknown. Your edits save automatically; the original supporting passage stays attached. You can restore this browser’s review copy below.</p><button type="button" className="text-button" onClick={()=>{try{const cached=JSON.parse(accountStorage.getItem(draftKey(run.id))||'null');if(cached){const merged=reviewDrafts(run.proposals,cached.decisions);setDrafts(merged);scheduleSave(run.id,merged);}}catch{setError('Browser draft could not be restored.');}}}>Restore browser copy</button></details></div>
             </ReviewProposals>}
             {run.status==='review'&&<MissedActionForm key={run.id} run={run} busy={busy} onAdd={addMissed}/>}
             <ConversationChanges changes={run.settings?.conversation_changes} renderEvidence={(change,i)=><Evidence passages={change.evidence} onInspect={inspectEvidence} label={`conversation change ${i+1}`}/>}/>
+            <details className="disclosure meeting-overview"><summary>Meeting details</summary>
+            {run.summary&&<div className="summary"><div className="eyebrow accent">MEETING SUMMARY</div><p>{run.summary}</p></div>}
+            <p>Meeting date: {run.reference_date}</p><details className="disclosure"><summary>Technical details</summary><p>Meeting ID: <code>{run.id}</code></p><pre className="saved-transcript">{run.transcript}</pre><p>Extractor: {run.settings?.extractor || 'rules'} · Maximum groups: {run.settings?.clusters || 3}</p><small>Extractor fingerprint: {run.settings?.extractor_sha256 || 'Unavailable for this meeting'}</small></details>
+            </details>
             <ActivityTimeline key={`activity-${run.id}`} run={run} download={<Download href={`/api/runs/${run.id}/history.json`}>History JSON</Download>}/>
           </section>}
           </div></div>
         </>}
         {page==='annotations'&&<AnnotationReviewer api={api} downloadJson={downloadJson}/>}
         {page==='data'&&<DataControls completeAccountDeletion={completeAccountDeletion} onClosing={()=>{clearTimeout(saveTimer.current);activeRun.current=null;setClosing(true);setRun(null);setDrafts([]);setTranscript('');setMeetingTitle('');setInputSaveStatus('');setReport(null);setPending(null);setAnalysisStatus('');}}/>}
-        {page==='history'&&<MeetingHistory onOpen={openRun} busy={busy || !!pending}/> }
+        {page==='history'&&<MeetingHistory onOpen={openRun} busy={busy || restoring || !!pending}/> }
         {page==='benchmark'&&<>
           <div className="page-intro"><div><div className="eyebrow accent">QUALITY BEFORE GUESSWORK</div><h1 tabIndex={-1}>The evaluation lab.</h1><p>Compare retained extraction experiments and inspect individual cases.</p></div></div>
           <div className="stat-grid"><div className="stat"><span>ANNOTATED TRANSCRIPTS</span><strong>84</strong><small>Synthetic cases across two versions</small></div><div className="stat"><span>DEVELOPMENT / HELD OUT</span><strong>42 / 42</strong><small>30 + 12 per split; related scenarios</small></div><div className="stat"><span>HELD-OUT RULES F1</span><strong>{pct(bench?.reports.find(r=>r.label==='rules' && r.dataset==='test.jsonl')?.metrics.task_f1)}</strong><small>Lexical task matching</small></div></div>

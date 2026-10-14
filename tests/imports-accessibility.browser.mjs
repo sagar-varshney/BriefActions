@@ -1,4 +1,4 @@
-import {navigate} from './browser-helpers.mjs';
+import {navigate,meetingField} from './browser-helpers.mjs';
 import assert from 'node:assert/strict';
 import {mkdtemp,mkdir,rm,writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
@@ -25,8 +25,8 @@ try{
   browser=await chromium.launch({headless:true,...(process.env.FLOW_CHROMIUM_PATH?{executablePath:process.env.FLOW_CHROMIUM_PATH}:{})});
   const context=await browser.newContext({viewport:{width:1440,height:1000}});const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto(base);await page.getByRole('button',{name:'Try an example',exact:true}).waitFor();
-  assert.equal(await page.getByLabel('Meeting transcript',{exact:true}).inputValue(),'');
-  assert.equal(await page.getByLabel('Meeting date',{exact:true}).inputValue(),'');
+  assert.equal(await (await meetingField(page,'Meeting transcript')).inputValue(),'');
+  assert.equal(await (await meetingField(page,'Meeting date')).inputValue(),'');
   await page.getByRole('button',{name:'Paste my transcript',exact:true}).click();
   assert.equal(await page.evaluate(()=>document.activeElement.id),'transcript');
   await page.getByRole('button',{name:'Import a file',exact:true}).click();
@@ -36,12 +36,12 @@ try{
   await page.getByRole('status').filter({hasText:'Synthetic example meeting'}).waitFor();
   assert.equal((await (await fetch(base+'/api/runs')).json()).length,0);
   await page.reload();await page.getByRole('status').filter({hasText:'Restored transcript draft'}).waitFor();
-  assert.ok((await page.getByLabel('Meeting transcript',{exact:true}).inputValue()).length>0);
+  assert.ok((await (await meetingField(page,'Meeting transcript')).inputValue()).length>0);
   await page.getByRole('button',{name:'Discard transcript draft',exact:true}).click();
   await page.getByRole('button',{name:'Try an example',exact:true}).waitFor();
-  assert.equal(await page.getByLabel('Meeting transcript',{exact:true}).inputValue(),'');
+  assert.equal(await (await meetingField(page,'Meeting transcript')).inputValue(),'');
   for(const width of [1440,320]){await page.setViewportSize({width,height:800});for(const theme of ['light','dark']){await page.getByLabel('Color theme').selectOption(theme);await scan(page,`welcome-${width}-${theme}`);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await page.screenshot({path:path.join(shots,`welcome-${width}-${theme}.png`),fullPage:true});}}
-  await page.getByLabel('Meeting transcript',{exact:true}).fill('Ready.');
+  await (await meetingField(page,'Meeting transcript')).fill('Ready.');
   // First Tab exposes the skip link; it focuses the main landmark on Enter.
   await page.reload();await page.getByRole('button',{name:'Analyze transcript',exact:true}).waitFor();
   await page.keyboard.press('Tab');assert.ok(await page.getByRole('link',{name:'Skip to workspace'}).evaluate(el=>el===document.activeElement));
@@ -53,22 +53,23 @@ try{
   assert.equal(await preview.inputValue(),'Bob: Okay 📝.\nMaya: I’ll send the report tomorrow.');
   assert.equal((await (await fetch(base+'/api/runs')).json()).length,0);
   await preview.fill('Bob: Okay 📝.\nMaya: I will send the invoice tomorrow.');await scan(page,'import-preview-light');
-  await page.getByRole('button',{name:'Use this transcript'}).click();assert.equal(await page.getByLabel('Meeting date',{exact:true}).inputValue(),'');assert.equal(await page.evaluate(()=>document.activeElement.id),'meeting-date');
-  await page.getByLabel('Meeting date',{exact:true}).fill('2026-10-12');
+  await page.getByRole('button',{name:'Use this transcript'}).click();assert.equal(await (await meetingField(page,'Meeting date')).inputValue(),'');assert.equal(await page.evaluate(()=>document.activeElement.id),'meeting-date');
+  await (await meetingField(page,'Meeting date')).fill('2026-10-12');
   await page.getByRole('button',{name:'Analyze transcript',exact:true}).click();await page.getByRole('heading',{name:/Review action proposals/}).waitFor();
   await page.reload();await page.getByRole('heading',{name:/Review action proposals/}).waitFor();assert.equal(await page.getByRole('button',{name:'Try an example',exact:true}).count(),0);
   const saved=await (await fetch(base+'/api/runs')).json();const run=await (await fetch(base+`/api/runs/${saved[0].id}`)).json();
   assert.equal(run.transcript,'Bob: Okay 📝.\nMaya: I will send the invoice tomorrow.');assert.equal(run.proposals[0].owner,'Maya');assert.equal(run.proposals[0].deadline,'2026-10-13');
   for(const e of run.proposals[0].evidence)assert.equal(Array.from(run.transcript).slice(e.start,e.end).join(''),e.text);
+  await meetingField(page,'Meeting transcript');
   await page.locator('summary').filter({hasText:'Import a transcript file'}).click();
   await upload.setInputFiles({name:'meeting.srt',mimeType:'text/plain',buffer:Buffer.from('1\n00:00:01,000 --> 00:00:03,000\nJon will send the report.')});assert.equal(await preview.inputValue(),'Jon will send the report.');await page.getByRole('button',{name:'Discard preview'}).click();
   await upload.setInputFiles({name:'meeting.txt',mimeType:'text/plain',buffer:Buffer.from('Maya will send the notes tomorrow.\r\nJon: Thanks.')});assert.equal(await preview.inputValue(),'Maya will send the notes tomorrow.\nJon: Thanks.');await page.getByRole('button',{name:'Discard preview'}).click();
   await upload.setInputFiles({name:'bad.vtt',mimeType:'text/vtt',buffer:Buffer.from('broken')});await page.getByRole('alert').filter({hasText:'WEBVTT header'}).waitFor();
   assert.equal((await (await fetch(base+'/api/runs')).json()).length,1);
   // Keyboard navigation places focus on the new page heading, including unchanged pages.
-  const history=page.getByRole('button',{name:'Run history',exact:true});await history.focus();await page.keyboard.press('Enter');await page.waitForFunction(()=>document.activeElement?.tagName==='H1');
-  assert.equal(await page.evaluate(()=>document.activeElement.textContent),'Your run history.');
-  const pages=['Extract & review','Run history','Evaluation lab','Annotation reviewer','Data & account'];
+  const history=page.getByRole('button',{name:'Meeting history',exact:true});await history.focus();await page.keyboard.press('Enter');await page.waitForFunction(()=>document.activeElement?.tagName==='H1');
+  assert.equal(await page.evaluate(()=>document.activeElement.textContent),'Your meeting history.');
+  const pages=['Extract & review','Meeting history','Evaluation lab','Annotation reviewer','Data & account'];
   for(const width of [1440,320]){
     await page.setViewportSize({width,height:width===320?800:1000});
     for(const theme of ['light','dark']){
@@ -90,7 +91,7 @@ try{
   }
   // Hosted meter states are UI fixtures; backend byte counts and isolation are tested separately.
   await page.route('**/api/account',async route=>{const response=await route.fetch();await route.fulfill({response,json:{...await response.json(),storage:{history:{used_bytes:20_000_000,limit_bytes:25_000_000},drafts:{used_bytes:4_500_000,limit_bytes:5_000_000}}}});});
-  await page.getByRole('button',{name:'Run history',exact:true}).click();await page.getByRole('button',{name:'Data & account',exact:true}).click();
+  await page.getByRole('button',{name:'Meeting history',exact:true}).click();await page.getByRole('button',{name:'Data & account',exact:true}).click();
   await page.getByRole('meter',{name:'Saved history usage'}).waitFor();
   assert.equal(await page.getByRole('meter',{name:'Saved history usage'}).getAttribute('value'),'20000000');
   assert.equal(await page.getByRole('meter',{name:'Annotation drafts usage'}).getAttribute('max'),'5000000');

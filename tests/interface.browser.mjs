@@ -1,3 +1,4 @@
+import {meetingField} from './browser-helpers.mjs';
 import assert from 'node:assert/strict';
 import {mkdtemp,mkdir,rm,writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
@@ -18,21 +19,21 @@ try{
  await page.goto(base);await page.getByRole('button',{name:'Try an example',exact:true}).waitFor();
  await page.getByLabel('Color theme').selectOption('light');await page.screenshot({path:path.join(shots,'flow-welcome-desktop.png'),fullPage:true});
  const longInput='Bob: Okay 📝.\n'+Array.from({length:35},(_,i)=>`Bob: Context note ${i}; no decision recorded.`).join('\n')+'\nMaya will send the report tomorrow.';
- await page.getByLabel('Meeting transcript',{exact:true}).fill(longInput);await page.getByLabel('Meeting date',{exact:true}).fill('2026-10-14');await page.getByRole('button',{name:'Analyze transcript',exact:true}).click();await page.getByRole('heading',{name:/Review action proposals/}).waitFor();
+ await (await meetingField(page,'Meeting transcript')).fill(longInput);await (await meetingField(page,'Meeting date')).fill('2026-10-14');await page.getByRole('button',{name:'Analyze transcript',exact:true}).click();await page.getByRole('heading',{name:/Review action proposals/}).waitFor();
  await page.getByRole('button',{name:'Locate passage 1 for task 1',exact:true}).click();await page.waitForFunction(()=>document.activeElement?.id==='saved-source');
  const longSource=page.getByRole('region',{name:'Saved source transcript',exact:true}),highlight=await longSource.locator('mark').boundingBox(),sourceBox=await longSource.boundingBox();assert.ok(highlight.y>=sourceBox.y && highlight.y+highlight.height<=sourceBox.y+sourceBox.height+1,'Located evidence must be visible inside a long source transcript');
  await page.getByRole('button',{name:'Back to task',exact:true}).click();await page.waitForFunction(()=>document.activeElement?.getAttribute('aria-label')==='Locate passage 1 for task 1');
  await page.getByRole('button',{name:'New meeting',exact:true}).click();
  const input='Bob: Okay 📝. Literal <b>notes</b>.\nMaya will send the report tomorrow.\nJon will send the invoice.';
- await page.getByLabel('Meeting transcript',{exact:true}).fill(input);await page.getByLabel('Meeting date',{exact:true}).fill('2026-10-14');await page.getByLabel('Meeting name',{exact:true}).fill('Launch planning');await page.getByRole('button',{name:'Analyze transcript',exact:true}).click();await page.getByRole('heading',{name:/Review action proposals/}).waitFor();
+ await (await meetingField(page,'Meeting transcript')).fill(input);await (await meetingField(page,'Meeting date')).fill('2026-10-14');await (await meetingField(page,'Meeting name')).fill('Launch planning');await page.getByRole('button',{name:'Analyze transcript',exact:true}).click();await page.getByRole('heading',{name:/Review action proposals/}).waitFor();
  const metrics=page.getByRole('region',{name:'Current meeting summary'});
  const metric=label=>metrics.locator('.metric-card').filter({has:page.getByText(label,{exact:true})}).locator('strong');
  assert.equal(await metric('Proposed actions').textContent(),'2');assert.equal(await metric('Selected tasks').textContent(),'0');assert.equal(await metric('Need owner or date').textContent(),'1');assert.equal(await metric('Supporting passages').textContent(),'2');
  const source=page.getByRole('region',{name:'Saved source transcript',exact:true});assert.equal(await source.textContent(),input);assert.equal(await source.locator('b').count(),0);
  await page.getByRole('button',{name:'Locate passage 1 for task 1',exact:true}).click();await page.waitForFunction(()=>document.activeElement?.id==='saved-source');assert.equal(await source.locator('mark').textContent(),'Maya will send the report tomorrow.');assert.equal(await source.textContent(),input);
  // Locating evidence always uses saved code-point offsets, even after input edits.
- await page.getByLabel('Meeting transcript',{exact:true}).fill('Completely different editable meeting text.');await page.getByRole('button',{name:'Locate passage 1 for task 2',exact:true}).click();await page.waitForFunction(()=>document.activeElement?.id==='saved-source');assert.equal(await source.locator('mark').textContent(),'Jon will send the invoice.');assert.equal(await page.getByLabel('Meeting transcript',{exact:true}).inputValue(),'Completely different editable meeting text.');assert.equal(await source.textContent(),input);
- await page.getByRole('button',{name:'Discard transcript draft',exact:true}).click();assert.equal(await page.getByLabel('Meeting transcript',{exact:true}).inputValue(),input);
+ await (await meetingField(page,'Meeting transcript')).fill('Completely different editable meeting text.');await page.getByRole('button',{name:'Locate passage 1 for task 2',exact:true}).click();await page.waitForFunction(()=>document.activeElement?.id==='saved-source');assert.equal(await source.locator('mark').textContent(),'Jon will send the invoice.');assert.equal(await (await meetingField(page,'Meeting transcript')).inputValue(),'Completely different editable meeting text.');assert.equal(await source.textContent(),input);
+ await page.getByRole('button',{name:'Discard transcript draft',exact:true}).click();assert.equal(await (await meetingField(page,'Meeting transcript')).inputValue(),input);
  await page.getByLabel('Keep task 1',{exact:true}).check();assert.equal(await metric('Selected tasks').textContent(),'1');await page.getByLabel('Deadline 2',{exact:true}).fill('2026-10-16');assert.equal(await metric('Need owner or date').textContent(),'0');
  for(const width of [1440,1180,1024,768,390,320]){
   await page.setViewportSize({width,height:1000});
