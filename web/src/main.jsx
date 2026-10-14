@@ -12,6 +12,9 @@ import DataControls from './DataControls.jsx';
 import TranscriptImport from './TranscriptImport.jsx';
 import PrivacyPage from './PrivacyPage.jsx';
 import MeetingHistory from './MeetingHistory.jsx';
+import ProductBrand from './ProductBrand.jsx';
+import SourceTranscript from './SourceTranscript.jsx';
+import WorkspaceSummary from './WorkspaceSummary.jsx';
 import {readInputDraft,saveInputDraft,removeInputDraft} from './inputDraft.js';
 
 function loadPending(){try{const value=JSON.parse(accountStorage.getItem('flow.pendingAnalysis') || 'null');return value && /^[a-f0-9]{32}$/.test(value.request_id) && typeof value.transcript==='string'?value:null;}catch{return null;}}
@@ -35,8 +38,8 @@ function Icon({name, size = 20}) {
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>;
 }
 function Json({value}) { return <pre className="json" tabIndex={0}>{JSON.stringify(value,null,2)}</pre>; }
-function Evidence({passages = []}) {
-  return <div className="evidence"><div className="eyebrow"><Icon name="quote" size={15}/> Supporting transcript</div>{passages.map((e,i)=><div key={i}><blockquote>{e.text}</blockquote><span className="span-note">Characters {e.start}–{e.end} in the saved input</span></div>)}</div>;
+function Evidence({passages = [],onInspect,label}) {
+  return <div className="evidence"><div className="eyebrow"><Icon name="quote" size={15}/> Supporting transcript</div>{passages.map((e,i)=><div key={i}><blockquote>{e.text}</blockquote><div className="evidence-footer"><span className="span-note">Characters {e.start}–{e.end} in the saved input</span>{onInspect&&<button type="button" className="text-button evidence-jump" aria-label={`Locate passage ${i+1} for ${label}`} onClick={event=>onInspect(e,event.currentTarget)}>Locate passage <Icon name="arrow" size={14}/></button>}</div></div>)}</div>;
 }
 function Download({href, children}) { const [error,setError]=useState('');return <span><button type="button" className="button secondary" onClick={()=>downloadFile(href).catch(e=>setError(e.message))}><Icon name="download" size={16}/>{children}</button>{error&&<small role="alert">{error}</small>}</span>; }
 function downloadJson(value, filename) {
@@ -58,6 +61,9 @@ function App({account,signOut,completeAccountDeletion,authError}) {
   const [meetingTitle,setMeetingTitle]=useState(''),[inputSaveStatus,setInputSaveStatus]=useState('');
   const [clusters,setClusters] = useState(3);
   const [run,setRun] = useState(null);
+  const [activeEvidence,setActiveEvidence]=useState(null),evidenceTrigger=useRef(null);
+  function inspectEvidence(passage,trigger){evidenceTrigger.current=trigger;setActiveEvidence(passage);requestAnimationFrame(()=>{const source=document.getElementById('saved-source');source?.focus({preventScroll:true});(source?.querySelector('mark') || source)?.scrollIntoView({block:'center',behavior:'instant'});});}
+  function returnToTask(){if(evidenceTrigger.current?.isConnected)evidenceTrigger.current.focus();}
   const [drafts,setDrafts] = useState([]);
   const [busy,setBusy] = useState(false);
   const [error,setError] = useState('');
@@ -107,7 +113,7 @@ function App({account,signOut,completeAccountDeletion,authError}) {
   async function saveName(){setError('');setBusy(true);try{const value=await api(`/runs/${run.id}/title`,{method:'POST',body:JSON.stringify({title:meetingTitle,version:run.title_version})});adopt(value);setMeetingTitle(value.title);stashInput(inputValue({title:value.title}));}catch(e){setError(e.message);}finally{setBusy(false);}}
 
   function adopt(snapshot) {
-    setRun(snapshot);
+    setActiveEvidence(null);setRun(snapshot);
     clearTimeout(saveTimer.current);activeRun.current=snapshot.id;
     const saved=snapshot.draft;
     draftVersions.current[snapshot.id]=saved?.version || 0;
@@ -223,22 +229,24 @@ function App({account,signOut,completeAccountDeletion,authError}) {
 
   return <div className="app-shell">
     <a className="skip-link" href="#workspace-main">Skip to workspace</a>
-    <aside className="sidebar">
-      <a href="#" className="brand" onClick={e=>{e.preventDefault();setPage('extract');}}><span className="brand-mark"><Icon name="flow" size={25}/></span><span>Productivity<span className="brand-sub">FLOW ENGINE</span></span></a>
-      <div className="nav-label">WORKSPACE</div>
-      <nav aria-label="Main navigation">{pages.map(p=><button key={p.id} disabled={closing && p.id!=='data'} className={`nav-item ${page===p.id?'active':''}`} aria-current={page===p.id?'page':undefined} onClick={e=>{setPage(p.id);location.hash=p.id==='data'?'data':'';setError('');if(e.detail===0)requestAnimationFrame(()=>document.querySelector('main h1')?.focus());}}><Icon name={p.icon}/>{p.name}{page===p.id&&<span className="nav-dot"/>}</button>)}</nav>
-      <div className="sidebar-bottom"><span className="engine-status"><span/> Evidence-backed extraction</span><p>Review your proposals.<br/>You make the final call.</p></div>
-    </aside>
+    <header className="workspace-header">
+      <ProductBrand href="#" onClick={e=>{e.preventDefault();setPage('extract');}}/>
+      <nav aria-label="Main navigation">{pages.map(p=><button key={p.id} disabled={closing && p.id!=='data'} className={`nav-item ${page===p.id?'active':''}`} aria-current={page===p.id?'page':undefined} onClick={e=>{setPage(p.id);location.hash=p.id==='data'?'data':'';setError('');if(e.detail===0)requestAnimationFrame(()=>document.querySelector('main h1')?.focus());}}><Icon name={p.icon} size={17}/><span>{p.name}</span></button>)}</nav>
+      <div className="topbar-actions"><ThemeControl/>{account&&<><span className="account-name" title={account.email}>{account.email || 'Signed in'}</span><button className="text-button" onClick={signOut}>Sign out</button></>}</div>
+    </header>
     <main id="workspace-main" tabIndex={-1}>
-      <header className="topbar"><span>Workspace <span className="slash">/</span> {pages.find(p=>p.id===page).name}</span><div className="topbar-actions"><ThemeControl/>{account&&<><span className="account-name" title={account.email}>{account.email || 'Signed in'}</span><button className="text-button" onClick={signOut}>Sign out</button></>}<span className="local-badge"><span/> {account?'Private account':'Local workspace'}</span></div></header>
+      <div className="topbar"><span>Workspace <span className="slash">/</span> {pages.find(p=>p.id===page).name}</span><span className="local-badge"><span/> {account?'Private account':'Local workspace'}</span></div>
       <div className="content">
         {authError&&<div className="notice error" role="alert">{authError}</div>}{error&&<div className="notice error" role="alert">{error}{!config&&<button className="text-button" onClick={()=>location.reload()}>Retry workspace loading</button>}<button aria-label="Dismiss error" onClick={()=>setError('')}>×</button></div>}
         {page==='extract'&&<>
-          <div className="page-intro"><div><div className="eyebrow accent">FROM CONVERSATION TO ACTION</div><h1 tabIndex={-1}>Make your next move clear.</h1><p>Extract action items, check the evidence, and confirm your plan.</p></div><span className="intro-icon"><Icon name="flow" size={38}/></span></div>
+          <div className={`page-intro extraction-intro ${run?'compact':''}`}><div><div className="eyebrow accent">LESS FOLLOW-UP. MORE FOLLOW-THROUGH.</div><h1 tabIndex={-1}>Make your next move <em>clear.</em></h1><p>Turn the conversation into a plan. Every task, grounded in what was said.</p></div><div className="intro-note"><Icon name="check" size={17}/><span>Evidence attached.<br/><strong>You make the final call.</strong></span></div></div>
+          <WorkspaceSummary run={run} drafts={drafts} selected={selected}/>
           <div className="steps"><span className="current"><b>1</b> Add transcript</span><span className={run?'current':''}><b>2</b> Review proposals</span><span className={run?.status==='confirmed'?'current':''}><b>3</b> Confirm plan</span></div>
-          <div className="meeting-actions">{run&&<button className="button secondary" disabled={busy || restoring || !!pending} onClick={newMeeting}>New meeting</button>}<button className="text-button" disabled={busy || restoring || !!pending} onClick={discardInput}>Discard transcript draft</button></div>
+          {(run || transcript || meetingTitle || meetingDate)&&<div className="meeting-actions">{run&&<button className="button secondary" disabled={busy || restoring || !!pending} onClick={newMeeting}>New meeting</button>}<button className="text-button" disabled={busy || restoring || !!pending} onClick={discardInput}>Discard transcript draft</button></div>}
+          <div className={`extraction-grid ${run?'has-result':''}`}><div className="source-column" role="region" aria-label="Transcript workspace" tabIndex={0}>
+          {run&&<SourceTranscript run={run} passage={activeEvidence} onReturn={returnToTask}/>}
           <form className="panel transcript-panel" onSubmit={analyze}>
-            {!run&&!pending&&!restoring&&config&&!transcript&&<section className="welcome-panel" aria-labelledby="welcome-title"><h2 id="welcome-title">Start with a conversation</h2><p>Try a sample meeting, paste your own text, or import a transcript file. You’ll review every proposed task before confirming a plan.</p><div className="welcome-actions"><button type="button" className="button primary" onClick={()=>{changeInput({transcript:config.sample_transcript,reference_date:config.sample_reference_date,title:'Example meeting'});setAnalysisStatus('Example loaded. Analyze it to try reviewing a plan.');}}>Try an example</button><button type="button" className="button secondary" onClick={()=>document.getElementById('transcript').focus()}>Paste my transcript</button><button type="button" className="button secondary" onClick={()=>{const details=document.querySelector('.transcript-import');details.open=true;document.getElementById('transcript-file').focus();}}>Import a file</button></div><p className="form-hint">Choosing an option saves nothing to history. Analyze transcript saves your input and proposals. <a href="/privacy">Read how your data is handled.</a></p></section>}
+            {!run&&!pending&&!restoring&&config&&!transcript&&<section className="welcome-panel" aria-labelledby="welcome-title"><h2 id="welcome-title">Start with a conversation</h2><p>Try a sample, paste a conversation, or import a transcript file.</p><div className="welcome-actions"><button type="button" className="button primary" onClick={()=>{changeInput({transcript:config.sample_transcript,reference_date:config.sample_reference_date,title:'Example meeting'});setAnalysisStatus('Example loaded. Analyze it to try reviewing a plan.');}}>Try an example</button><button type="button" className="button secondary" onClick={()=>document.getElementById('transcript').focus()}>Paste my transcript</button><button type="button" className="button secondary" onClick={()=>{const details=document.querySelector('.transcript-import');details.open=true;document.getElementById('transcript-file').focus();}}>Import a file</button></div><p className="form-hint">Choosing an option saves nothing to history. Analyze transcript saves your input and proposals. <a href="/privacy">Read how your data is handled.</a></p></section>}
             <div className="panel-heading"><div><h2>Meeting transcript</h2><p>Paste the conversation. Keep speaker names where available.</p></div><button type="button" className="text-button" disabled={!config || busy || restoring} onClick={()=>{changeInput({transcript:config.sample_transcript,reference_date:config.sample_reference_date,title:'Example meeting'});}}>Load example</button></div>
             <label className="field-label meeting-name">Meeting name (optional)<input aria-label="Meeting name" maxLength={120} value={meetingTitle} disabled={busy || restoring} placeholder="e.g. Product planning" onChange={e=>changeInput({title:e.target.value})}/></label>
             {run&&<button type="button" className="text-button" disabled={busy || restoring || !!pending || meetingTitle===run.title} onClick={saveName}>Save meeting name</button>}
@@ -251,8 +259,10 @@ function App({account,signOut,completeAccountDeletion,authError}) {
           {inputSaveStatus&&<p className="form-hint" role="status">{inputSaveStatus} Browser drafts are separated by account and tab. Only analysis sends transcript edits to the server.</p>}
           {analysisStatus&&<p className="notice" role="status">{analysisStatus}</p>}
           {pending&&!busy&&!restoring&&<button className="button secondary" onClick={()=>submitAnalysis(pending)}>Retry saved analysis</button>}
-          {!run&&<div className="empty-state"><span className="empty-icon"><Icon name="extract" size={28}/></span><h3>Your action plan starts here.</h3><p>Analyze a transcript to see proposals with their supporting passages.</p></div>}
-          {run&&<section aria-label="Extraction result">
+          </div><div className="review-column">
+          {!run&&<section className="panel review-placeholder" aria-labelledby="plan-placeholder-title"><div className="eyebrow accent">FROM WORDS TO WHAT’S NEXT</div><div className="plan-illustration" aria-hidden="true"><div className="illustration-row"><span>01</span><i/><b><Icon name="arrow" size={13}/></b></div><div className="illustration-row"><span>02</span><i/><b><Icon name="check" size={13}/></b></div><div className="illustration-row"><span>03</span><i/><b><Icon name="check" size={13}/></b></div></div><h2 id="plan-placeholder-title">Your action plan starts here.</h2><p>Add a conversation on the left. We’ll find proposed tasks and the passages behind them, ready for your review.</p><div className="plan-principles"><div><span>01</span><strong>Know what was said</strong><p>Every proposal keeps its supporting transcript.</p></div><div><span>02</span><strong>Fill in the gaps</strong><p>Missing owners and deadlines stay Unknown.</p></div><div><span>03</span><strong>Make it your plan</strong><p>Correct, select, and confirm only the tasks you want.</p></div></div><span className="badge neutral">Nothing is accepted automatically</span></section>}
+
+          {run&&<section className="extraction-result" aria-label="Extraction result">
             {inputChanged&&<div className="notice warning">These proposals belong to the saved input. Analyze your edited transcript or settings to create a new run.</div>}
             <div className="result-meta"><span><strong>{run.title || `Meeting ${run.reference_date}`}</strong> · Run <code>{run.id.slice(0,8)}</code></span><span className={`badge ${run.status==='confirmed'?'green':'purple'}`}>{run.status==='confirmed'?'Confirmed':'Needs your review'}</span></div>
             {run.summary&&<div className="summary"><div className="eyebrow accent">MEETING SUMMARY</div><p>{run.summary}</p></div>}
@@ -260,7 +270,7 @@ function App({account,signOut,completeAccountDeletion,authError}) {
             {run.status==='confirmed'?<>
               <div className="section-heading"><div><h2>Your confirmed plan</h2><p>{run.final_tasks.length} task{run.final_tasks.length===1?'':'s'} saved. This result is immutable.</p></div><Download href={`/api/runs/${run.id}/tasks.csv`}>Export CSV</Download></div>
               {run.final_tasks.length===0&&<div className="notice">You confirmed a plan with no tasks. All proposals were rejected.</div>}
-              {run.final_tasks.map((task,i)=><article className="panel confirmed-card" key={task.proposal_id}><span className="check-circle"><Icon name="check" size={18}/></span><div className="confirmed-content"><h3>{task.task}</h3>{task.source==='manual'&&<span className="badge purple">User added</span>}<div className="task-meta"><span>Owner: <strong>{task.owner}</strong></span><span>Deadline: <strong>{task.deadline}</strong></span></div><Evidence passages={task.evidence}/></div></article>)}
+              {run.final_tasks.map((task,i)=><article className="panel confirmed-card" key={task.proposal_id}><span className="check-circle"><Icon name="check" size={18}/></span><div className="confirmed-content"><h3>{task.task}</h3>{task.source==='manual'&&<span className="badge purple">User added</span>}<div className="task-meta"><span>Owner: <strong>{task.owner}</strong></span><span>Deadline: <strong>{task.deadline}</strong></span></div><Evidence passages={task.evidence} onInspect={inspectEvidence} label={`confirmed task ${i+1}`}/></div></article>)}
             </>:<form onSubmit={finalize}>
               <div className="section-heading"><div><h2>Review action proposals <span className="count">{run.proposals.length}</span></h2><p>Correct the fields and select each task to keep. Nothing is accepted by default.</p></div></div>
               <p role="status" className="form-hint">{saveStatus}</p><button type="button" className="text-button" onClick={()=>{try{const cached=JSON.parse(accountStorage.getItem(draftKey(run.id))||'null');if(cached){const merged=reviewDrafts(run.proposals,cached.decisions);setDrafts(merged);scheduleSave(run.id,merged);}}catch{setError('Browser draft could not be restored.');}}}>Restore browser copy</button>
@@ -270,7 +280,7 @@ function App({account,signOut,completeAccountDeletion,authError}) {
                 <div className="proposal-heading"><span className="proposal-number">{String(i+1).padStart(2,'0')}</span><span className="badge neutral">{p.category || 'Action'}</span><label className="keep"><input type="checkbox" checked={drafts[i]?.accept || false} disabled={busy} onChange={e=>edit(i,'accept',e.target.checked)}/>Keep task {i+1}</label></div>
                 <label className="field-label">Task {i+1}<textarea aria-label={`Task ${i+1}`} className="task-input" required value={drafts[i]?.task || ''} disabled={busy} onChange={e=>edit(i,'task',e.target.value)}/></label>
                 <div className="field-row"><label className="field-label">Owner {i+1}<input aria-label={`Owner ${i+1}`} required value={drafts[i]?.owner || ''} disabled={busy} onChange={e=>edit(i,'owner',e.target.value)}/></label><label className="field-label">Deadline {i+1}<input aria-label={`Deadline ${i+1}`} required placeholder="YYYY-MM-DD or Unknown" value={drafts[i]?.deadline || ''} disabled={busy} onChange={e=>edit(i,'deadline',e.target.value)}/><span className="field-hint">YYYY-MM-DD or Unknown</span></label></div>
-                <Evidence passages={p.evidence}/>
+                <Evidence passages={p.evidence} onInspect={inspectEvidence} label={`task ${i+1}`}/>
                 {p.source!=='manual'&&<details className="suggestions"><summary>Proposal suggestions · {p.priority} priority · Group {p.cluster}</summary><p>Suggested slot: {p.suggested_slot || 'Unknown'}<br/>Workstream classifier probability: {p['confidence_%'] ?? 'Unknown'}%</p><p>Priority and scheduling use heuristics. Classifier probability is not extraction confidence. These suggestions are not included in the confirmed plan.</p></details>}
               </article>)}
               <div className="confirm-bar"><div><strong>{selected} of {run.proposals.length} selected</strong><span>{run.proposals.length-selected} proposal{run.proposals.length-selected===1?'':'s'} will be rejected.</span></div><button className="button primary" disabled={busy}>{busy?'Saving…':selected?'Confirm selected tasks':'Confirm empty plan'}<Icon name="check" size={17}/></button></div>
@@ -279,6 +289,7 @@ function App({account,signOut,completeAccountDeletion,authError}) {
             {run.settings?.conversation_changes?.length>0&&<details className="disclosure" open><summary>Conversation revisions & cancellations</summary><Json value={run.settings.conversation_changes}/></details>}
             <HistoryEvents run={run}/>
           </section>}
+          </div></div>
         </>}
         {page==='annotations'&&<AnnotationReviewer api={api} downloadJson={downloadJson}/>}
         {page==='data'&&<DataControls completeAccountDeletion={completeAccountDeletion} onClosing={()=>{clearTimeout(saveTimer.current);activeRun.current=null;setClosing(true);setRun(null);setDrafts([]);setTranscript('');setMeetingTitle('');setInputSaveStatus('');setReport(null);setPending(null);setAnalysisStatus('');}}/>}

@@ -6,6 +6,30 @@ A React + Node.js application that turns meeting transcripts into evidence-backe
 proposals, lets users correct or confirm them, and preserves the complete review
 history. Extraction improvements are measured against a retained annotated corpus.
 
+![Productivity Flow Engine workspace](docs/screenshots/workspace-light.png)
+
+[Review workspace](docs/screenshots/review-light.png) · [Sign-in page](docs/screenshots/sign-in-light.png)
+
+## A clearer review workspace
+
+The interface uses a mint and forest palette with warm action buttons, compact top
+navigation, and Light, Dark, and System themes. On desktop, the saved source
+transcript sits beside the action proposals. **Locate passage** highlights the
+exact supporting text, scrolls it into view, and focuses the source; **Back to
+task** returns to the originating control. Unicode offsets are preserved, and
+editing the input never changes the saved evidence. Narrow screens stack these
+panels in reading order.
+
+Meeting summary cards show actual proposal, selected/confirmed task, missing
+owner/date, and supporting-passage counts. They update as you review. Counts are
+scoped to the current meeting; the passage count refers to original proposals,
+including proposals later rejected. The public sign-in screen introduces the
+workflow without loading private records. Screenshots use synthetic demo inputs.
+
+The responsive UI is checked from 320 to 1440 pixels, including keyboard passage
+navigation and automated WCAG checks in both themes. These checks supplement
+manual visual review; they are not a claim of complete accessibility conformance.
+
 ## Public deployment and themes
 
 The interface includes Light, Dark, and System themes, with a persistent preference.
