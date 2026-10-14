@@ -6,12 +6,13 @@ export default function TaskFollowThrough({run,onUpdate,onViewChange=()=>{},rend
  const key=`flow.taskProgress.${run.id}`;
  const [status,setStatus]=useState('all'),[due,setDue]=useState('all'),[error,setError]=useState(''),[busy,setBusy]=useState(false),[pending,setPending]=useState(()=>{try{const p=JSON.parse(accountStorage.getItem(key)||'null');return p && p.run_id===run.id && /^[a-f0-9]{32}$/.test(p.request_id) && run.final_tasks.some(t=>t.proposal_id===p.proposal_id) && Object.hasOwn(progressLabels,p.status) && Number.isInteger(p.version)?p:null;}catch{return null;}}),alive=useRef(true);
  useEffect(()=>{alive.current=true;return()=>{alive.current=false;};},[]);
+ function clearPendingCache(){try{accountStorage.removeItem(key);}catch{/* A retained request can still be retried safely after storage recovers. */}}
  async function send(payload){
   setError('');
   try{accountStorage.setItem(key,JSON.stringify(payload));}catch{setError('Browser storage is unavailable. Enable storage before making a recoverable progress update.');return;}
   setBusy(true);setPending(payload);
-  try{const value=await api(`/runs/${run.id}/progress`,{method:'POST',body:JSON.stringify(payload)});accountStorage.removeItem(key);if(alive.current){setPending(null);onUpdate(value);}}
-  catch(e){if(alive.current){setError(e.message);if(!e.retryable){accountStorage.removeItem(key);setPending(null);}}}
+  try{const value=await api(`/runs/${run.id}/progress`,{method:'POST',body:JSON.stringify(payload)});clearPendingCache();if(alive.current){setPending(null);onUpdate(value);}}
+  catch(e){if(alive.current){setError(e.message);if(!e.retryable){clearPendingCache();setPending(null);}}}
   finally{if(alive.current)setBusy(false);}
  }
  async function refresh(){setBusy(true);setError('');try{const value=await api(`/runs/${run.id}`);if(alive.current)onUpdate(value);}catch(e){if(alive.current)setError(e.message);}finally{if(alive.current)setBusy(false);}}
