@@ -12,8 +12,12 @@ history. Extraction improvements are measured against a retained annotated corpu
 
 ## A clearer review workspace
 
-The interface uses a mint and forest palette with warm action buttons, compact top
-navigation, and Light, Dark, and System themes. On desktop, the saved source
+The Swiss / flat interface uses white and charcoal surfaces, the primary blue
+`#0084C7`, crisp outlines, a consistent grid, and typography-led hierarchy.
+Components use solid fills and subtle corners, without shadows or gradients.
+Primary buttons pair the exact blue with dark labels for readable contrast; small
+blue text uses a darker shade in Light mode and a lighter shade in Dark mode.
+Compact top navigation includes Light, Dark, and System themes. On desktop, the saved source
 transcript sits beside the action proposals. **Locate passage** highlights the
 exact supporting text, scrolls it into view, and focuses the source; **Back to
 task** returns to the originating control. Unicode offsets are preserved, and
