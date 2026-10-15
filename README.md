@@ -14,43 +14,14 @@ Extraction quality is measured against an annotated evaluation set.
 
 [Review workspace](docs/screenshots/review-light.png) · [Dark theme](docs/screenshots/review-dark.png) · [Task progress](docs/screenshots/task-progress-light.png) · [Sign-in page](docs/screenshots/sign-in-light.png)
 
-## Brand
+## Review with context
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/brand-dark.png">
-  <img src="docs/screenshots/brand-light.png" alt="BriefActions brand" width="240">
-</picture>
+Review suggested tasks alongside the original transcript. Use **Locate passage**
+to check the supporting words, correct details, and choose which tasks to keep.
+Missing owners and deadlines stay **Unknown** until you supply them.
 
-The mark interlocks two geometric ribbons with forward diagonal
-cuts, suggesting conversation flowing into action. Its open silhouette sits beside
-a single-line BriefActions wordmark. The same [SVG mark](web/public/flow.svg) is used for
-workspace and sign-in branding and the browser favicon. It uses the primary blue
-`#0084C7` with no enclosing tile, shadows, or gradients. The SVG stays crisp at
-favicon sizes and on larger brand surfaces.
-
-## A clearer review workspace
-
-The Swiss / flat interface uses white and charcoal surfaces, the primary blue
-`#0084C7`, crisp outlines, a consistent grid, and typography-led hierarchy.
-Components use solid fills and subtle corners, without shadows or gradients.
-Primary buttons pair the exact blue with dark labels for readable contrast; small
-blue text uses a darker shade in Light mode and a lighter shade in Dark mode.
-Compact top navigation includes Light, Dark, and System themes. On desktop, the saved source
-transcript sits beside the action proposals. **Locate passage** highlights the
-exact supporting text, scrolls it into view, and focuses the source; **Back to
-task** returns to the originating control. Unicode offsets are preserved, and
-editing the input never changes the saved evidence. Narrow screens stack these
-panels in reading order.
-
-Meeting summary cards show actual proposal, selected/confirmed task, missing
-owner/date, and supporting-passage counts. They update as you review. Counts are
-scoped to the current meeting; the passage count refers to original proposals,
-including proposals later rejected. The public sign-in screen introduces the
-workflow without loading private records. Screenshots use synthetic demo inputs.
-
-The responsive UI is checked from 320 to 1440 pixels, including keyboard passage
-navigation and automated WCAG checks in both themes. These checks supplement
-manual visual review; they are not a claim of complete accessibility conformance.
+The workspace supports light, dark, and system themes, keyboard navigation, and
+mobile layouts. Screenshots use synthetic demo inputs.
 
 ## Guides for first-time users
 
