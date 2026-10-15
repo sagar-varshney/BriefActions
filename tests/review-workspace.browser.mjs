@@ -18,6 +18,15 @@ try{
  await page.goto(base);await page.getByRole('button',{name:'Try an example',exact:true}).waitFor();
  assert.equal(await page.getByRole('button',{name:'Compare extraction methods',exact:true}).count(),0);
  await page.getByRole('button',{name:'Research tools',exact:true}).click();await page.keyboard.press('Escape');assert.equal(await page.getByRole('button',{name:'Research tools',exact:true}).getAttribute('aria-expanded'),'false');
+ await navigate(page,'Label & review examples');await page.getByRole('heading',{name:'Label & review examples.',exact:true}).waitFor();
+ for(const width of [320,390,768,1024,1440]){await page.setViewportSize({width,height:1000});for(const theme of ['light','dark']){
+  await page.getByLabel('Color theme').selectOption(theme);const trigger=page.getByRole('button',{name:'Research tools',exact:true});await trigger.focus();await page.keyboard.press('Enter');
+  const menu=page.locator('#research-links'),bounds=await menu.boundingBox(),rows=menu.getByRole('button');assert.ok(bounds.x>=0&&bounds.x+bounds.width<=width,'Research menu stays inside viewport');assert.equal(await rows.count(),2);
+  const boxes=await rows.evaluateAll(items=>items.map(el=>{const r=el.getBoundingClientRect();return {x:r.x,width:r.width,height:r.height,overflow:el.scrollWidth>el.clientWidth};}));assert.equal(boxes[0].x,boxes[1].x);assert.equal(boxes[0].width,boxes[1].width);assert.ok(boxes.every(row=>row.height>=44&&!row.overflow),'Menu rows must fit their labels and touch targets');
+  await scan(page,`research-menu-${width}-${theme}`);await page.screenshot({path:path.join(shots,`research-menu-${width}-${theme}.png`),clip:{x:0,y:0,width,height:Math.min(600,Math.ceil(bounds.y+bounds.height+24))}});
+  await page.keyboard.press('Tab');assert.ok(await rows.first().evaluate(el=>el===document.activeElement));await page.keyboard.press('Escape');assert.equal(await trigger.getAttribute('aria-expanded'),'false');assert.ok(await trigger.evaluate(el=>el===document.activeElement));
+ }}
+ await page.setViewportSize({width:1440,height:1000});await navigate(page,'Extract & review');
  const today=localToday(),shift=days=>{const d=new Date(today+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+days);return d.toISOString().slice(0,10);},yesterday=shift(-1),tomorrow=shift(1);
  const transcript=`Maya will send the report by ${yesterday}.\nJon will send the invoice by ${today}.\nAda will review the budget by ${tomorrow}.\nPlease prepare the launch notes.\nNora will review the release tomorrow.\nNora: Cancel that task.`;
  await (await meetingField(page,'Meeting transcript')).fill(transcript);await (await meetingField(page,'Meeting date')).fill(today);await (await meetingField(page,'Meeting name')).fill('Launch follow-through');await page.getByRole('button',{name:'Analyze transcript',exact:true}).click();await page.getByRole('heading',{name:/Review action proposals/}).waitFor();

@@ -152,7 +152,7 @@ Every saved meeting request requires the signed-in account; knowing a URL does n
 grant another account access. The sign-in flow can retain a requested destination
 through the same tab's session storage. The primary navigation keeps extraction,
 history, and account controls visible; **Research tools** contains Compare extraction methods
-and Label & review examples. These research screens remain available to each account.
+and Label & review examples. These research screens remain available to each account. Research links use left-aligned rows in an anchored desktop dropdown; on phones, they expand within the navigation so account and Help controls stay unobstructed.
 
 ## Public deployment and themes
 
