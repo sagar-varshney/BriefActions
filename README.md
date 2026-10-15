@@ -17,11 +17,12 @@ history. Extraction improvements are measured against a retained annotated corpu
   <img src="docs/screenshots/brand-light.png" alt="Productivity Flow Engine brand" width="220">
 </picture>
 
-The geometric P mark uses a forward-arrow cutout to suggest progress into action.
-The shared header lockup pairs it with a tighter two-line wordmark, with a square
-mark on desktop and mobile. The same [SVG mark](web/public/flow.svg) is used for
+The mark interlocks two geometric ribbons with forward diagonal
+cuts, suggesting conversation flowing into action. Its open silhouette sits beside
+a prominent Flow Engine wordmark, with Productivity as the smaller descriptor. The same [SVG mark](web/public/flow.svg) is used for
 workspace and sign-in branding and the browser favicon. It uses the primary blue
-`#0084C7` and white, without shadows or gradients.
+`#0084C7` with no enclosing tile, shadows, or gradients. The SVG stays crisp at
+favicon sizes and on larger brand surfaces.
 
 ## A clearer review workspace
 
