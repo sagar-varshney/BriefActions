@@ -1,10 +1,14 @@
 # BriefActions
 
-[![CI](https://github.com/sagar-varshney/Productivity-Flow-Engine/actions/workflows/ci.yml/badge.svg)](https://github.com/sagar-varshney/Productivity-Flow-Engine/actions/workflows/ci.yml)
+**A Productivity Flow Engine**
 
-A React + Node.js application that turns meeting transcripts into evidence-backed action
-proposals, lets users correct or confirm them, and preserves the complete review
-history. Extraction improvements are measured against a retained annotated corpus.
+[![CI](https://github.com/sagar-varshney/BriefActions/actions/workflows/ci.yml/badge.svg)](https://github.com/sagar-varshney/BriefActions/actions/workflows/ci.yml)
+
+Turn meeting transcripts into clear action plans, with tasks, owners, deadlines,
+and supporting evidence. Review and correct each proposal before confirming your plan.
+
+Built with React and Node.js, BriefActions preserves the complete review history.
+Extraction quality is measured against an annotated evaluation set.
 
 ![BriefActions workspace](docs/screenshots/workspace-light.png)
 
@@ -554,7 +558,7 @@ latency; benchmark timings continue to describe extraction only.
 
 ## Continuous integration
 
-[GitHub Actions CI](https://github.com/sagar-varshney/Productivity-Flow-Engine/actions/workflows/ci.yml)
+[GitHub Actions CI](https://github.com/sagar-varshney/BriefActions/actions/workflows/ci.yml)
 runs on pushes, pull requests, and manual dispatch. An Ubuntu 24.04
 runner uses Python 3.13, Node.js 24, and pnpm 11.25.0 to install dependencies,
 run Python workflow tests on SQLite and real Postgres, verify account isolation and
