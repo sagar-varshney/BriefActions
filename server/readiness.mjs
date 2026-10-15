@@ -4,6 +4,7 @@ import {fileURLToPath} from 'node:url';
 
 const ROOT=fileURLToPath(new URL('../',import.meta.url));
 export function createStorageProbe({python,historyPath,databaseUrl,timeout=5000}){
+  const exits=new Set();
   let child=null,pending=null,buffer='',stopped=false;
   const unavailable=()=>new Error('Storage probe unavailable.');
   function fail(worker){
@@ -13,6 +14,8 @@ export function createStorageProbe({python,historyPath,databaseUrl,timeout=5000}
   }
   function start(){
     const worker=spawn(python(),['-B',path.join(ROOT,'readiness_bridge.py')],{cwd:ROOT,env:{...process.env,FLOW_HISTORY_PATH:historyPath,FLOW_DATABASE_URL:databaseUrl || '',PYTHONIOENCODING:'utf-8'},stdio:['pipe','pipe','pipe']});
+    const exited=new Promise(resolve=>worker.once('close',resolve));
+    exits.add(exited);void exited.then(()=>exits.delete(exited));
     child=worker;buffer='';worker.stdout.setEncoding('utf8');worker.stderr.resume();
     worker.on('error',()=>fail(worker));worker.on('close',()=>fail(worker));worker.stdin.on('error',()=>fail(worker));
     worker.stdout.on('data',chunk=>{
@@ -35,6 +38,6 @@ export function createStorageProbe({python,historyPath,databaseUrl,timeout=5000}
     pending={promise,resolve,reject,timer:setTimeout(()=>fail(worker),timeout)};
     worker.stdin.write('{"operation":"probe"}\n');return promise;
   }
-  function stop(){stopped=true;if(child)fail(child);}
+  function stop(){stopped=true;if(child)fail(child);return Promise.allSettled([...exits]);}
   return {check,stop};
 }

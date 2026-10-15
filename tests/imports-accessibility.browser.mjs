@@ -116,5 +116,5 @@ try{
   assert.deepEqual(errors,[]);console.log('Onboarding, storage, privacy, imports, and accessibility passed: empty first-use input/date, explicit unsaved example, paste/import focus, restored review, account meter warnings/refresh, public privacy without auth requests, preview approval, TXT/VTT/SRT, caption voices, edited evidence offsets, required meeting date, rejected malformed file, keyboard skip/navigation/modal, 320px reflow and automated WCAG checks in both themes.');
 }finally{
   await writeFile(path.join(shots,'accessibility-results.json'),JSON.stringify(checks,null,2));
-  await browser?.close();for(const s of [server,authServer]){s.closeAllConnections();await new Promise(resolve=>s.close(resolve));}await rm(folder,{recursive:true,force:true});
+  await browser?.close();for(const s of [server,authServer]){s.closeAllConnections();await s.shutdown();}await rm(folder,{recursive:true,force:true});
 }

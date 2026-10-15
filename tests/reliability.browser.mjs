@@ -67,4 +67,4 @@ try{
   failAnalysis=false;await failurePage.getByRole('button',{name:'Retry saved analysis'}).click();await failurePage.getByRole('status').filter({hasText:'Analysis saved. Review the proposals below.'}).waitFor();
   assert.equal((await (await fetch(base+`/api/runs/${unfinished.request_id}`)).json()).id,unfinished.request_id);assert.equal(await failurePage.evaluate(()=>localStorage.getItem('flow.pendingAnalysis')),null);await context.close();
   assert.deepEqual(errors,[]);console.log('Reliability browser passed: lost-response recovery, reload/same-ID retry, complete export, keyboard confirmation, transcript deletion, erased browser cache, mobile dark layout, rejected incomplete download, and safe failure references with same-request recovery.');
-}finally{await browser?.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));await rm(folder,{recursive:true,force:true});}
+}finally{await browser?.close();server.closeAllConnections();await server.shutdown();await rm(folder,{recursive:true,force:true});}

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtemp,rm,writeFile} from 'node:fs/promises';
+import {mkdtemp,rm,writeFile,readFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {randomUUID} from 'node:crypto';
@@ -17,7 +17,7 @@ const hosted=()=>({...loadConfig(),authMode:'supabase',supabaseUrl:'https://fixt
 async function running(options,action){
   const server=createApp(options);await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
   try{await action(`http://127.0.0.1:${server.address().port}`,server);}
-  finally{server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}
+  finally{server.closeAllConnections();await server.shutdown();}
 }
 const deferred=()=>{let resolve;return {promise:new Promise(r=>{resolve=r;}),resolve:value=>resolve(value)};};
 
@@ -117,5 +117,44 @@ test('Persistent storage probes share work, recover after a process timeout, and
   try{
     await assert.rejects(probe.check(),/unavailable/);stalled=false;
     await Promise.all([probe.check(),probe.check()]);await probe.check();probe.stop();await assert.rejects(probe.check(),/unavailable/);
-  }finally{probe.stop();await rm(folder,{recursive:true,force:true});}
+  }finally{await probe.stop();await rm(folder,{recursive:true,force:true});}
+});
+
+
+test('Shutdown drains a disconnected write and queued work before storage can be removed',async()=>{
+  const folder=await mkdtemp(path.join(tmpdir(),'flow-shutdown-')),gate=deferred(),entered=deferred(),both=deferred();
+  let calls=0,seen=0,stopped=false;
+  const server=createApp({maxWorkers:1,execute:async()=>{
+    const number=++calls;entered.resolve();await gate.promise;
+    await writeFile(path.join(folder,`write-${number}`),'saved');return [];
+  }});
+  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+  const base=`http://127.0.0.1:${server.address().port}`;
+  server.on('request',()=>{if(++seen===2)both.resolve();});
+  const first=fetch(base+'/api/runs').catch(()=>null);await entered.promise;
+  const second=fetch(base+'/api/runs').catch(()=>null);await both.promise;
+  try{
+    const closed=new Promise(resolve=>server.once('close',resolve));
+    server.closeAllConnections();const shutdown=server.shutdown().then(()=>{stopped=true;});
+    assert.equal(server.shutdown(),server.shutdown(),'Repeated shutdown calls share the same drain');
+    await closed;await Promise.all([first,second]);
+    assert.equal(stopped,false,'Socket closure must not report shutdown while accepted writes remain');
+    assert.equal(calls,1,'The second accepted request is still queued');
+    gate.resolve();await shutdown;assert.equal(calls,2);
+    for(const number of [1,2])assert.equal(await readFile(path.join(folder,`write-${number}`),'utf8'),'saved');
+  }finally{gate.resolve();await server.shutdown();await rm(folder,{recursive:true,force:true});}
+});
+
+test('Shutdown also waits for an independent readiness request after disconnection',async()=>{
+  const gate=deferred(),entered=deferred();let stopped=false;
+  const server=createApp({checkHealth:async()=>{entered.resolve();await gate.promise;}});
+  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+  const response=fetch(`http://127.0.0.1:${server.address().port}/api/health`).catch(()=>null);
+  await entered.promise;
+  try{
+    const closed=new Promise(resolve=>server.once('close',resolve));
+    server.closeAllConnections();const shutdown=server.shutdown().then(()=>{stopped=true;});
+    await closed;await response;assert.equal(stopped,false);
+    gate.resolve();await shutdown;assert.equal(stopped,true);
+  }finally{gate.resolve();await server.shutdown();}
 });

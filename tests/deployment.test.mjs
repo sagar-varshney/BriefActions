@@ -55,11 +55,11 @@ test('Authenticated routes isolate all private state and authenticated downloads
     const annotation=await (await post('/api/annotations',{transcript:'No actions.',reference_date:'2026-09-15',source:'synthetic',permission:true,anonymized:true,group:'a'},'alice')).json();
     assert.deepEqual(await (await get('/api/annotations','bob')).json(),[]);assert.equal((await get(`/api/annotations/${annotation.id}`,'bob')).status,404);
     assert.equal((await get('/api/runs','alice')).headers.get('x-frame-options'),'DENY');
-  }finally{server.closeAllConnections();await new Promise(resolve=>server.close(resolve));await rm(folder,{recursive:true,force:true});}
+  }finally{server.closeAllConnections();await server.shutdown();await rm(folder,{recursive:true,force:true});}
 });
 test('Authentication outage cannot open a workspace',async()=>{
   const config={...loadConfig(),authMode:'supabase',supabaseUrl:'https://test-project.supabase.co'};
   const server=createApp({config,verifyAccount:async()=>{throw new Error('offline');}});
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
-  try{const r=await fetch(`http://127.0.0.1:${server.address().port}/api/runs`,{headers:{Authorization:'Bearer token'}});assert.equal(r.status,503);}finally{server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}
+  try{const r=await fetch(`http://127.0.0.1:${server.address().port}/api/runs`,{headers:{Authorization:'Bearer token'}});assert.equal(r.status,503);}finally{server.closeAllConnections();await server.shutdown();}
 });

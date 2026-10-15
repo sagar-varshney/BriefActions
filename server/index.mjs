@@ -128,7 +128,14 @@ export function createApp({historyPath, config=loadConfig(), maxWorkers=config.m
       });
     }finally{workers--;waiting.shift()?.();}
   }
-  const server=http.createServer(async (req, res) => {
+  // Closing sockets does not finish async handlers: disconnected clients can leave
+  // accepted writes running. Drain them before shutdown or test storage cleanup.
+  const requests=new Set();
+  const server=http.createServer((req,res)=>{
+    const pending=handleRequest(req,res);requests.add(pending);
+    pending.then(()=>requests.delete(pending),()=>{requests.delete(pending);res.destroy();});
+  });
+  async function handleRequest(req,res) {
     const id=requestId(),started=performance.now();let failureCode='request.failed',recorded=false;
     res.setHeader('X-Request-ID',id);
     const record=aborted=>{if(recorded)return;recorded=true;telemetry.observe({id,route:req.url,method:req.method,status:aborted?499:res.statusCode,duration:performance.now()-started,code:aborted?'request.aborted':failureCode,aborted});};
@@ -278,9 +285,15 @@ export function createApp({historyPath, config=loadConfig(), maxWorkers=config.m
       if (!res.headersSent) json(res, expected?error.status:500, {error: expected?error.message:'Something went wrong. Please try again.',request_id:id});
       else res.destroy();
     }
-  });
+  }
   const metrics=setInterval(()=>{void telemetry.sample(runtime());},60_000);metrics.unref();
   server.once('close',()=>{clearInterval(metrics);storageProbe.stop();void telemetry.sample(runtime());});
+  let shutdown;
+  server.shutdown=()=>shutdown ||= (async()=>{
+    await new Promise((resolve,reject)=>server.close(error=>error?reject(error):resolve()));
+    await Promise.allSettled([...requests]);
+    await storageProbe.stop();
+  })();
   return server;
 }
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
@@ -289,6 +302,6 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   const server = createApp({config});
   server.on('error', error => { console.error(JSON.stringify({event:'server_start_failed',code:['EADDRINUSE','EACCES'].includes(error.code)?error.code:'START_FAILED'})); process.exitCode = 1; });
   server.listen(port, host, () => console.log(JSON.stringify({event:'server_started',mode:config.production?'production':'local',port,worker_limit:config.maxWorkers})));
-  for (const signal of ['SIGINT','SIGTERM']) process.on(signal, () => server.close(() => process.exit(0)));
+  for (const signal of ['SIGINT','SIGTERM']) process.on(signal, () => void server.shutdown().then(()=>process.exit(0)));
   }catch{console.error(JSON.stringify({event:'server_config_failed',code:'CONFIG_INVALID'}));process.exitCode=1;}
 }

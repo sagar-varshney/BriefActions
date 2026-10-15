@@ -351,5 +351,5 @@ try {
   if(browser) await browser.contexts()[0]?.pages()[0]?.screenshot({path:path.join(screenshotDir,'failure.png'),fullPage:true}).catch(()=>{});
   throw error;
 } finally {
-  await browser?.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));await rm(folder,{recursive:true,force:true});
+  await browser?.close();server.closeAllConnections();await server.shutdown();await rm(folder,{recursive:true,force:true});
 }

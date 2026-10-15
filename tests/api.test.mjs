@@ -13,7 +13,7 @@ before(async () => {
   base = `http://127.0.0.1:${server.address().port}`;
 });
 after(async () => {
-  await new Promise(resolve=>server.close(resolve));
+  await server.shutdown();
   await rm(folder,{recursive:true,force:true});
 });
 async function request(url, data, method='POST') {

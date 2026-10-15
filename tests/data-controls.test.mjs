@@ -62,7 +62,7 @@ test('Data controls isolate exports, protect deletions, prevent resurrection, an
     assert.equal((await get('/api/runs')).status,409);assert.equal((await post('/api/runs',input)).status,409);
     assert.equal((await (await get('/api/runs','bob')).json()).length,1);
     fail=false;assert.equal((await post('/api/account/delete',{confirmation:'DELETE MY ACCOUNT'})).status,200);assert.deepEqual(deleted,[alice,alice]);
-  }finally{server.closeAllConnections();await new Promise(resolve=>server.close(resolve));await rm(folder,{recursive:true,force:true});}
+  }finally{server.closeAllConnections();await server.shutdown();await rm(folder,{recursive:true,force:true});}
 });
 test('Supabase account deletion uses the server-only admin client and tolerates an already removed user',async()=>{
   const id=randomUUID(),calls=[];

@@ -54,4 +54,4 @@ try{
   failDeletion=false;await page.getByRole('button',{name:'Retry account deletion',exact:true}).click();await page.getByLabel('Deletion confirmation').fill('DELETE MY ACCOUNT');
   await page.getByRole('dialog').getByRole('button',{name:'Delete my account',exact:true}).click();await page.getByRole('button',{name:'Continue with GitHub',exact:true}).waitFor();assert.deepEqual(deleted,[bob]);
   assert.deepEqual(errors,[]);console.log('Authenticated browser checks passed: sign-in gate, SDK session, authenticated CSV, sign-out, account-scoped history/browser drafts, desktop/mobile themes, confirmed account erasure, provider-failure/reload retry, cache cleanup, and unaffected second account.');
-}finally{await browser?.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));await rm(folder,{recursive:true,force:true});}
+}finally{await browser?.close();server.closeAllConnections();await server.shutdown();await rm(folder,{recursive:true,force:true});}
