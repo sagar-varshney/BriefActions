@@ -10,6 +10,19 @@ history. Extraction improvements are measured against a retained annotated corpu
 
 [Review workspace](docs/screenshots/review-light.png) · [Dark theme](docs/screenshots/review-dark.png) · [Task progress](docs/screenshots/task-progress-light.png) · [Sign-in page](docs/screenshots/sign-in-light.png)
 
+## Brand
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/brand-dark.png">
+  <img src="docs/screenshots/brand-light.png" alt="Productivity Flow Engine brand" width="220">
+</picture>
+
+The geometric P mark uses a forward-arrow cutout to suggest progress into action.
+The shared header lockup pairs it with a tighter two-line wordmark, with a square
+mark on desktop and mobile. The same [SVG mark](web/public/flow.svg) is used for
+workspace and sign-in branding and the browser favicon. It uses the primary blue
+`#0084C7` and white, without shadows or gradients.
+
 ## A clearer review workspace
 
 The Swiss / flat interface uses white and charcoal surfaces, the primary blue
