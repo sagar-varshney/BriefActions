@@ -1,3 +1,4 @@
+import useAfterRender from './useAfterRender.js';
 import React,{useEffect,useRef,useState} from 'react';
 const guides={
  meetings:{label:'Meeting tasks',page:'extract',steps:[
@@ -20,7 +21,8 @@ const guides={
 export default function HelpGuide({initialTopic='meetings',onClose,onNavigate,navigationDisabled}){
  const [topic,setTopic]=useState(initialTopic),[step,setStep]=useState(0),ref=useRef(null),heading=useRef(null),close=useRef(null);
  useEffect(()=>{const dialog=ref.current,previous=document.activeElement;dialog.showModal();close.current.focus();return()=>{dialog.close();if(previous?.isConnected)previous.focus();};},[]);
- function move(index){setStep(index);requestAnimationFrame(()=>{heading.current?.focus();heading.current?.scrollIntoView({block:'nearest'});});}
+ function move(index){setStep(index);afterRender(()=>{heading.current?.focus();heading.current?.scrollIntoView({block:'nearest'});});}
+ const afterRender=useAfterRender();
  const guide=guides[topic],current=guide.steps[step];
  return <dialog ref={ref} className="help-dialog" aria-labelledby="help-title" onKeyDown={event=>{if(event.key!=='Tab')return;const controls=[...ref.current.querySelectorAll('button:not(:disabled),select:not(:disabled),summary,a[href],[tabindex="0"]')].filter(el=>el.getClientRects().length);const first=controls[0],last=controls.at(-1);if(event.shiftKey&&document.activeElement===first){event.preventDefault();last?.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus();}}} onCancel={event=>{event.preventDefault();onClose();}}>
   <div className="help-header"><div><div className="eyebrow accent">A QUICK WALKTHROUGH</div><h2 id="help-title">Help & getting started</h2></div><button ref={close} className="text-button" type="button" onClick={onClose}>Close guide</button></div>

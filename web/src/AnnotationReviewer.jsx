@@ -3,6 +3,7 @@ import TranscriptImport from './TranscriptImport.jsx';
 import React,{useEffect,useRef,useState} from 'react';
 import useAnnotationDraft,{emptyAnnotation} from './useAnnotationDraft';
 import WorkflowGuide from './WorkflowGuide.jsx';
+import useAfterRender from './useAfterRender.js';
 import {movePassageSelection} from './passageSelection.js';
 
 const readOnly = (c,reviewer,mode='review') => !!c.resolution || c.events.some(e=>e.kind==='annotation_split') || mode==='review' && c.reviews.some(r=>r.reviewer.toLowerCase()===reviewer.trim().toLowerCase());
@@ -18,14 +19,7 @@ export default function AnnotationReviewer({api,downloadJson,onHelp}) {
   const [library,setLibrary]=useState([]),[corpus,setCorpus]=useState('all'),[importSplit,setImportSplit]=useState('all'),[importNotice,setImportNotice]=useState('');
   const [caseFilter,setCaseFilter]=useState('all'),[splitFilter,setSplitFilter]=useState('all'),[search,setSearch]=useState(''),[offset,setOffset]=useState(0);
   const draft=useAnnotationDraft(api), mounted=useRef(true);
-  const [focusTarget,setFocusTarget]=useState(null);
-  // Loading disables the transcript. Focus only after React commits the ready UI.
-  useEffect(()=>{
-    if(busy || !focusTarget)return;
-    const target=document.getElementById(focusTarget);
-    target?.focus({preventScroll:true});target?.scrollIntoView({block:'start',behavior:'instant'});
-    setFocusTarget(null);
-  },[busy,focusTarget]);
+  const afterRender=useAfterRender(!busy);
   const {items,selection,task,owner,deadline,reason}=draft.session?.state || emptyAnnotation();
   const replacements=aliases.split('\n').filter(Boolean).map(line=>line.split('=>').map(s=>s.trim()));
   const aliasError=replacements.some(pair=>pair.length!==2 || !pair[0] || !pair[1]);
@@ -56,7 +50,7 @@ export default function AnnotationReviewer({api,downloadJson,onHelp}) {
     })();
     return ()=>{mounted.current=false;};
   },[]);
-  async function action(fn,focusId){setBusy(true);setError('');setFocusTarget(null);try{await fn();if(mounted.current && focusId)setFocusTarget(focusId);}catch(e){if(mounted.current)setError(e.message);}finally{if(mounted.current)setBusy(false);}}
+  async function action(fn,focusId){setBusy(true);setError('');try{await fn();if(mounted.current && focusId)afterRender(()=>{const target=document.getElementById(focusId);target?.focus({preventScroll:true});target?.scrollIntoView({block:'start',behavior:'instant'});});}catch(e){if(mounted.current)setError(e.message);}finally{if(mounted.current)setBusy(false);}}
   function adopt(c){draft.close();setActive(c);setCompare(false);setIndependent(false);}
   async function open(id){await action(async()=>{
     const c=await api(`/annotations/${id}`);adopt(c);

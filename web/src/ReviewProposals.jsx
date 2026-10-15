@@ -1,14 +1,16 @@
+import useAfterRender from './useAfterRender.js';
 import React,{useEffect,useState} from 'react';
 import accountStorage from './accountStorage.js';
 import {issues,reviewError} from './reviewTools.js';
 export default function ReviewProposals({run,drafts,busy,onChange,onConfirm,onViewChange=()=>{},renderEvidence,children}){
+ const afterRender=useAfterRender(!busy);
  const [filter,setFilter]=useState('all'),[layout,setLayout]=useState(()=>{try{return accountStorage.getItem('flow.reviewLayout') || (matchMedia('(max-width:760px)').matches?'focus':'detailed');}catch{return 'detailed';}}),[expanded,setExpanded]=useState({}),[focusId,setFocusId]=useState(null),[validation,setValidation]=useState(null);
  const visible=run.proposals.map((p,i)=>({p,i,d:drafts[i]})).filter(({d})=>d && (filter==='all' || filter==='selected'&&d.accept || filter==='attention'&&issues(d).length));
  const focus=Math.max(0,visible.findIndex(({p})=>p.proposal_id===focusId)),shown=layout==='focus'?visible.slice(focus,focus+1):visible;
  const selected=drafts.filter(d=>d.accept).length,hiddenSelected=drafts.filter(d=>d.accept&&!shown.some(({p})=>p.proposal_id===d.proposal_id)).length;
  useEffect(()=>{if(!['compact','detailed','focus'].includes(layout))setLayout('detailed');},[layout]);
  function changeLayout(value){onViewChange();setLayout(value);setExpanded({});try{accountStorage.setItem('flow.reviewLayout',value);}catch{}}
- function jump(index,field){onViewChange();const id=run.proposals[index].proposal_id;setFilter('all');setFocusId(id);setExpanded(s=>({...s,[id]:true}));requestAnimationFrame(()=>document.getElementById(`review-${id}-${field}`)?.focus());}
+ function jump(index,field){onViewChange();const id=run.proposals[index].proposal_id;setFilter('all');setFocusId(id);setExpanded(s=>({...s,[id]:true}));afterRender(()=>document.getElementById(`review-${id}-${field}`)?.focus());}
  function batch(accept){const ids=new Set(shown.map(({p})=>p.proposal_id));onChange(drafts.map(d=>ids.has(d.proposal_id)?{...d,accept}:d));}
  function submit(event){const invalid=reviewError(drafts);setValidation(invalid);if(invalid){event.preventDefault();jump(invalid.index,invalid.field);return;}onConfirm(event);}
  return <form onSubmit={submit} noValidate>

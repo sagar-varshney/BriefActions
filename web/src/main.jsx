@@ -22,6 +22,7 @@ import ResearchNavigation from './ResearchNavigation.jsx';
 import WorkspaceLayout from './WorkspaceLayout.jsx';
 import HelpGuide from './HelpGuide.jsx';
 import WorkflowGuide from './WorkflowGuide.jsx';
+import useAfterRender from './useAfterRender.js';
 import ComparisonResults,{ResultSummary} from './ComparisonResults.jsx';
 import {readRoute,routePath} from './routing.js';
 import {readInputDraft,saveInputDraft,removeInputDraft} from './inputDraft.js';
@@ -71,7 +72,7 @@ function App({account,signOut,completeAccountDeletion,authError}) {
     if(next.invalid){setError('This page does not exist. Choose a section from the navigation.');if(mode==='pop')history.replaceState({},'',committedURL.current);return;}
     if(next.page==='extract' && next.runId && next.runId!==run?.id)return openRun(next.runId,mode);
     if(next.page==='extract' && !next.runId && run){if(!resetMeeting()){if(mode==='pop')history.replaceState({},'',committedURL.current);return;}}
-    navigationEpoch.current++;setError('');commitRoute(next,mode);requestAnimationFrame(()=>document.querySelector('main h1')?.focus({preventScroll:true}));
+    navigationEpoch.current++;setError('');commitRoute(next,mode);afterRender(()=>document.querySelector('main h1')?.focus({preventScroll:true}));
   }
   navigation.current=navigate;
   useEffect(()=>{const pop=()=>navigation.current?.(readRoute(),'pop');window.addEventListener('popstate',pop);return()=>window.removeEventListener('popstate',pop);},[]);
@@ -88,11 +89,12 @@ function App({account,signOut,completeAccountDeletion,authError}) {
   const [run,setRun] = useState(null);
   const [editorOpen,setEditorOpen]=useState(false);
   const [activeEvidence,setActiveEvidence]=useState(null),evidenceTrigger=useRef(null);
-  function inspectEvidence(passage,trigger){evidenceTrigger.current=trigger;setActiveEvidence(passage);requestAnimationFrame(()=>{const source=document.getElementById('saved-source');const disclosure=source?.closest('details');if(disclosure)disclosure.open=true;source?.focus({preventScroll:true});(source?.querySelector('mark') || source)?.scrollIntoView({block:'center',behavior:'instant'});});}
-  function openEditor(field='meeting-name'){setEditorOpen(true);requestAnimationFrame(()=>document.getElementById(field)?.focus());}
+  function inspectEvidence(passage,trigger){evidenceTrigger.current=trigger;setActiveEvidence(passage);afterRender(()=>{const source=document.getElementById('saved-source');const disclosure=source?.closest('details');if(disclosure)disclosure.open=true;source?.focus({preventScroll:true});(source?.querySelector('mark') || source)?.scrollIntoView({block:'center',behavior:'instant'});});}
+  function openEditor(field='meeting-name'){setEditorOpen(true);afterRender(()=>document.getElementById(field)?.focus());}
   function returnToTask(){if(evidenceTrigger.current?.isConnected)evidenceTrigger.current.focus();}
   const [drafts,setDrafts] = useState([]);
   const [busy,setBusy] = useState(false);
+  const afterRender=useAfterRender(!busy && !restoring);
   const [error,setError] = useState('');
   const [bench,setBench] = useState(null);
   const [report,setReport] = useState(null);
@@ -209,7 +211,7 @@ function App({account,signOut,completeAccountDeletion,authError}) {
     try{accountStorage.setItem('flow.pendingAnalysis',JSON.stringify(input));}catch{setError('Browser storage is unavailable. Enable storage before starting a recoverable analysis.');return;}
     analysisBusy.current=true;setPending(input);setError('');setBusy(true);setAnalysisStatus('Analyzing your saved request…');
     showInput(input);
-    const finish=value=>{removeInputDraft(draftClient,sourceContext);adopt(value);showInput(value);accountStorage.removeItem('flow.pendingAnalysis');setPending(null);setAnalysisStatus('Analysis saved. Review the proposals below.');commitRoute({page:'extract',runId:value.id});requestAnimationFrame(()=>{const heading=document.getElementById('task-review-title') || document.getElementById('confirmed-plan-title');heading?.focus({preventScroll:true});heading?.scrollIntoView({block:'start',behavior:'instant'});});};
+    const finish=value=>{removeInputDraft(draftClient,sourceContext);adopt(value);showInput(value);accountStorage.removeItem('flow.pendingAnalysis');setPending(null);setAnalysisStatus('Analysis saved. Review the proposals below.');commitRoute({page:'extract',runId:value.id});afterRender(()=>{const heading=document.getElementById('task-review-title') || document.getElementById('confirmed-plan-title');heading?.focus({preventScroll:true});heading?.scrollIntoView({block:'start',behavior:'instant'});});};
     try{finish(await api('/runs',{method:'POST',body:JSON.stringify(input)}));}
     catch(e){
       if(e.retryable){
@@ -238,7 +240,7 @@ function App({account,signOut,completeAccountDeletion,authError}) {
     if(!stashInput()){setError('Browser storage is unavailable. Return to Extract & review and copy your unsaved transcript before opening another run.');if(mode==='pop')history.replaceState({},'',committedURL.current);return;}
     const epoch=++navigationEpoch.current;setError('');setBusy(true);
     try {
-      const value=await api(`/runs/${id}`);if(epoch!==navigationEpoch.current)return;adopt(value);restoreInput(value);commitRoute({page:'extract',runId:id},mode);requestAnimationFrame(()=>document.querySelector('main h1')?.focus({preventScroll:true}));
+      const value=await api(`/runs/${id}`);if(epoch!==navigationEpoch.current)return;adopt(value);restoreInput(value);commitRoute({page:'extract',runId:id},mode);afterRender(()=>document.querySelector('main h1')?.focus({preventScroll:true}));
     }catch(e){if(epoch===navigationEpoch.current){setError(e.message);if(mode==='pop')history.replaceState({},'',committedURL.current);}}finally{if(epoch===navigationEpoch.current)setBusy(false);}
   }
   async function inspect(id) {

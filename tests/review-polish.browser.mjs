@@ -13,7 +13,12 @@ try{
  browser=await chromium.launch({headless:true,...(process.env.FLOW_CHROMIUM_PATH?{executablePath:process.env.FLOW_CHROMIUM_PATH}:{})});const context=await browser.newContext({viewport:{width:1440,height:1000}}),page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto(base);await page.getByRole('button',{name:'Try an example',exact:true}).waitFor();
  const input='Maya: Note 📝.\nMaya: I will send the launch notes tomorrow.\nJon will review the budget by 2026-10-16.';
- await page.getByLabel('Meeting name',{exact:true}).fill('Launch planning');await page.getByLabel('Meeting transcript',{exact:true}).fill(input);await page.getByLabel('Meeting date',{exact:true}).fill('2026-10-14');await page.getByRole('button',{name:'Analyze transcript',exact:true}).click();
+ await page.getByLabel('Meeting name',{exact:true}).fill('Launch planning');await page.getByLabel('Meeting transcript',{exact:true}).fill(input);await page.getByLabel('Meeting date',{exact:true}).fill('2026-10-14');const analysisReceived=Promise.withResolvers(),releaseAnalysis=Promise.withResolvers();
+ await page.route('**/api/runs',async route=>{if(route.request().method()!=='POST')return route.continue();const response=await route.fetch();analysisReceived.resolve();await releaseAnalysis.promise;await route.fulfill({response});});
+ await page.getByRole('button',{name:'Analyze transcript',exact:true}).click();await analysisReceived.promise;
+ assert.equal(await page.getByLabel('Meeting transcript',{exact:true}).isDisabled(),true);
+ assert.equal(await page.locator('#task-review-title').count(),0,'No review heading exists before the analysis response arrives');
+ releaseAnalysis.resolve();
  await page.waitForFunction(()=>document.activeElement?.id==='task-review-title');assert.equal(await page.getByRole('heading',{level:1}).textContent(),'Launch planning');assert.ok(!await page.getByLabel('Meeting transcript',{exact:true}).isVisible());assert.equal(await page.getByRole('button',{name:'Edit meeting input',exact:true}).getAttribute('aria-expanded'),'false');assert.equal(await page.getByRole('heading',{name:/Make your next move/}).count(),0);
  await page.evaluate(()=>scrollTo(0,0));const first=await page.locator('.proposal-card').first().boundingBox();assert.ok(first.y+100<1000,'Task review must be visible in the initial desktop viewport');
  assert.ok(!await page.getByRole('button',{name:'Restore browser copy',exact:true}).isVisible());assert.ok(!await page.getByLabel('Transcript panel width',{exact:true}).isVisible());assert.ok(!await page.getByText('Meeting ID:',{exact:false}).isVisible());await page.getByRole('heading',{name:'Activity',exact:true}).waitFor({state:'attached'});
