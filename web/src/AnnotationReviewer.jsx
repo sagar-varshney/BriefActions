@@ -2,7 +2,7 @@ import accountStorage from './accountStorage.js';
 import TranscriptImport from './TranscriptImport.jsx';
 import React,{useEffect,useRef,useState} from 'react';
 import useAnnotationDraft,{emptyAnnotation} from './useAnnotationDraft';
-import WorkflowGuide,{jumpTo} from './WorkflowGuide.jsx';
+import WorkflowGuide from './WorkflowGuide.jsx';
 import {movePassageSelection} from './passageSelection.js';
 
 const readOnly = (c,reviewer,mode='review') => !!c.resolution || c.events.some(e=>e.kind==='annotation_split') || mode==='review' && c.reviews.some(r=>r.reviewer.toLowerCase()===reviewer.trim().toLowerCase());
@@ -18,6 +18,14 @@ export default function AnnotationReviewer({api,downloadJson,onHelp}) {
   const [library,setLibrary]=useState([]),[corpus,setCorpus]=useState('all'),[importSplit,setImportSplit]=useState('all'),[importNotice,setImportNotice]=useState('');
   const [caseFilter,setCaseFilter]=useState('all'),[splitFilter,setSplitFilter]=useState('all'),[search,setSearch]=useState(''),[offset,setOffset]=useState(0);
   const draft=useAnnotationDraft(api), mounted=useRef(true);
+  const [focusTarget,setFocusTarget]=useState(null);
+  // Loading disables the transcript. Focus only after React commits the ready UI.
+  useEffect(()=>{
+    if(busy || !focusTarget)return;
+    const target=document.getElementById(focusTarget);
+    target?.focus({preventScroll:true});target?.scrollIntoView({block:'start',behavior:'instant'});
+    setFocusTarget(null);
+  },[busy,focusTarget]);
   const {items,selection,task,owner,deadline,reason}=draft.session?.state || emptyAnnotation();
   const replacements=aliases.split('\n').filter(Boolean).map(line=>line.split('=>').map(s=>s.trim()));
   const aliasError=replacements.some(pair=>pair.length!==2 || !pair[0] || !pair[1]);
@@ -48,22 +56,21 @@ export default function AnnotationReviewer({api,downloadJson,onHelp}) {
     })();
     return ()=>{mounted.current=false;};
   },[]);
-  async function action(fn){setBusy(true);setError('');try{await fn();}catch(e){setError(e.message);}finally{if(mounted.current)setBusy(false);}}
+  async function action(fn,focusId){setBusy(true);setError('');setFocusTarget(null);try{await fn();if(mounted.current && focusId)setFocusTarget(focusId);}catch(e){if(mounted.current)setError(e.message);}finally{if(mounted.current)setBusy(false);}}
   function adopt(c){draft.close();setActive(c);setCompare(false);setIndependent(false);}
   async function open(id){await action(async()=>{
     const c=await api(`/annotations/${id}`);adopt(c);
     // Resume only this reviewer's own draft; a different identity starts empty.
     if(reviewer.trim())await draft.open(id,reviewer,'review',readOnly(c,reviewer));
-    jumpTo('active-example-title');
-  });}
+  },'active-example-title');}
   async function start(mode='review'){if(!active)return;await action(async()=>{
-    await draft.open(active.id,reviewer,mode,readOnly(active,reviewer,mode));setCompare(mode==='resolution');setIndependent(false);jumpTo('example-transcript');
-  });}
+    await draft.open(active.id,reviewer,mode,readOnly(active,reviewer,mode));setCompare(mode==='resolution');setIndependent(false);
+  },'example-transcript');}
   async function create(e){e.preventDefault();await action(async()=>{
     if(aliasError)throw new Error('Use one original => alias pair per line.');
     adopt(await api('/annotations',{method:'POST',body:JSON.stringify({transcript:preview,reference_date:meeting,source,group,permission,anonymized:checked})}));
-    await refresh();setText('');setAliases('');setChecked(false);setPermission(false);jumpTo('active-example-title');
-  });}
+    await refresh();setText('');setAliases('');setChecked(false);setPermission(false);
+  },'active-example-title');}
   async function importCorpus(){await action(async()=>{
     const result=await api('/annotations/import-corpus',{method:'POST',body:JSON.stringify({corpus_id:corpus,split:importSplit})});
     await refresh();setOffset(0);setCaseFilter(corpus);setSplitFilter(importSplit);
