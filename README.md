@@ -34,6 +34,44 @@ The responsive UI is checked from 320 to 1440 pixels, including keyboard passage
 navigation and automated WCAG checks in both themes. These checks supplement
 manual visual review; they are not a claim of complete accessibility conformance.
 
+## Guides for first-time users
+
+**Help** is available throughout the signed-in workspace (and local development).
+Fresh meetings also offer **Start a quick walkthrough**. The optional guide has
+three paths: meeting tasks, labeling examples, and comparing extraction methods.
+You can skip, close with Escape, reopen, move backwards, and finish at any time.
+Reading a guide never imports examples, analyzes a transcript, submits a review,
+or confirms tasks. The native dialog contains keyboard focus and returns it to the
+opening control. A glossary explains expected tasks, reserved test examples,
+instructions versions, detection score, timing, and approximate passage matching.
+
+The optional research screens use **Label & review examples** and **Compare
+extraction methods**. Three-step overviews explain each job and link to relevant
+controls. Opening an example moves focus to its heading; starting a review focuses
+the read-only conversation for keyboard text selection. Missing metadata remains
+Unknown, reviews must be submitted before comparison, and separate identities do
+not prove independent human review. Those rules are unchanged.
+
+Comparison tables lead with counts: expected tasks found, extra suggestions,
+owner/date matches, response time, fees, and failures. **Detailed scores & how to
+read them** retains the percentage metrics and definitions. Counts use the saved
+report, with no new scoring or reruns. Extra suggestions did not match a reference task; they are not automatically
+unsupported claims. Zero denominators show Not applicable;
+missing fees show Unknown. Technical records and downloads preserve original fields.
+
+See the [plain-language user guide](docs/user-guide.md). Automated checks cover the
+guides and both-theme keyboard/mobile access; new-user human sessions are still
+pending using the [feedback checklist](docs/usability-check.md).
+
+<details>
+<summary>Walkthrough and quality-tool screenshots</summary>
+
+![Optional walkthrough and glossary](docs/screenshots/getting-started-light.png)
+![Guided example review](docs/screenshots/example-review-light.png)
+![Plain-language extraction comparison](docs/screenshots/comparison-light.png)
+
+</details>
+
 ## A simpler everyday workflow
 
 A saved meeting replaces the welcome headline with its own name and a compact
@@ -113,8 +151,8 @@ protection and interrupted-analysis recovery still apply when opening another ru
 Every saved meeting request requires the signed-in account; knowing a URL does not
 grant another account access. The sign-in flow can retain a requested destination
 through the same tab's session storage. The primary navigation keeps extraction,
-history, and account controls visible; **Research tools** contains Evaluation Lab
-and Annotation Reviewer. These research screens remain available to each account.
+history, and account controls visible; **Research tools** contains Compare extraction methods
+and Label & review examples. These research screens remain available to each account.
 
 ## Public deployment and themes
 
@@ -212,7 +250,7 @@ Save a new analysis when you intentionally want another run.
 
 ## Transcript files, accessibility, and recovery
 
-Use **Import a transcript file** on Extract & review or Annotation reviewer to choose `.txt`, `.vtt`, or
+Use **Import a transcript file** on Extract & review or Label & review examples to choose `.txt`, `.vtt`, or
 `.srt` files up to 1 MiB. Files are parsed in your browser; caption timestamps,
 metadata, and styling are removed while available voice names are retained.
 Review/edit the preview, choose **Use this transcript**, then set the actual
@@ -339,7 +377,7 @@ and a fresh held-out split before further tuning from current test errors.
 
 ## Annotation review and fresh evaluation data
 
-Open **Annotation reviewer** to import synthetic material or real transcripts you have
+Open **Label & review examples** to import synthetic material or real transcripts you have
 permission to use. Literal `original => alias` replacements are applied in the browser;
 inspect the preview and confirm permission and a manual privacy check. Only the
 preview reaches SQLite. There is no automatic guarantee that all identifiers are removed.
@@ -358,7 +396,7 @@ Stale writes from another tab are rejected, with the browser copy retained for e
 a resolution with an explanation before export. Reviewer identities are self-reported
 on this local app, not authenticated, and the app cannot verify human independence.
 
-Use **Review the existing evaluation corpus** to import all 84 bundled synthetic
+Use **Start with practice examples** to import all 84 bundled synthetic
 transcripts, one corpus version, or an original split. Imports verify manifest hashes
 and copy only transcript/date/source identifiers. Gold items and annotation rationale
 are never copied into annotation storage or first-pass forms. Repeating an import
@@ -366,7 +404,7 @@ reuses cases by source ID or matching transcript and date. Filter/search cases b
 corpus, original split, or text; the list is paginated. Imported source provenance
 is retained in reviewed exports. The existing corpus files and reports stay unchanged.
 Reviewing already evaluated cases does not make them unseen held-out data; reviewers
-should avoid inspecting their original labels in the Evaluation lab. Reviewer identity
+should avoid inspecting their original labels in the Compare extraction methods. Reviewer identity
 and independence remain self-attested, not authenticated access control.
 
 Freeze agreed/resolved cases into seeded source-group splits; related meetings/scenarios
@@ -400,12 +438,12 @@ Fixed temperature 0 / seed 42 measure repeatability under those settings, not qu
 across random seeds. Local API fees are zero; hardware/electricity costs are excluded.
 Mean ± sample standard deviation is descriptive, not a confidence interval. Latency
 includes adapter/startup/model-load time. Original and new corpus results are filtered
-by dataset hash in the Evaluation lab so same-named JSONL files cannot be mixed.
+by dataset hash in the Compare extraction methods so same-named JSONL files cannot be mixed.
 
 ## Benchmark frozen reviewed snapshots
 
-Open **Evaluation lab → Benchmark reviewed snapshots** after freezing agreed or
-resolved labels in Annotation reviewer. Select a snapshot and run the original
+Open **Compare extraction methods → Compare your reviewed examples** after freezing agreed or
+resolved labels in Label & review examples. Select a snapshot and run the original
 and current rules on the same inputs. **Development** is the default; scoring
 held-out cases or both splits requires an explicit acknowledgment. Viewing test
 errors makes them unsuitable for further tuning; prepare a new snapshot for later
@@ -566,7 +604,7 @@ IDs and experiment configuration are retained. The original held-out comparison 
 one pass per combination. The new revision-v1 development matrix has three repeats
 per model/prompt, with aggregate means, sample standard deviations, ranges, and
 per-case failures. Model selection still needs independently labeled real data.
-The app's Evaluation lab displays retained rule and measured LLM reports.
+The app's Compare extraction methods displays retained rule and measured LLM reports.
 
 Browser workflow check (after the production build):
 
@@ -578,10 +616,12 @@ pnpm test:browser
 This uses a temporary SQLite database and covers explicit acceptance, deduplication,
 invalid date recovery, corrections, immutable confirmation, CSV/JSON downloads,
 reload recovery, history, benchmark case inspection, empty plans, and mobile overflow.
-Eight browser suites also cover filtered bulk decisions, compact/focused editing,
+Nine browser suites also cover filtered bulk decisions, compact/focused editing,
 hidden-field validation, private deep links and Back/Forward navigation, resizable
 columns, readable audit events, due-date filters, and lost-response/stale progress
-updates. The polish suite checks the initial task position, collapsed editing and
+updates. The guided workflow suite checks focus containment, skip/reopen, no automatic writes,
+input preservation, keyboard passage selection, comparison counts, and empty denominators.
+The polish suite checks the initial task position, collapsed editing and
 draft recovery, nested help, mobile source disclosure, and repeated keyboard
 passage navigation. New progress storage tests run on SQLite and real Postgres in CI; the
 encrypted restore drill verifies progress events too.

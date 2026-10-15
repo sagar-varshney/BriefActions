@@ -120,7 +120,7 @@ test('Annotation draft routes isolate identities, preserve partial edits and rej
   const publicCase=await (await fetch(base+`/api/annotations/${c.id}`)).json();
   assert.ok(publicCase.events.every(e=>!e.kind.includes('draft')));
 });
-test('Bundled corpus import copies 84 input-only cases and repeated imports reuse them',async()=>{
+test('Practice example import copies 84 input-only cases and repeated imports reuse them',async()=>{
   const catalogue=await (await fetch(base+'/api/annotations/corpora')).json();assert.equal(catalogue.length,2);
   assert.equal((await request('/api/annotations/import-corpus',{corpus_id:'../../secret'})).status,400);
   let response=await request('/api/annotations/import-corpus',{corpus_id:'all'});assert.equal(response.status,200);

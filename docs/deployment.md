@@ -107,7 +107,7 @@ private evaluation data, tests, and the legacy RAG backend.
   a separate non-login role with row security and no superuser/bypass privileges.
   These functions take their owner from the verified server transaction; no API
   accepts a user-selected account ID for deletion.
-- Account data is private. Annotation reviewer names and independence remain
+- Account data is private. Label & review examples names and independence remain
   self-attested labels inside that account; team sharing and authenticated
   multi-person annotation studies are not implemented.
 - Account browser keys are separate. They retain unfinished drafts on the same

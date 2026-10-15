@@ -26,3 +26,15 @@ test('Workspace routes encode sections and validated meeting identifiers without
  assert.equal(readRoute(new URL('https://flow.example/meetings/not-an-id')).invalid,true);
  assert.equal(readRoute(new URL('https://flow.example/#data')).page,'data');
 });
+
+test('Keyboard passage selection preserves Unicode characters and selection anchors',async()=>{
+ const {movePassageSelection:move}=await import('../web/src/passageSelection.js');
+ const text='A📊B';
+ assert.deepEqual(move(text,1,1,'forward','ArrowRight',true),{start:1,end:3,direction:'forward'});
+ assert.deepEqual(move(text,3,3,'forward','ArrowLeft',true),{start:1,end:3,direction:'backward'});
+ assert.deepEqual(move(text,1,3,'backward','ArrowRight',true),{start:3,end:3,direction:'forward'});
+ assert.deepEqual(move(text,0,4,'forward','ArrowLeft',false),{start:0,end:0,direction:'forward'});
+ assert.deepEqual(move(text,0,4,'backward','ArrowRight',false),{start:4,end:4,direction:'forward'});
+ assert.deepEqual(move(text,0,0,'forward','ArrowLeft',true),{start:0,end:0,direction:'forward'});
+ assert.deepEqual(move(text,4,4,'forward','ArrowRight',true),{start:4,end:4,direction:'forward'});
+});
