@@ -339,7 +339,7 @@ function App({account,signOut,completeAccountDeletion,authError}) {
           <ReviewedBenchmarks api={api} downloadJson={downloadJson} onAnnotate={()=>setPage('annotations')}/>
           {bench&&<><details className="disclosure"><summary>Example dataset details</summary><p>These invented conversations have draft expected answers. Independent review is still needed.</p><details className="disclosure"><summary>Technical dataset details</summary><Json value={{...bench.manifest,provenance:'Synthetic transcripts and draft annotations; not independently reviewed'}}/></details></details><details className="disclosure"><summary>Illustrative workstream classifier seed data</summary><p>This small seed set trains workstream classification. It does not train action extraction.</p><Json value={bench.training_data}/></details></>}
         </>}
-        <footer className="page-footer">Productivity Flow Engine <a href="/privacy">Privacy & your data</a><span>Evidence → Review → Action</span></footer>
+        <footer className="page-footer">BriefActions <a href="/privacy">Privacy & your data</a><span>Evidence → Review → Action</span></footer>
       </div>
     </main>
   </div>;

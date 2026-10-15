@@ -1,4 +1,4 @@
-# Deploying Productivity Flow Engine
+# Deploying BriefActions
 
 The hosted app serves React and a Node API from one origin. Node runs the Python
 extraction engine; Postgres stores account-scoped history and annotation drafts.
@@ -87,8 +87,8 @@ automatically.
 ## Other Docker hosts
 
 ```sh
-docker build -t productivity-flow-engine .
-docker run --env-file .env.production -p 3001:3001 productivity-flow-engine
+docker build -t briefactions .
+docker run --env-file .env.production -p 3001:3001 briefactions
 ```
 
 Put TLS and your public domain in front of the container. Configure

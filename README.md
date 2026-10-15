@@ -1,4 +1,4 @@
-# Productivity Flow Engine
+# BriefActions
 
 [![CI](https://github.com/sagar-varshney/Productivity-Flow-Engine/actions/workflows/ci.yml/badge.svg)](https://github.com/sagar-varshney/Productivity-Flow-Engine/actions/workflows/ci.yml)
 
@@ -6,7 +6,7 @@ A React + Node.js application that turns meeting transcripts into evidence-backe
 proposals, lets users correct or confirm them, and preserves the complete review
 history. Extraction improvements are measured against a retained annotated corpus.
 
-![Productivity Flow Engine workspace](docs/screenshots/workspace-light.png)
+![BriefActions workspace](docs/screenshots/workspace-light.png)
 
 [Review workspace](docs/screenshots/review-light.png) · [Dark theme](docs/screenshots/review-dark.png) · [Task progress](docs/screenshots/task-progress-light.png) · [Sign-in page](docs/screenshots/sign-in-light.png)
 
@@ -14,12 +14,12 @@ history. Extraction improvements are measured against a retained annotated corpu
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/brand-dark.png">
-  <img src="docs/screenshots/brand-light.png" alt="Productivity Flow Engine brand" width="220">
+  <img src="docs/screenshots/brand-light.png" alt="BriefActions brand" width="240">
 </picture>
 
 The mark interlocks two geometric ribbons with forward diagonal
 cuts, suggesting conversation flowing into action. Its open silhouette sits beside
-a prominent Flow Engine wordmark, with Productivity as the smaller descriptor. The same [SVG mark](web/public/flow.svg) is used for
+a single-line BriefActions wordmark. The same [SVG mark](web/public/flow.svg) is used for
 workspace and sign-in branding and the browser favicon. It uses the primary blue
 `#0084C7` with no enclosing tile, shadows, or gradients. The SVG stays crisp at
 favicon sizes and on larger brand surfaces.

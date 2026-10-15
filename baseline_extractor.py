@@ -1,4 +1,4 @@
-"""Core NLP and ML pipeline for the Productivity Flow Engine demo."""
+"""Core NLP and ML pipeline for the BriefActions demo."""
 
 from __future__ import annotations
 

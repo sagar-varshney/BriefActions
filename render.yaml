@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: productivity-flow-engine
+    name: briefactions
     runtime: docker
     plan: free
     healthCheckPath: /api/live
