@@ -1,4 +1,4 @@
-/* Swiss / flat: neutral surfaces, precise rules, and one primary blue. */
+/* Precise grids, neutral reading surfaces, and blue-to-cyan gradient accents. */
 :root {
   font-family:Inter,'Helvetica Neue',Arial,sans-serif;
   font-synthesis:none; font-weight:400; line-height:1.5;
@@ -316,4 +316,42 @@ main.signin-shell{min-height:100vh;display:flex;flex-direction:column;background
 @media(max-width:1100px){.landing-header{flex-wrap:wrap;gap:12px 22px;padding-block:20px}.landing-header nav{order:3;width:100%;justify-content:center;border-top:1px solid var(--line);padding-top:8px}.landing-header-actions{margin-left:auto}.landing-data{display:block}.landing-data>.text-button{margin-top:20px}.landing-faq{gap:35px}}
 @media(max-width:700px){
  .landing-container{padding-inline:20px}.landing-header{gap:14px}.landing-header .brand-name{font-size:24px}.landing-header .brand-mark{width:40px;height:40px}.landing-header-actions{margin-left:auto}.landing-header nav{order:3;border:0;padding:0;gap:24px;justify-content:flex-start}.landing-header-actions{order:2}.landing-header nav a{min-height:36px;font-size:11px}.landing-header-actions .button{min-width:76px;padding-inline:12px}.landing-hero{padding:47px 0 35px}.landing-hero .eyebrow{font-size:9px;letter-spacing:1.2px}.landing-hero h1{font-size:clamp(37px,8.5vw,58px);letter-spacing:-.065em;margin:20px 0}.landing-lead{font-size:14px}.landing-hero-actions .button{min-width:0;flex:1;font-size:12px;padding-inline:12px}.landing-principles{font-size:10px}.landing-demo{margin-bottom:45px}.landing-demo-bar{padding:14px;flex-wrap:wrap;gap:8px}.landing-demo-bar h2{font-size:13px}.landing-demo-bar .badge{font-size:9px}.landing-demo-grid{grid-template-columns:minmax(0,1fr)}.landing-demo-source,.landing-demo-tasks{padding:23px 18px}.landing-demo-source{border-right:0;border-bottom:1px solid var(--line)}.landing-demo h3{font-size:21px}.demo-conversation{margin-top:20px}.demo-conversation p{font-size:13px;padding:12px}.demo-source-note{margin-top:17px}.demo-task dl{gap:25px}.demo-task{padding:15px}.landing-demo-caption{padding:13px 18px;font-size:10px}.landing-section{padding:40px 0}.landing-section-heading{margin-bottom:27px}.landing-section-heading h2,.landing-data h2{text-wrap:balance;font-size:31px}.landing-how ol{grid-template-columns:1fr;gap:27px}.landing-step-number{margin-bottom:14px;padding-top:12px}.landing-how h3,.landing-feature-grid h3{font-size:20px}.landing-feature-grid{grid-template-columns:1fr}.landing-feature-grid article{padding:25px 22px}.landing-feature-grid .eyebrow{margin-bottom:13px}.landing-faq{grid-template-columns:minmax(0,1fr);gap:0}.landing-faq details:last-child{margin-bottom:0}.landing-close{margin:0;padding:45px 0}.landing-close h2{font-size:38px}.landing-footer{align-items:flex-start;flex-direction:column;gap:4px;padding-bottom:25px}.landing-footer>span:last-child{margin-top:9px}main.signin-shell{padding:16px 20px}.signin-content{padding:38px 0}.signin-content>.brand .brand-mark{width:42px;height:42px}.signin-card{padding:27px 22px}.signin-card h1{font-size:30px}.signin-toolbar{gap:12px}.signin-toolbar .text-button{font-size:11px}.signin-caption{max-width:230px}
+}
+
+/* Shared atmosphere follows the workspace theme; public sections own their palette. */
+:root,.landing-light{
+ --glow-blue:rgb(0 132 199 / .12);--glow-cyan:rgb(27 177 191 / .08);
+ --wash-blue:rgb(0 132 199 / .07);--wash-cyan:rgb(27 177 191 / .04);
+ --surface-wash:linear-gradient(115deg,var(--wash-blue),transparent 60%,var(--wash-cyan));
+}
+:root[data-theme=dark],.landing-dark{
+ --glow-blue:rgb(0 132 199 / .22);--glow-cyan:rgb(27 177 191 / .12);
+ --wash-blue:rgb(0 132 199 / .12);--wash-cyan:rgb(27 177 191 / .06);
+ --surface-wash:linear-gradient(115deg,var(--wash-blue),transparent 60%,var(--wash-cyan));
+}
+.app-shell{
+ background-image:radial-gradient(ellipse 850px 420px at 100% 80px,var(--glow-blue),transparent 75%),radial-gradient(ellipse 600px 380px at 0 180px,var(--glow-cyan),transparent 75%);
+ background-repeat:no-repeat;background-size:100% 620px;
+}
+.workspace-header,.landing-header{background-image:linear-gradient(110deg,var(--wash-blue),transparent 65%)}
+.page-intro,.meeting-heading{position:relative}
+.page-intro::after,.meeting-heading::after{content:'';position:absolute;inset:auto 0 -10px;height:1px;background:linear-gradient(90deg,var(--primary),#36b6cb 35%,transparent 85%);pointer-events:none}
+.review-placeholder,.workflow-guide,.metric-card,.stat,.intro-note,.summary,.empty-state,.guide-example,.nav-item.active,.task-view[aria-pressed=true]{background-image:var(--surface-wash)}
+.button.primary{background-image:linear-gradient(110deg,#0084c7,#149fd1 58%,#42bfd2)}
+.button.primary:hover:not(:disabled){background-image:linear-gradient(110deg,#1093d0,#20acd7 58%,#60cbd9)}
+.landing-stage{
+ background-image:radial-gradient(ellipse 900px 680px at 86% 10%,var(--glow-blue),transparent 74%),radial-gradient(ellipse 650px 560px at 8% 35%,var(--glow-cyan),transparent 75%);
+}
+.landing-band{
+ background-image:radial-gradient(ellipse 850px 480px at 100% 0,var(--glow-blue),transparent 78%),radial-gradient(ellipse 650px 360px at 0 100%,var(--glow-cyan),transparent 78%);
+}
+.landing-feature-grid article,.landing-demo-bar{background-image:var(--surface-wash)}
+main.signin-shell{
+ background-image:radial-gradient(ellipse 900px 640px at 95% 0,var(--glow-blue),transparent 76%),radial-gradient(ellipse 850px 680px at 0 100%,var(--glow-cyan),transparent 76%);
+}
+.signin-card{position:relative}
+.signin-card::before{content:'';position:absolute;inset:-3px -1px auto;height:3px;background:linear-gradient(90deg,#0084c7,#42bfd2);pointer-events:none}
+@media(forced-colors:active){
+ .app-shell,.workspace-header,.landing-header,.landing-stage,.landing-band,main.signin-shell,.landing-feature-grid article,.landing-demo-bar,.review-placeholder,.workflow-guide,.metric-card,.stat,.intro-note,.summary,.empty-state,.guide-example,.nav-item.active,.task-view[aria-pressed=true],.button.primary,.button.primary:hover:not(:disabled){background-image:none}
+ .page-intro::after,.meeting-heading::after,.signin-card::before{display:none}
 }

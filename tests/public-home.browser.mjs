@@ -42,7 +42,7 @@ try{
  const palette=()=>page.evaluate(()=>Object.fromEntries(['.landing-hero','.landing-demo','.landing-how','.landing-features','.landing-faq','.landing-close'].map(selector=>{
   const el=document.querySelector(selector),style=getComputedStyle(el);let background=el;
   while(getComputedStyle(background).backgroundColor==='rgba(0, 0, 0, 0)')background=background.parentElement;
-  return [selector,{background:getComputedStyle(background).backgroundColor,text:style.color}];
+  return [selector,{background:getComputedStyle(background).backgroundColor,image:getComputedStyle(background).backgroundImage,text:style.color}];
  })));
  const expectedPalette=await palette();
  assert.equal(expectedPalette['.landing-hero'].background,'rgb(19, 21, 24)');
@@ -94,6 +94,14 @@ try{
  for(const width of [1440,320])for(const theme of ['light','dark']){
   await page.setViewportSize({width,height:1000});await page.getByLabel('Color theme').selectOption(theme);const result=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa','wcag22aa']).analyze();checks.push({label:`email-signin-${width}-${theme}`,violations:result.violations});assert.equal(result.violations.length,0);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
  }
+ await page.emulateMedia({forcedColors:'active'});
+ assert.equal(await page.locator('.signin-shell').evaluate(el=>getComputedStyle(el).backgroundImage),'none');
+ assert.equal(await page.getByRole('button',{name:'Continue with GitHub',exact:true}).evaluate(el=>getComputedStyle(el).backgroundImage),'none');
+ assert.ok(await page.getByRole('button',{name:'Continue with GitHub',exact:true}).isVisible());
+ await page.emulateMedia({forcedColors:'none'});
  await page.goto(localBase+'/sign-in');await page.getByRole('link',{name:'Open local workspace',exact:true}).waitFor();assert.equal(await page.getByRole('button',{name:'Continue with GitHub'}).count(),0);await page.getByLabel('Color theme').selectOption('dark');await page.getByRole('link',{name:'Open local workspace',exact:true}).click();await page.getByRole('button',{name:'Try an example',exact:true}).waitFor();assert.equal(await page.getByLabel('Color theme').inputValue(),'dark');assert.equal(await page.locator('html').getAttribute('data-theme'),'dark');
- assert.deepEqual(errors,[]);console.log('Public entry checks passed: fixed light/dark homepage, preserved sign-in/workspace theme preferences, sample-only demo, private API gate, responsive accessibility, keyboard evidence, email and GitHub PKCE callbacks, intended route, unsafe redirect rejection, callback failure recovery, and honest local preview.');
+ await page.emulateMedia({forcedColors:'active'});
+ for(const selector of ['.app-shell','.workspace-header','.review-placeholder'])assert.equal(await page.locator(selector).evaluate(el=>getComputedStyle(el).backgroundImage),'none');
+ assert.ok(await page.getByRole('button',{name:'Try an example',exact:true}).isVisible());await page.emulateMedia({forcedColors:'none'});
+ assert.deepEqual(errors,[]);console.log('Public entry checks passed: fixed light/dark homepage, preserved sign-in/workspace theme preferences, sample-only demo, private API gate, responsive accessibility, forced-color fallbacks, keyboard evidence, email and GitHub PKCE callbacks, intended route, unsafe redirect rejection, callback failure recovery, and honest local preview.');
 }finally{await writeFile(path.join(shots,'public-accessibility.json'),JSON.stringify(checks,null,2));await browser?.close();for(const server of [managed,local]){server.closeAllConnections();await server.shutdown();}await rm(folder,{recursive:true,force:true});}

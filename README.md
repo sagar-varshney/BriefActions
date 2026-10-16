@@ -179,6 +179,10 @@ The public homepage combines a dark introduction and feature sections with a lig
 product preview, workflow, and FAQ. Its design stays consistent across device
 appearance settings. Sign-in and the workspace offer Light, Dark, and System
 themes, with a persistent preference; visiting the homepage preserves that choice.
+Blue-to-cyan gradients add soft color to the landing sections, sign-in background,
+workspace headers, summary cards, walkthroughs, and primary buttons. Transcript
+text, task inputs, evidence, tables, and account controls keep solid reading
+surfaces. Decorative gradients fall back to solid colors in forced-color modes.
 The public deployment uses Supabase sign-in and persistent Postgres storage with
 account isolation. Browser drafts are scoped per account, and CSV/JSON exports
 are authenticated. Local development continues to use SQLite on loopback.
