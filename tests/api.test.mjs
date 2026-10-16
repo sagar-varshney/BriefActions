@@ -167,3 +167,14 @@ test('Only frozen reviewed snapshots can be compared and held-out scoring is exp
   assert.equal((await (await fetch(base+`/api/reviewed-benchmarks/${report.id}`)).json()).dataset_sha256,report.dataset_sha256);
   assert.equal((await (await fetch(base+'/api/reviewed-benchmarks')).json()).length,1);
 });
+
+
+test('All-task API requires bounded valid filters and returns confirmed values only',async()=>{
+ const created=await (await request('/api/runs',{transcript:'Ada will review the deployment by 2026-10-19.',reference_date:'2026-10-16',title:'Dashboard API fixture'})).json();
+ const query='/api/tasks?today=2026-10-16&query=Dashboard%20API%20fixture';
+ assert.equal((await (await fetch(base+query)).json()).total,0);
+ assert.equal((await request(`/api/runs/${created.id}/finalize`,{decisions:created.proposals.map(p=>({...p,accept:true,owner:'Ravi'}))})).status,200);
+ const response=await fetch(base+query),result=await response.json();assert.equal(response.status,200);assert.equal(response.headers.get('cache-control'),'no-store');
+ assert.equal(result.total,1);assert.equal(result.items[0].owner,'Ravi');assert.equal(result.counts.upcoming,1);
+ for(const params of ['', '?today=2026-02-30','?today=2026-10-16&page=-1','?today=2026-10-16&page_size=51','?today=2026-10-16&view=invalid','?today=2026-10-16&query=a&query=b','?today=2026-10-16&owner_id=other'])assert.equal((await fetch(base+'/api/tasks'+params)).status,400,params);
+});

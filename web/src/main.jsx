@@ -12,6 +12,8 @@ import DataControls from './DataControls.jsx';
 import TranscriptImport from './TranscriptImport.jsx';
 import PrivacyPage from './PrivacyPage.jsx';
 import MeetingHistory from './MeetingHistory.jsx';
+import AllTasks,{initialTaskFilters} from './AllTasks.jsx';
+import PlanExport from './PlanExport.jsx';
 import ProductBrand from './ProductBrand.jsx';
 import SourceTranscript from './SourceTranscript.jsx';
 import WorkspaceSummary from './WorkspaceSummary.jsx';
@@ -56,23 +58,24 @@ function downloadJson(value, filename) {
   const link = document.createElement('a'); link.href=url; link.download=filename; link.click();
   setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
-const pages = [{id:'extract',name:'Extract & review',icon:'extract'},{id:'history',name:'Meeting history',icon:'history'},{id:'benchmark',name:'Compare extraction methods',icon:'chart'},{id:'annotations',name:'Label & review examples',icon:'quote'},{id:'data',name:'Data & account',icon:'history'}];
+const pages = [{id:'extract',name:'Extract & review',icon:'extract'},{id:'tasks',name:'All tasks',icon:'check'},{id:'history',name:'Meeting history',icon:'history'},{id:'benchmark',name:'Compare extraction methods',icon:'chart'},{id:'annotations',name:'Label & review examples',icon:'quote'},{id:'data',name:'Data & account',icon:'history'}];
 
 function App({account,signOut,completeAccountDeletion,authError}) {
   const [helpTopic,setHelpTopic]=useState(null);
+  const [taskFilters,setTaskFilters]=useState(initialTaskFilters),[taskTarget,setTaskTarget]=useState(()=>readRoute().taskId || null);
   const [page,setPageState] = useState(()=>readRoute().page);
   const navigation=useRef(null),deferredNavigation=useRef(null),navigationEpoch=useRef(0),committedURL=useRef(routePath(readRoute()));
   const [sourceWidth,setSourceWidth]=useState(()=>{try{const width=Number(accountStorage.getItem('flow.workspaceWidth'));return Number.isInteger(width)&&width>=32&&width<=55?width:43;}catch{return 43;}});
   function resizeSource(width){setSourceWidth(width);try{accountStorage.setItem('flow.workspaceWidth',String(width));}catch{}}
-  function commitRoute(next,mode='push'){const url=routePath(next);if(mode!=='pop' && (location.pathname+location.search+location.hash!==url))history[mode==='replace'?'replaceState':'pushState']({},'',url);committedURL.current=url;setPageState(next.page);}
+  function commitRoute(next,mode='push'){const url=routePath(next);if(mode!=='pop' && (location.pathname+location.search+location.hash!==url))history[mode==='replace'?'replaceState':'pushState']({},'',url);committedURL.current=url;setPageState(next.page);setTaskTarget(next.taskId || null);}
   function setPage(next){return navigate({page:next,runId:next==='extract'?run?.id:null});}
   async function navigate(next,mode='push'){
     if(restoring && mode==='pop'){deferredNavigation.current=next;return;}
     if(closing && next.page!=='data' || busy || restoring){if(mode==='pop')history.replaceState({},'',committedURL.current);return;}
     if(next.invalid){setError('This page does not exist. Choose a section from the navigation.');if(mode==='pop')history.replaceState({},'',committedURL.current);return;}
-    if(next.page==='extract' && next.runId && next.runId!==run?.id)return openRun(next.runId,mode);
+    if(next.page==='extract' && next.runId && next.runId!==run?.id)return openRun(next.runId,mode,next.taskId);
     if(next.page==='extract' && !next.runId && run){if(!resetMeeting()){if(mode==='pop')history.replaceState({},'',committedURL.current);return;}}
-    navigationEpoch.current++;setError('');commitRoute(next,mode);afterRender(()=>document.querySelector('main h1')?.focus({preventScroll:true}));
+    navigationEpoch.current++;setError('');commitRoute(next,mode);if(!next.taskId)afterRender(()=>document.querySelector('main h1')?.focus({preventScroll:true}));
   }
   navigation.current=navigate;
   useEffect(()=>{const pop=()=>navigation.current?.(readRoute(),'pop');window.addEventListener('popstate',pop);return()=>window.removeEventListener('popstate',pop);},[]);
@@ -175,7 +178,7 @@ function App({account,signOut,completeAccountDeletion,authError}) {
         if(saved) {
           try {
             const snapshot=await api(`/runs/${saved}`);
-            if(alive){adopt(snapshot);restoreInput(snapshot);if(initial.page==='extract')commitRoute({page:'extract',runId:snapshot.id},'replace');}
+            if(alive){adopt(snapshot);restoreInput(snapshot);if(initial.page==='extract')commitRoute({page:'extract',runId:snapshot.id,taskId:initial.taskId},'replace');}
           } catch(e){if([404,410].includes(e.status)){if(accountStorage.getItem('flow.activeRun')===saved)accountStorage.removeItem('flow.activeRun');if(initial.runId)setError('This meeting is unavailable or does not belong to your account.');}else throw e;}
         }
         if(alive && !saved){restoreInput(null);if(!initial.invalid)commitRoute(initial,'replace');}
@@ -235,12 +238,12 @@ function App({account,signOut,completeAccountDeletion,authError}) {
     try{await saveQueue.current.catch(()=>{});adopt(await api(`/runs/${run.id}/manual-actions`,{method:'POST',body:JSON.stringify(payload)}));}
     finally{setBusy(false);}
   }
-  async function openRun(id,mode='push') {
+  async function openRun(id,mode='push',taskId=null) {
     if(pending || busy || restoring){setError('Finish the current request before opening another meeting.');if(mode==='pop')history.replaceState({},'',committedURL.current);return;}
     if(!stashInput()){setError('Browser storage is unavailable. Return to Extract & review and copy your unsaved transcript before opening another run.');if(mode==='pop')history.replaceState({},'',committedURL.current);return;}
     const epoch=++navigationEpoch.current;setError('');setBusy(true);
     try {
-      const value=await api(`/runs/${id}`);if(epoch!==navigationEpoch.current)return;adopt(value);restoreInput(value);commitRoute({page:'extract',runId:id},mode);afterRender(()=>document.querySelector('main h1')?.focus({preventScroll:true}));
+      const value=await api(`/runs/${id}`);if(epoch!==navigationEpoch.current)return;adopt(value);restoreInput(value);commitRoute({page:'extract',runId:id,taskId},mode);if(!taskId)afterRender(()=>document.querySelector('main h1')?.focus({preventScroll:true}));
     }catch(e){if(epoch===navigationEpoch.current){setError(e.message);if(mode==='pop')history.replaceState({},'',committedURL.current);}}finally{if(epoch===navigationEpoch.current)setBusy(false);}
   }
   async function inspect(id) {
@@ -303,7 +306,8 @@ function App({account,signOut,completeAccountDeletion,authError}) {
             {run.status==='confirmed'?<>
               <div className="section-heading"><div><h2 id="confirmed-plan-title" tabIndex={-1}>Your confirmed plan</h2><p>{run.final_tasks.length} task{run.final_tasks.length===1?'':'s'} confirmed. Next: update their progress below.</p></div><Download href={`/api/runs/${run.id}/tasks.csv`}>Export CSV</Download></div>
               {run.final_tasks.length===0&&<div className="notice">You confirmed a plan with no tasks. All proposals were rejected.</div>}
-              <TaskFollowThrough key={`progress-${run.id}`} run={run} onViewChange={()=>{setActiveEvidence(null);evidenceTrigger.current=null;}} onUpdate={value=>{setRun(value);setActiveEvidence(null);evidenceTrigger.current=null;}} renderEvidence={(task,i)=><Evidence passages={task.evidence} onInspect={inspectEvidence} label={`confirmed task ${i+1}`}/>}/>
+              <PlanExport key={`export-${run.id}`} run={run}/>
+              <TaskFollowThrough key={`progress-${run.id}`} run={run} targetId={taskTarget} onViewChange={()=>{setActiveEvidence(null);evidenceTrigger.current=null;}} onUpdate={value=>{setRun(value);setActiveEvidence(null);evidenceTrigger.current=null;}} renderEvidence={(task,i)=><Evidence passages={task.evidence} onInspect={inspectEvidence} label={`confirmed task ${i+1}`}/>}/>
             </>:<ReviewProposals key={`review-${run.id}`} run={run} drafts={drafts} busy={busy} onViewChange={()=>{setActiveEvidence(null);evidenceTrigger.current=null;}} onChange={updateReview} onConfirm={finalize} renderEvidence={(p,i)=><Evidence passages={p.evidence} onInspect={inspectEvidence} label={`task ${i+1}`}/>}>
               <div className="review-save-state"><p role="status" className="form-hint">{saveStatus}</p><details className="review-recovery"><summary>Review help</summary><p>Missing owners and dates stay Unknown. Your edits save automatically; the original supporting passage stays attached. You can restore this browser’s review copy below.</p><button type="button" className="text-button" onClick={()=>{try{const cached=JSON.parse(accountStorage.getItem(draftKey(run.id))||'null');if(cached){const merged=reviewDrafts(run.proposals,cached.decisions);setDrafts(merged);scheduleSave(run.id,merged);}}catch{setError('Browser draft could not be restored.');}}}>Restore browser copy</button></details></div>
             </ReviewProposals>}
@@ -319,6 +323,7 @@ function App({account,signOut,completeAccountDeletion,authError}) {
         </>}
         {page==='annotations'&&<AnnotationReviewer api={api} downloadJson={downloadJson} onHelp={()=>setHelpTopic('annotations')}/>}
         {page==='data'&&<DataControls completeAccountDeletion={completeAccountDeletion} onClosing={()=>{clearTimeout(saveTimer.current);activeRun.current=null;setClosing(true);setRun(null);setDrafts([]);setTranscript('');setMeetingTitle('');setInputSaveStatus('');setReport(null);setPending(null);setAnalysisStatus('');}}/>}
+        {page==='tasks'&&<AllTasks filters={taskFilters} onFilters={setTaskFilters} onOpen={item=>openRun(item.run_id,'push',item.proposal_id)} busy={busy || restoring || !!pending}/>}
         {page==='history'&&<MeetingHistory onOpen={openRun} busy={busy || restoring || !!pending}/> }
         {page==='benchmark'&&<>
           <div className="page-intro"><div><div className="eyebrow accent">QUALITY BEFORE GUESSWORK</div><h1 tabIndex={-1}>Compare extraction methods.</h1><p>See how different methods turn conversations into tasks. You can use this app without setting up these optional checks.</p></div></div>

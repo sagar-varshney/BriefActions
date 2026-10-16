@@ -38,7 +38,7 @@ test('Authenticated routes isolate all private state and authenticated downloads
   const get=(route,token)=>fetch(base+route,{headers:token?{Authorization:`Bearer ${token}`}:{}});
   const post=(route,data,token,origin='https://flow.example')=>fetch(base+route,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`,Origin:origin},body:JSON.stringify(data)});
   try {
-    for(const route of ['/api/config','/api/runs','/api/annotations','/api/benchmarks','/api/reviewed-snapshots','/api/reviewed-benchmarks'])assert.equal((await get(route)).status,401);
+    for(const route of ['/api/tasks?today=2026-09-15','/api/config','/api/runs','/api/annotations','/api/benchmarks','/api/reviewed-snapshots','/api/reviewed-benchmarks'])assert.equal((await get(route)).status,401);
     assert.equal((await get('/api/runs','tampered')).status,401);
     const publicConfig=await (await get('/api/auth-config')).json();assert.equal(publicConfig.mode,'supabase');assert.equal(publicConfig.databaseUrl,undefined);
     assert.equal((await post('/api/runs',{},'alice','https://evil.example')).status,403);
@@ -51,6 +51,11 @@ test('Authenticated routes isolate all private state and authenticated downloads
     assert.equal((await fetch(base+`/api/runs/${run.id}/progress`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(progress)})).status,401);
     assert.equal((await post(`/api/runs/${run.id}/progress`,progress,'bob')).status,404);
     const tracked=await post(`/api/runs/${run.id}/progress`,progress,'alice');assert.equal(tracked.status,200);assert.equal((await tracked.json()).task_progress[progress.proposal_id].status,'done');
+    const tasks=await (await get('/api/tasks?today=2026-09-15&status=','alice')).json();
+    assert.equal(tasks.total,1);assert.equal(tasks.items[0].run_id,run.id);assert.equal(tasks.items[0].status,'done');
+    const otherTasks=await (await get('/api/tasks?today=2026-09-15&status=','bob')).json();
+    assert.equal(otherTasks.total,0);assert.deepEqual(otherTasks.items,[]);assert.ok(Object.values(otherTasks.counts).every(count=>count===0));
+    assert.equal((await get('/api/tasks?today=2026-09-15&owner_id='+alice,'bob')).status,400);
     const exported=await get(`/api/runs/${run.id}/tasks.csv`,'alice');assert.equal(exported.status,200);assert.ok((await exported.text()).includes('Maya'));assert.equal(exported.headers.get('cache-control'),'no-store');
     const annotation=await (await post('/api/annotations',{transcript:'No actions.',reference_date:'2026-09-15',source:'synthetic',permission:true,anonymized:true,group:'a'},'alice')).json();
     assert.deepEqual(await (await get('/api/annotations','bob')).json(),[]);assert.equal((await get(`/api/annotations/${annotation.id}`,'bob')).status,404);

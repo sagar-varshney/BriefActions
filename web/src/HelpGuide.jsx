@@ -3,9 +3,9 @@ import React,{useEffect,useRef,useState} from 'react';
 const guides={
  meetings:{label:'Meeting tasks',page:'extract',steps:[
   ['Add a conversation','Paste a transcript, import a file, or use Try an example. Choose the meeting date so words like “tomorrow” can be understood.','The example is invented. Loading it does not start analysis.'],
-  ['Check suggested tasks','Click Analyze transcript to save the input and get suggestions. Open Edit & evidence to correct a task, owner, or date. Locate passage shows the original words.','Unknown means the conversation did not provide that information.'],
+  ['Check suggested tasks','Click Analyze transcript to save the input and get suggestions. Open Edit & evidence to correct a task, owner, or date. Locate passage shows the original words.','Unknown means no value was identified. Check the source before filling it in.'],
   ['Choose what to keep','Select the tasks you want, then confirm your selection. Unselected suggestions are rejected. Review edits save automatically before confirmation.','Confirmation locks this plan. Editing the transcript later creates a separate analysis when you submit it.'],
-  ['Follow through','Set tasks to To do, In progress, or Done. Use Meeting history to return later and Activity to see what changed.','Progress updates preserve the confirmed task and its original evidence.']
+  ['Follow through','Set tasks to To do, In progress, or Done. Use All tasks to see confirmed work across meetings, or Meeting history to return to one conversation. Copy or download your confirmed action plan, and use Activity to see what changed.','Progress updates preserve the confirmed task and its original evidence.']
  ]},
  annotations:{label:'Label examples',page:'annotations',steps:[
   ['Choose an example','Add practice examples or a conversation you have permission to use. An example is one conversation with a meeting date.','Practice imports exclude the original answers, so a reviewer can start independently.'],

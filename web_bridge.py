@@ -57,6 +57,9 @@ def report_paths():
 
 def handle(request):
     op = request.get('operation')
+    if op=='task_search':
+        from task_dashboard import search
+        return search(store(), **{key:request[key] for key in ('today','view','status','query','page','page_size') if key in request})
     if op=='task_progress':
         from task_progress import update
         update(store(),request.get('run_id'),request.get('proposal_id'),request.get('status'),request.get('version'),request.get('request_id'))

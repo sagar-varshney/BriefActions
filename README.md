@@ -23,6 +23,27 @@ Missing owners and deadlines stay **Unknown** until you supply them.
 The workspace supports light, dark, and system themes, keyboard navigation, and
 mobile layouts. Screenshots use synthetic demo inputs.
 
+## From reviewed plans to daily work
+
+**All tasks** brings confirmed tasks from your meetings into one private dashboard.
+Search by task, owner, or meeting name; filter by progress, Today, Overdue,
+Upcoming (the next seven days), or Unassigned. Open a result to go directly to its
+task and supporting transcript. Date views use your device's date and exclude
+completed tasks. Counts follow the current search and progress filter.
+
+Confirmed plans offer **Copy action plan** and **Download Markdown**, grouped by
+owner, deadline, or original task order. Both include the complete confirmed plan
+and its supporting passages, preserving Unknown values. Progress updates do not
+rewrite these exports. A preview lets you copy manually when clipboard access is
+unavailable. CSV and full history downloads remain available.
+
+During review, **What to check** explains missing details, invalid dates, and
+proposals with matching task wording but different deadlines. Compare the linked
+passages before choosing what to keep. These are review aids; Unknown metadata
+is allowed, and suggestions never merge or change your decisions automatically.
+
+[All tasks dashboard](docs/screenshots/all-tasks-light.png) · [Dark theme](docs/screenshots/all-tasks-dark.png)
+
 ## Guides for first-time users
 
 **Help** is available throughout the signed-in workspace (and local development).
@@ -136,6 +157,9 @@ Back/Forward preserve the section or load the requested meeting. The old `/#data
 link still opens account settings. Opening `/meetings` starts or restores that tab's
 new-meeting draft; opening `/` can resume the last saved run. Unsaved transcript
 protection and interrupted-analysis recovery still apply when opening another run.
+
+A task link adds `?task=<proposal-id>` to its meeting URL, opens the exact confirmed
+task, and keeps its supporting passage accessible. **All tasks** uses `/tasks`.
 
 Every saved meeting request requires the signed-in account; knowing a URL does not
 grant another account access. The sign-in flow can retain a requested destination
@@ -626,6 +650,7 @@ encrypted restore drill verifies progress events too.
 - `evaluate.py`: task, metadata, evidence, latency, cost and failure measurement.
 - `ollama_runner.py`, `compare_models.py`: actual LLM adapter and experiment matrix.
 - `history.py`: append-only extraction, user-added proposals, decisions, and final plans.
+- `task_dashboard.py`: bounded, account-scoped search and date views of confirmed tasks.
 - `reviewed_benchmarks.py`: frozen-snapshot scoring and local comparison persistence.
 - `annotations.py`, `annotation_drafts.py`: immutable submitted reviews and separate mutable drafts.
 - `corpus_library.py`: fingerprint-verified, input-only bundled corpus registry.
