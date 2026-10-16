@@ -1,6 +1,6 @@
 export const missing=value=>!value?.trim() || value.trim().toLowerCase()==='unknown';
 export function validDeadline(value){const text=value?.trim();return text==='Unknown' || /^\d{4}-\d{2}-\d{2}$/.test(text || '') && text.slice(0,4)!=='0000' && Number.isFinite(Date.parse(text)) && new Date(text).toISOString().slice(0,10)===text;}
-const taskWords=value=>(value?.toLowerCase().match(/[a-z0-9]+/g) || []).filter(word=>!['a','an','the'].includes(word)).join(' ');
+const taskWords=value=>(value?.normalize('NFKC').toLowerCase().match(/[\p{L}\p{N}]+/gu) || []).filter(word=>!['a','an','the'].includes(word)).join(' ');
 export function issues(item,items=[]){
  const result=[
   !item.task?.trim()&&{field:'task',label:'Task is empty',description:'Write the action you want to keep, using the supporting passage to check it.'},

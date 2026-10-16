@@ -44,6 +44,9 @@ test('Review explanations flag competing dates without treating distinct assignm
  assert.deepEqual(issues(one,[one,{...two,task:'Review report'}]),[]);
  assert.equal(issues({...one,owner:'Unknown'})[0].label,'Owner unknown');
  assert.match(issues({...one,deadline:'Unknown'})[0].description,/keep|stay Unknown/);
+ assert.deepEqual(issues({...one,task:'Review café A'},[{...two,task:'Review café B'}]),[]);
+ assert.deepEqual(issues({...one,task:'Review 東京'},[{...two,task:'Review 京都'}]),[]);
+ assert.equal(issues({...one,task:'Review 東京'},[{...two,task:'Review 東京'}])[0].label,'Different deadlines');
  assert.equal(reviewError([one,two]),null,'Competing proposals are a review aid, not a confirmation prohibition');
 });
 
