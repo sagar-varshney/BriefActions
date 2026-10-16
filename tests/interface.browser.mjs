@@ -41,9 +41,15 @@ try{
    await page.getByLabel('Color theme').selectOption(theme);
    if(width===1440 || width===320)await scan(page,`review-${width}-${theme}`);
    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`${width} ${theme}`);
-   const left=await page.getByRole('region',{name:'Transcript workspace',exact:true}).boundingBox(),right=await page.getByRole('region',{name:'Extraction result',exact:true}).boundingBox();
-   if(width>=1180)assert.ok(left.x+left.width<=right.x+1,'Desktop source and review must sit alongside each other');
-   if(width<=1024)assert.ok(right.y>=left.y+left.height-1,'Narrow layouts must stack source before review');
+   // The source disclosure collapses on resize. Separate protocol reads can
+   // straddle that React update (and scroll anchoring), mixing two layouts.
+   const {left,right}=await page.evaluate(()=>{
+    const box=label=>{const {x,y,width,height}=document.querySelector(`[aria-label="${label}"]`).getBoundingClientRect();return {x,y,width,height};};
+    return {left:box('Transcript workspace'),right:box('Extraction result')};
+   });
+   const layout=`${width} ${theme}: ${JSON.stringify({left,right})}`;
+   if(width>=1180)assert.ok(left.x+left.width<=right.x+1,'Desktop source and review must sit alongside each other; '+layout);
+   if(width<=1024)assert.ok(right.y>=left.y+left.height-1,'Narrow layouts must stack source before review; '+layout);
    if([1440,390,320].includes(width)){await page.evaluate(()=>scrollTo(0,0));await page.screenshot({path:path.join(shots,`flow-review-${width}-${theme}.png`),fullPage:width<=390});}
   }
  }
