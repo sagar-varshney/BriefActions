@@ -44,7 +44,14 @@ input[type=date]{color-scheme:inherit} textarea{resize:vertical} summary{cursor:
 .app-shell{min-height:100vh}
 .workspace-header{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:24px;min-height:84px;padding:14px max(28px,calc((100vw - 1480px)/2));border-bottom:1px solid var(--line);background:var(--surface)}
 .brand{display:flex;align-items:center;gap:11px;flex-shrink:0;color:var(--text);line-height:1}
-.brand-mark{display:block;flex-shrink:0;width:52px;height:52px}.brand-mark img{display:block;width:100%;height:100%}.brand-wordmark{display:block}.brand-name{display:block;font-size:26px;font-weight:750;letter-spacing:-1px;line-height:1.05}
+.brand-mark{display:block;flex-shrink:0;width:52px;height:52px}.brand-mark svg{display:block;width:100%;height:100%;overflow:visible}.brand-wordmark{display:block}.brand-name{display:block;font-size:26px;font-weight:750;letter-spacing:-1px;line-height:1.05}
+@media(prefers-reduced-motion:no-preference){
+ .brand-ribbon{animation-duration:900ms;animation-timing-function:cubic-bezier(.22,1,.36,1);animation-fill-mode:both}
+ .brand-ribbon-upper{animation-name:brand-ribbon-upper}
+ .brand-ribbon-lower{animation-name:brand-ribbon-lower;animation-delay:90ms}
+}
+@keyframes brand-ribbon-upper{0%{transform:translate(-7px,7px);opacity:0}25%{opacity:1}72%{transform:translate(1px,-1px)}100%{transform:translate(0,0);opacity:1}}
+@keyframes brand-ribbon-lower{0%{transform:translate(7px,-7px);opacity:0}25%{opacity:1}72%{transform:translate(-1px,1px)}100%{transform:translate(0,0);opacity:1}}
 .workspace-header nav{display:flex;align-items:center;gap:4px;margin:auto}
 .nav-item{display:flex;align-items:center;justify-content:center;gap:7px;background:none;color:var(--muted);border:1px solid transparent;border-radius:2px;padding:11px 10px;font-size:12px;font-weight:550;min-height:44px;white-space:nowrap}
 .nav-item:hover{background:var(--surface-soft);color:var(--text)}
