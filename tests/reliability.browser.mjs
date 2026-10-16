@@ -14,7 +14,7 @@ try{
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const base=`http://127.0.0.1:${server.address().port}`;
   browser=await chromium.launch({headless:true,...(process.env.FLOW_CHROMIUM_PATH?{executablePath:process.env.FLOW_CHROMIUM_PATH}:{})});
   const page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
-  await page.goto(base);await page.getByRole('button',{name:'Analyze transcript',exact:true}).waitFor();
+  await page.goto(base+'/meetings');await page.getByRole('button',{name:'Analyze transcript',exact:true}).waitFor();
   await (await meetingField(page,'Meeting transcript')).fill('Maya will send the private report tomorrow.');
   await (await meetingField(page,'Meeting date')).fill('2026-09-15');
   let droppedId;
@@ -57,7 +57,7 @@ try{
   await page.getByRole('button',{name:'Download workspace JSONL'}).click();await page.getByRole('alert').filter({hasText:'The export was interrupted.'}).waitFor();assert.equal(badDownload,false);
   // A real server exception exposes only a support reference and preserves the
   // original analysis request for an explicit retry after the service recovers.
-  const context=await browser.newContext(),failurePage=await context.newPage();await failurePage.setViewportSize({width:320,height:800});await failurePage.goto(base);
+  const context=await browser.newContext(),failurePage=await context.newPage();await failurePage.setViewportSize({width:320,height:800});await failurePage.goto(base+'/meetings');
   await (await meetingField(failurePage,'Meeting transcript')).fill('Maya will send the launch notes tomorrow.');
   await (await meetingField(failurePage,'Meeting date')).fill('2026-09-15');
   failAnalysis=true;const failedResponse=failurePage.waitForResponse(response=>response.url()===base+'/api/runs'&&response.request().method()==='POST');

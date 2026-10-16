@@ -11,7 +11,7 @@ async function scan(page,label){const result=await new AxeBuilder({page}).withTa
 try{
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const base=`http://127.0.0.1:${server.address().port}`;
  browser=await chromium.launch({headless:true,...(process.env.FLOW_CHROMIUM_PATH?{executablePath:process.env.FLOW_CHROMIUM_PATH}:{})});const context=await browser.newContext({viewport:{width:1440,height:1000}}),page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
- await page.goto(base);await page.getByRole('button',{name:'Try an example',exact:true}).waitFor();
+ await page.goto(base+'/meetings');await page.getByRole('button',{name:'Try an example',exact:true}).waitFor();
  const input='Maya: Note 📝.\nMaya: I will send the launch notes tomorrow.\nJon will review the budget by 2026-10-16.';
  await page.getByLabel('Meeting name',{exact:true}).fill('Launch planning');await page.getByLabel('Meeting transcript',{exact:true}).fill(input);await page.getByLabel('Meeting date',{exact:true}).fill('2026-10-14');const analysisReceived=Promise.withResolvers(),releaseAnalysis=Promise.withResolvers();
  await page.route('**/api/runs',async route=>{if(route.request().method()!=='POST')return route.continue();const response=await route.fetch();analysisReceived.resolve();await releaseAnalysis.promise;await route.fulfill({response});});

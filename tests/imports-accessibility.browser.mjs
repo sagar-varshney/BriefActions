@@ -24,7 +24,7 @@ try{
   const base=`http://127.0.0.1:${server.address().port}`,authBase=`http://127.0.0.1:${authServer.address().port}`;
   browser=await chromium.launch({headless:true,...(process.env.FLOW_CHROMIUM_PATH?{executablePath:process.env.FLOW_CHROMIUM_PATH}:{})});
   const context=await browser.newContext({viewport:{width:1440,height:1000}});const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
-  await page.goto(base);await page.getByRole('button',{name:'Try an example',exact:true}).waitFor();
+  await page.goto(base+'/meetings');await page.getByRole('button',{name:'Try an example',exact:true}).waitFor();
   assert.equal(await (await meetingField(page,'Meeting transcript')).inputValue(),'');
   assert.equal(await (await meetingField(page,'Meeting date')).inputValue(),'');
   await page.getByRole('button',{name:'Paste my transcript',exact:true}).click();
@@ -107,7 +107,7 @@ try{
   await page.getByLabel('Reviewer identity').fill('Accessibility fixture');await page.getByRole('button',{name:'Start or resume review',exact:true}).click();await page.getByText('Independent review',{exact:false}).first().waitFor();
   for(const theme of ['light','dark']){await page.getByLabel('Color theme').selectOption(theme);await scan(page,`active-annotation-${theme}`);}
   await page.emulateMedia({reducedMotion:'reduce'});assert.equal(await page.evaluate(()=>matchMedia('(prefers-reduced-motion: reduce)').matches),true);
-  const login=await context.newPage();await login.setViewportSize({width:320,height:800});await login.goto(authBase);await login.getByRole('button',{name:'Continue with GitHub'}).waitFor();
+  const login=await context.newPage();await login.setViewportSize({width:320,height:800});await login.goto(authBase+'/sign-in');await login.getByRole('button',{name:'Continue with GitHub'}).waitFor();
   for(const theme of ['light','dark']){await login.getByLabel('Color theme').selectOption(theme);await scan(login,`sign-in-${theme}`);assert.ok(await login.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));}
   const privacyPage=await context.newPage(),privacyPageRequests=[];privacyPage.on('request',r=>{if(new URL(r.url()).pathname.startsWith('/api/'))privacyPageRequests.push(r.url());});
   await privacyPage.goto(authBase+'/privacy');await privacyPage.getByRole('heading',{name:'Privacy & your data',exact:true}).waitFor();assert.equal(await privacyPage.getByRole('button',{name:'Continue with GitHub'}).count(),0);assert.deepEqual(privacyPageRequests,[]);

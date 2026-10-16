@@ -15,7 +15,7 @@ try{
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const base=`http://127.0.0.1:${server.address().port}`;
  browser=await chromium.launch({headless:true,...(process.env.FLOW_CHROMIUM_PATH?{executablePath:process.env.FLOW_CHROMIUM_PATH}:{})});
  const context=await browser.newContext(),page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
- await page.goto(base);await page.getByRole('button',{name:'Try an example',exact:true}).waitFor();
+ await page.goto(base+'/meetings');await page.getByRole('button',{name:'Try an example',exact:true}).waitFor();
  const input='Maya will send the café report tomorrow.';
  await (await meetingField(page,'Meeting transcript')).fill(input);await (await meetingField(page,'Meeting date')).fill('2026-10-13');await (await meetingField(page,'Meeting name')).fill('Sprint café');await page.getByLabel('Maximum groups').selectOption('2');
  await page.reload();await page.getByRole('status').filter({hasText:'Restored transcript draft'}).waitFor();
@@ -23,7 +23,7 @@ try{
  assert.equal((await (await fetch(base+'/api/runs')).json()).length,0);
  await page.route('**/api/account',route=>route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:'Workspace temporarily unavailable.'})}));await page.reload();await page.getByRole('alert').filter({hasText:'temporarily unavailable'}).waitFor();assert.equal(await (await meetingField(page,'Meeting transcript')).inputValue(),input);assert.equal(await (await meetingField(page,'Meeting name')).inputValue(),'Sprint café');await page.unroute('**/api/account');await page.reload();await page.getByRole('status').filter({hasText:'Restored transcript draft'}).waitFor();
  // Independent tabs share account storage but cannot overwrite each other's input drafts.
- const other=await context.newPage();await other.goto(base);await other.getByRole('button',{name:'Try an example',exact:true}).waitFor();assert.equal(await (await meetingField(other,'Meeting transcript')).inputValue(),'');
+ const other=await context.newPage();await other.goto(base+'/meetings');await other.getByRole('button',{name:'Try an example',exact:true}).waitFor();assert.equal(await (await meetingField(other,'Meeting transcript')).inputValue(),'');
  await (await meetingField(other,'Meeting transcript')).fill('Tab two only.');await other.reload();await other.getByRole('status').filter({hasText:'Restored transcript draft'}).waitFor();assert.equal(await (await meetingField(other,'Meeting transcript')).inputValue(),'Tab two only.');
  await page.reload();await page.getByRole('status').filter({hasText:'Restored transcript draft'}).waitFor();assert.equal(await (await meetingField(page,'Meeting transcript')).inputValue(),input);
  await page.getByRole('button',{name:'Analyze transcript',exact:true}).click();await page.getByRole('heading',{name:/Review action proposals/}).waitFor();

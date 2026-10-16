@@ -12,7 +12,7 @@ Extraction quality is measured against an annotated evaluation set.
 
 ![BriefActions workspace](docs/screenshots/workspace-light.png)
 
-[Review workspace](docs/screenshots/review-light.png) · [Dark theme](docs/screenshots/review-dark.png) · [Task progress](docs/screenshots/task-progress-light.png) · [Sign-in page](docs/screenshots/sign-in-light.png)
+[Public homepage](docs/screenshots/homepage-light.png) · [Review workspace](docs/screenshots/review-light.png) · [Dark theme](docs/screenshots/review-dark.png) · [Task progress](docs/screenshots/task-progress-light.png) · [Sign-in page](docs/screenshots/sign-in-light.png)
 
 ## Review with context
 
@@ -155,7 +155,10 @@ Every meeting has a private `/meetings/:id` URL. Sections use `/meetings`, `/his
 `/account`, `/research/evaluation`, and `/research/annotations`. Refresh and browser
 Back/Forward preserve the section or load the requested meeting. The old `/#data`
 link still opens account settings. Opening `/meetings` starts or restores that tab's
-new-meeting draft; opening `/` can resume the last saved run. Unsaved transcript
+new-meeting draft. `/` is the public homepage, with an interactive sample plan,
+workflow introduction, features, and common questions. **Sign in** opens `/sign-in`;
+successful hosted sign-in opens the private workspace. Existing sessions can use
+**Open workspace** from the homepage. Unsaved transcript
 protection and interrupted-analysis recovery still apply when opening another run.
 
 A task link adds `?task=<proposal-id>` to its meeting URL, opens the exact confirmed
@@ -163,7 +166,10 @@ task, and keeps its supporting passage accessible. **All tasks** uses `/tasks`.
 
 Every saved meeting request requires the signed-in account; knowing a URL does not
 grant another account access. The sign-in flow can retain a requested destination
-through the same tab's session storage. The primary navigation keeps extraction,
+through the same tab's session storage, including its task selection. Only known,
+same-origin workspace routes are accepted as return destinations. `/auth/callback`
+completes GitHub or email-link sign-in; older callbacks to `/` remain supported.
+Signing out clears the return destination and opens `/sign-in`. The primary navigation keeps extraction,
 history, and account controls visible; **Research tools** contains Compare extraction methods
 and Label & review examples. These research screens remain available to each account. Research links use left-aligned rows in an anchored desktop dropdown; on phones, they expand within the navigation so account and Help controls stay unobstructed.
 
@@ -323,7 +329,10 @@ pnpm install
 pnpm dev
 ```
 
-Open **http://127.0.0.1:5173**. The development API runs on port 3001;
+Open **http://127.0.0.1:5173** for the public homepage, then use **Get started**
+and **Open local workspace** to preview the flow. Local development requires no
+account; public deployments require authenticated accounts. The workspace is at
+`/meetings`. The development API runs on port 3001;
 Vite proxies `/api` requests to it. `pnpm dev` starts and stops both processes.
 The loaded example uses its original meeting date (2026-09-15); set the actual
 meeting date when pasting a new transcript.

@@ -1,3 +1,4 @@
+import {authScreen} from './authRouting.js';
 import {api,downloadFile} from './api.js';
 import AuthShell from './AuthShell.jsx';
 import ThemeControl from './ThemeControl.jsx';
@@ -78,7 +79,7 @@ function App({account,signOut,completeAccountDeletion,authError}) {
     navigationEpoch.current++;setError('');commitRoute(next,mode);if(!next.taskId)afterRender(()=>document.querySelector('main h1')?.focus({preventScroll:true}));
   }
   navigation.current=navigate;
-  useEffect(()=>{const pop=()=>navigation.current?.(readRoute(),'pop');window.addEventListener('popstate',pop);return()=>window.removeEventListener('popstate',pop);},[]);
+  useEffect(()=>{const pop=()=>{if(authScreen()==='workspace')navigation.current?.(readRoute(),'pop');};window.addEventListener('popstate',pop);return()=>window.removeEventListener('popstate',pop);},[]);
   const [closing,setClosing]=useState(false);
   const [restoring,setRestoring]=useState(true);
   useEffect(()=>{if(!restoring && deferredNavigation.current){const next=deferredNavigation.current;deferredNavigation.current=null;history.replaceState({},'',routePath(next));void navigation.current?.(next,'pop');}},[restoring]);

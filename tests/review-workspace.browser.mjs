@@ -15,7 +15,7 @@ try{
  const post=async(url,data)=>fetch(base+url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
  browser=await chromium.launch({headless:true,...(process.env.FLOW_CHROMIUM_PATH?{executablePath:process.env.FLOW_CHROMIUM_PATH}:{})});
  const context=await browser.newContext({viewport:{width:1440,height:1000}}),page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
- await page.goto(base);await page.getByRole('button',{name:'Try an example',exact:true}).waitFor();
+ await page.goto(base+'/meetings');await page.getByRole('button',{name:'Try an example',exact:true}).waitFor();
  assert.equal(await page.getByRole('button',{name:'Compare extraction methods',exact:true}).count(),0);
  await page.getByRole('button',{name:'Research tools',exact:true}).click();await page.keyboard.press('Escape');assert.equal(await page.getByRole('button',{name:'Research tools',exact:true}).getAttribute('aria-expanded'),'false');
  await navigate(page,'Label & review examples');await page.getByRole('heading',{name:'Label & review examples.',exact:true}).waitFor();

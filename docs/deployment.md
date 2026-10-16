@@ -36,8 +36,13 @@ important meeting records. Provider limits and available plans can change.
    database administrator. It creates a private `flow` schema and restricted
    `flow_app` role. Never expose that schema through the browser Data API.
 3. In Auth, enable the GitHub OAuth provider and configure a GitHub OAuth app.
-   Use Supabase's callback URL for the GitHub app. Set Supabase's Site URL and
-   allowed redirect URL to the exact deployed app origin.
+   Use Supabase's callback URL for the GitHub app. Set Supabase's Site URL to
+   the exact deployed app origin (for example, `https://briefactions.example`).
+   Add `https://briefactions.example/auth/callback` to the allowed redirect URLs,
+   using your actual hostname. BriefActions uses this path for GitHub and email
+   links; the public homepage is `/`, and the sign-in page is `/sign-in`.
+   Keep the exact root origin allowed while older sign-in links are in circulation.
+   Avoid wildcard production redirect URLs.
 4. Copy the project's URL and **publishable key**. A legacy `anon` key is also
    supported; never use a service-role or secret key in that setting.
 5. Copy the **session pooler** Postgres connection URI from Connect. Add

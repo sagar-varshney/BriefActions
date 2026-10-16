@@ -18,7 +18,7 @@ try {
   browser=await chromium.launch({headless:true, ...(process.env.FLOW_CHROMIUM_PATH ? {executablePath:process.env.FLOW_CHROMIUM_PATH} : {})});
   const page=await browser.newPage({viewport:{width:1440,height:1000}});
   const errors=[];page.on('pageerror',error=>errors.push(error.message));
-  await page.goto(base);
+  await page.goto(base+'/meetings');
   await page.getByRole('button',{name:'Analyze transcript',exact:true}).waitFor();
   await page.getByLabel('Color theme').selectOption('dark');
   assert.equal(await page.locator('html').getAttribute('data-theme'),'dark');
@@ -35,7 +35,7 @@ try {
   assert.equal(await page.locator('html').getAttribute('data-theme'),'dark');
   await page.getByLabel('Color theme').selectOption('light');
   const visible=async (text)=>assert.ok(await page.getByText(text,{exact:true}).isVisible());
-  await page.goto(base);
+  await page.goto(base+'/meetings');
   await page.getByRole('button',{name:'Analyze transcript'}).waitFor();
   await page.getByRole('button',{name:'Try an example',exact:true}).waitFor();
   assert.equal(await (await meetingField(page,'Meeting transcript')).inputValue(),'');
