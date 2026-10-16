@@ -37,16 +37,44 @@ try{
  await page.getByRole('button',{name:'Show supporting passage for Review the release notes',exact:true}).focus();await page.keyboard.press('Enter');
  assert.equal(await page.locator('.demo-source-active').textContent(),'AlexPlease review the release notes.');assert.equal(await page.getByRole('button',{name:'Show supporting passage for Review the release notes',exact:true}).getAttribute('aria-pressed'),'true');
  await page.getByText('Do I need a technical background?',{exact:true}).click();assert.equal(await page.locator('details').first().getAttribute('open'),'');
- for(const width of [1440,1024,768,390,320]){
-  await page.setViewportSize({width,height:1000});
-  for(const theme of ['light','dark']){
-   await page.getByLabel('Color theme').selectOption(theme);
-   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`Home ${width} ${theme}: no overflow`);
-   if([1440,320].includes(width)){
-    const result=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa','wcag22aa']).analyze();checks.push({label:`home-${width}-${theme}`,violations:result.violations});assert.deepEqual(result.violations.map(({id,nodes})=>({id,targets:nodes.map(n=>n.target)})),[]);
-   }
-   if([1440,390].includes(width))await page.screenshot({path:path.join(shots,`homepage-${width}-${theme}.png`),fullPage:true});
+ // The homepage keeps its art direction; choosing a theme starts at sign-in.
+ assert.equal(await page.getByLabel('Color theme').count(),0);
+ const palette=()=>page.evaluate(()=>Object.fromEntries(['.landing-hero','.landing-demo','.landing-how','.landing-features','.landing-faq','.landing-close'].map(selector=>{
+  const el=document.querySelector(selector),style=getComputedStyle(el);let background=el;
+  while(getComputedStyle(background).backgroundColor==='rgba(0, 0, 0, 0)')background=background.parentElement;
+  return [selector,{background:getComputedStyle(background).backgroundColor,text:style.color}];
+ })));
+ const expectedPalette=await palette();
+ assert.equal(expectedPalette['.landing-hero'].background,'rgb(19, 21, 24)');
+ assert.equal(expectedPalette['.landing-demo'].background,'rgb(255, 255, 255)');
+ assert.equal(expectedPalette['.landing-how'].background,'rgb(255, 255, 255)');
+ assert.equal(expectedPalette['.landing-features'].background,'rgb(19, 21, 24)');
+ assert.equal(expectedPalette['.landing-faq'].background,'rgb(255, 255, 255)');
+ assert.equal(expectedPalette['.landing-close'].background,'rgb(19, 21, 24)');
+ for(const preference of ['light','dark','system']){
+  await page.goto(base+'/sign-in');await page.getByRole('button',{name:'Continue with GitHub',exact:true}).waitFor();
+  await page.getByLabel('Color theme').selectOption(preference);
+  await page.getByRole('link',{name:'← Back to home',exact:true}).click();await page.getByRole('heading',{name:'Good conversations. Clear next steps.'}).waitFor();
+  for(const scheme of ['light','dark']){
+   await page.emulateMedia({colorScheme:scheme});
+   assert.deepEqual(await palette(),expectedPalette,'Saved preference and system appearance must not recolor the homepage');
+   assert.equal(await page.evaluate(()=>localStorage.getItem('flow.theme')),preference,'The homepage must preserve the selected workspace theme');
   }
+  for(const width of [1440,1024,768,390,320]){
+   await page.setViewportSize({width,height:1000});
+   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`Home ${width} ${preference}: no overflow`);
+   const brand=await page.getByRole('link',{name:'BriefActions home',exact:true}).boundingBox(),workflow=await page.locator('.landing-how').boundingBox();
+   assert.ok(Math.abs(brand.x-workflow.x)<1,`Home ${width}: header and content must share the same alignment`);
+   if(preference==='light' && [1440,320].includes(width)){
+    const result=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa','wcag22aa']).analyze();checks.push({label:`home-${width}-mixed`,violations:result.violations});assert.deepEqual(result.violations.map(({id,nodes})=>({id,targets:nodes.map(n=>n.target)})),[]);
+   }
+   if(preference==='light' && [1440,390].includes(width))await page.screenshot({path:path.join(shots,`homepage-${width}-mixed.png`),fullPage:true});
+  }
+  await page.getByRole('link',{name:'Sign in',exact:true}).first().click();await page.getByLabel('Color theme').waitFor();
+  assert.equal(await page.getByLabel('Color theme').inputValue(),preference);
+  assert.equal(await page.locator('html').getAttribute('data-theme'),preference==='system'?'dark':preference,'Sign-in must restore the saved theme');
+  await page.reload();await page.getByRole('button',{name:'Continue with GitHub',exact:true}).waitFor();assert.equal(await page.getByLabel('Color theme').inputValue(),preference);
+  await page.goto(base);await page.getByRole('heading',{name:'Good conversations. Clear next steps.'}).waitFor();
  }
  assert.deepEqual(privateRequests,[],'Theme, sample evidence and FAQs must stay public-only');
  await page.getByRole('link',{name:'Sign in',exact:true}).first().click();await page.getByRole('button',{name:'Continue with GitHub',exact:true}).waitFor();assert.equal(new URL(page.url()).pathname,'/sign-in');
@@ -66,6 +94,6 @@ try{
  for(const width of [1440,320])for(const theme of ['light','dark']){
   await page.setViewportSize({width,height:1000});await page.getByLabel('Color theme').selectOption(theme);const result=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa','wcag22aa']).analyze();checks.push({label:`email-signin-${width}-${theme}`,violations:result.violations});assert.equal(result.violations.length,0);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
  }
- await page.goto(localBase+'/sign-in');await page.getByRole('link',{name:'Open local workspace',exact:true}).waitFor();assert.equal(await page.getByRole('button',{name:'Continue with GitHub'}).count(),0);await page.getByRole('link',{name:'Open local workspace',exact:true}).click();await page.getByRole('button',{name:'Try an example',exact:true}).waitFor();
- assert.deepEqual(errors,[]);console.log('Public entry checks passed: sample-only homepage, private API gate, responsive themes/accessibility, keyboard evidence, email and GitHub PKCE callbacks, intended route, unsafe redirect rejection, callback failure recovery, and honest local preview.');
+ await page.goto(localBase+'/sign-in');await page.getByRole('link',{name:'Open local workspace',exact:true}).waitFor();assert.equal(await page.getByRole('button',{name:'Continue with GitHub'}).count(),0);await page.getByLabel('Color theme').selectOption('dark');await page.getByRole('link',{name:'Open local workspace',exact:true}).click();await page.getByRole('button',{name:'Try an example',exact:true}).waitFor();assert.equal(await page.getByLabel('Color theme').inputValue(),'dark');assert.equal(await page.locator('html').getAttribute('data-theme'),'dark');
+ assert.deepEqual(errors,[]);console.log('Public entry checks passed: fixed light/dark homepage, preserved sign-in/workspace theme preferences, sample-only demo, private API gate, responsive accessibility, keyboard evidence, email and GitHub PKCE callbacks, intended route, unsafe redirect rejection, callback failure recovery, and honest local preview.');
 }finally{await writeFile(path.join(shots,'public-accessibility.json'),JSON.stringify(checks,null,2));await browser?.close();for(const server of [managed,local]){server.closeAllConnections();await server.shutdown();}await rm(folder,{recursive:true,force:true});}

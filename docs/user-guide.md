@@ -4,7 +4,9 @@ The public homepage explains the workflow with a sample conversation. Choose
 **Get started** or **Sign in**, then continue with GitHub (or an email link when
 enabled). After sign-in, BriefActions opens your private workspace. A saved meeting
 or task link returns to that item after sign-in. Local development instead shows
-**Open local workspace**, with no account required.
+**Open local workspace**, with no account required. Choose **Light**, **Dark**, or
+**System** from **Theme** on the sign-in page; the workspace remembers that choice.
+The public homepage always uses its own mix of light and dark sections.
 
 Start with **Extract & review**. The research tools are optional; you do not need
 a machine-learning background to turn a meeting into tasks. Open **Help** anywhere

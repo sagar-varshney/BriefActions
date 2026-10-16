@@ -12,7 +12,7 @@ Extraction quality is measured against an annotated evaluation set.
 
 ![BriefActions workspace](docs/screenshots/workspace-light.png)
 
-[Public homepage](docs/screenshots/homepage-light.png) · [Review workspace](docs/screenshots/review-light.png) · [Dark theme](docs/screenshots/review-dark.png) · [Task progress](docs/screenshots/task-progress-light.png) · [Sign-in page](docs/screenshots/sign-in-light.png)
+[Public homepage](docs/screenshots/homepage.png) · [Review workspace](docs/screenshots/review-light.png) · [Dark theme](docs/screenshots/review-dark.png) · [Task progress](docs/screenshots/task-progress-light.png) · [Sign-in page](docs/screenshots/sign-in-light.png)
 
 ## Review with context
 
@@ -175,7 +175,10 @@ and Label & review examples. These research screens remain available to each acc
 
 ## Public deployment and themes
 
-The interface includes Light, Dark, and System themes, with a persistent preference.
+The public homepage combines a dark introduction and feature sections with a light
+product preview, workflow, and FAQ. Its design stays consistent across device
+appearance settings. Sign-in and the workspace offer Light, Dark, and System
+themes, with a persistent preference; visiting the homepage preserves that choice.
 The public deployment uses Supabase sign-in and persistent Postgres storage with
 account isolation. Browser drafts are scoped per account, and CSV/JSON exports
 are authenticated. Local development continues to use SQLite on loopback.
