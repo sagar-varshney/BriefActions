@@ -1,0 +1,203 @@
+# Developing BriefActions
+
+For installation, see [Run locally](../README.md#run-locally). For everyday use,
+see the [user guide](user-guide.md). This reference describes the active React,
+Node, and Python application.
+
+## Architecture
+
+```text
+React / Vite → Node HTTP API → Python bridge → extraction and history
+                                    └──────→ annotation and evaluation
+                                               ↓
+                              SQLite locally / Postgres when hosted
+```
+
+| Location | Responsibility |
+| --- | --- |
+| `web/src/main.jsx`, `web/src/styles.css` | Public homepage, sign-in, private workspace, themes, and responsive UI |
+| `server/` | HTTP routes, authentication, request limits, worker lifecycle, and built asset serving |
+| `web_bridge.py`, `export_bridge.py` | JSON worker protocol and streaming workspace export |
+| `extraction.py`, `baseline_extractor.py` | Current evidence-backed rules and frozen original rules |
+| `flow_engine.py` | Summaries, task groups, workstream classification, and heuristic suggestions |
+| `history.py`, `task_dashboard.py` | Saved runs, drafts, decisions, progress, and cross-meeting task search |
+| `annotations.py`, `annotation_drafts.py`, `corpus_library.py` | Review submissions, autosaved labels, and verified input-only practice imports |
+| `reviewed_benchmarks.py`, `evaluate.py` | Frozen-snapshot comparisons and extraction scoring |
+| `ollama_runner.py`, `compare_models.py` | Explicit model/prompt/repeat experiments |
+| `evaluation/` | Versioned datasets, manifests, prompts, and retained reports |
+| `deploy/`, `scripts/backup.py` | Hosted migrations, deployment support, and encrypted recovery |
+| `tests/`, `.github/workflows/` | Workflow checks and CI automation |
+
+The Node server calls bounded Python subprocesses rather than a separate always-on
+Python web server. Cold imports affect API response time; benchmark extraction
+latency does not include the full browser/API workflow. Model reports are loaded
+from retained results; the UI does not trigger paid or local LLM calls.
+
+The Python pipeline also offers TF-IDF summaries, TF-IDF/K-Means task grouping,
+and a Logistic Regression workstream classifier trained on a small illustrative
+seed. Extraction itself uses rules. Classifier probabilities and priority/schedule
+heuristics are not calibrated extraction confidence. Confirmed exports retain the
+reviewed task fields and evidence, rather than stale derived suggestions.
+
+## Local settings
+
+| Setting | Behavior |
+| --- | --- |
+| `PYTHON_BIN` | Explicit Python executable; otherwise `.venv/bin/python3`, then `python3` |
+| `PORT` | API/built-app port, default `3001`; the development frontend uses `5173` |
+| `FLOW_HISTORY_PATH` | Override the local SQLite path, default `data/history.sqlite3` |
+| `FLOW_MAX_WORKERS` | Bound worker concurrency; defaults to two locally and one in production |
+| `FLOW_CHROMIUM_PATH` | Reuse a browser executable for browser checks |
+| `FLOW_SCREENSHOTS` | Directory for synthetic browser QA screenshots |
+
+`pnpm dev` starts and stops Vite and the API together. `pnpm build` writes `dist/`;
+`pnpm start` serves that build through Node. Keep local previews on loopback.
+The optional `run_local.sh` and macOS `run_local_4h.sh` launchers reuse installed
+Node/pnpm or the bundled desktop runtime when available.
+
+Public hosting uses server-side Supabase and Postgres configuration; follow the
+[deployment guide](deployment.md) rather than using local auth on a public host.
+`.env.example` contains production placeholders, not working development credentials.
+Never expose secret keys or a database URL through React build variables.
+
+## Routes and access
+
+Public browser routes are `/`, `/sign-in`, `/auth/callback`, and `/privacy`.
+Workspace routes are `/meetings`, `/meetings/:id`, `/tasks`, `/history`, `/account`,
+`/research/evaluation`, and `/research/annotations`. A meeting link can include
+`?task=<proposal-id>`. Sign-in preserves recognized same-origin destinations;
+signing out clears that destination. Hosted access is verified at the API, not
+only by hiding UI controls.
+
+The server binds to loopback locally and the configured host in production.
+Ordinary JSON requests are limited to 1 MB and transcripts to 100,000 characters.
+Workers have a 60-second timeout. Account authentication and usage limits are
+bounded separately. See [launch checks](launch-checks.md) for readiness, telemetry,
+and production resource verification.
+
+### HTTP API reference
+
+Hosted requests require a verified bearer token except for `/api/auth-config`,
+`/api/live`, and `/api/health`. These public endpoints return configuration or
+health status, not private records. All other hosted data is account-scoped.
+Request schemas and validation are implemented in [server/index.mjs](../server/index.mjs)
+and [web_bridge.py](../web_bridge.py).
+
+| Method and path | Purpose |
+| --- | --- |
+| `GET /api/auth-config` | Public sign-in mode, provider URL, publishable key, and email availability |
+| `GET /api/live`, `GET /api/health` | Process liveness and runtime/storage readiness |
+| `GET /api/config` | Workspace configuration and synthetic sample input |
+| `POST /api/runs` | Analyze `{transcript, reference_date, clusters, request_id, title}`; matching retries reuse the saved result |
+| `GET /api/runs`, `GET /api/runs/:id` | List and inspect saved runs |
+| `GET /api/runs/search` | Paginated meeting-name/transcript search, date range, and review status |
+| `GET /api/tasks` | Paginated confirmed-task search and date/progress views; requires the device's `today` date |
+| `POST /api/runs/:id/title` | Versioned, audited meeting rename |
+| `POST /api/runs/:id/progress` | Retry-safe `{proposal_id, status, version, request_id}` update, separate from the confirmed plan |
+| `POST /api/runs/:id/manual-actions` | Add an evidence-backed proposal before confirmation |
+| `POST /api/runs/:id/draft` | Save incomplete decisions with an optimistic draft version |
+| `POST /api/runs/:id/finalize` | Validate decisions and confirm the selected plan |
+| `GET /api/runs/:id/tasks.csv`, `GET /api/runs/:id/history.json` | Confirmed tasks and complete run activity exports |
+| `GET /api/account`, `GET /api/account/export` | Account lifecycle/storage usage and streaming workspace JSONL export |
+| `POST /api/account/delete` | Confirmed workspace erasure and hosted sign-in account deletion |
+| `POST /api/runs/:id/delete`, `POST /api/annotations/:id/delete` | Confirmed permanent input erasure |
+| `GET /api/annotations`, `POST /api/annotations`, `GET /api/annotations/:id` | List, import, and inspect example cases |
+| `GET /api/annotations/corpora`, `POST /api/annotations/import-corpus` | Verified, input-only bundled imports |
+| `GET /api/annotations/:id/draft`, `POST /api/annotations/:id/draft` | Reviewer- and mode-specific unfinished labels |
+| `POST /api/annotations/:id/submit` | Submit a review or reasoned disagreement resolution |
+| `POST /api/annotations/freeze`, `GET /api/annotations/:snapshot/export` | Freeze grouped splits and export a snapshot |
+| `GET /api/reviewed-snapshots` | Frozen reviewed dataset manifests |
+| `GET /api/reviewed-benchmarks`, `POST /api/reviewed-benchmarks`, `GET /api/reviewed-benchmarks/:id` | List, run, and reopen original/current rule comparisons |
+| `GET /api/benchmarks`, `GET /api/benchmarks/:id` | Retained method reports and annotated cases |
+
+## Persistence and review rules
+
+Original extraction events and confirmed plans remain unchanged. Review corrections,
+manual proposals, renames, and progress have separate saved records. Autosaved
+review drafts use optimistic versions to reject stale writes. Matching analysis
+and progress request IDs recover saved results without duplicating an operation.
+
+Local data lives in SQLite; hosted account data lives in Postgres. Review drafts,
+annotation drafts, frozen snapshots, and saved comparisons use the configured
+storage. Browser-only input drafts are not cross-device data or part of workspace
+exports. Older Streamlit-created history remains readable; old records may lack a summary.
+
+Annotation reviewer names and independence are self-attested within an account;
+separate names do not establish independent human review. Real transcripts require
+permission and a manual anonymization check. Previously evaluated bundled cases
+remain previously seen after importing or relabeling them. Frozen reports preserve
+inputs, labels, predictions, errors, and reproducibility hashes. See the
+[evaluation guide](../evaluation/README.md) for the annotation and scoring policy.
+
+## Verification
+
+Run unit/API checks, the production build, and browser workflows:
+
+```bash
+python -m unittest discover -s tests -v
+pnpm test
+pnpm build
+pnpm exec playwright install chromium
+pnpm test:browser
+```
+
+Browser suites use temporary databases and synthetic data. On a Linux CI host,
+Playwright uses `pnpm exec playwright install --with-deps chromium` to include
+system dependencies. `FLOW_SCREENSHOTS` retains screenshots; `FLOW_CHROMIUM_PATH`
+selects an existing executable.
+
+Run both development quality gates without changing retained results:
+
+```bash
+python evaluate.py --extractor rules --split dev --output artifacts/rules-dev.json
+python scripts/check_benchmark.py artifacts/rules-dev.json
+python evaluate.py --extractor rules --dataset evaluation/revision-v1/dev.jsonl \
+  --split dev --output artifacts/revision-dev.json
+python scripts/check_benchmark.py artifacts/revision-dev.json \
+  --dataset evaluation/revision-v1/dev.jsonl \
+  --baseline evaluation/results/revision-v1/rules-dev.json
+```
+
+Real-Postgres tests require an isolated disposable database configured through
+`FLOW_TEST_DATABASE_URL`. The workflow scripts apply migrations and use test data;
+never point them at a live application database.
+
+```bash
+python scripts/test_postgres.py
+python scripts/test_backup_postgres.py
+```
+
+For production-image resource tests, see [launch checks](launch-checks.md).
+For explicit model experiments, see [evaluation](../evaluation/README.md).
+
+### Continuous integration
+
+[CI](https://github.com/sagar-varshney/BriefActions/actions/workflows/ci.yml) runs on
+pushes, pull requests, and manual dispatch using Ubuntu 24.04, Python 3.13,
+Node.js 24, and pnpm 11.25.0. It checks:
+
+- Python extraction, evidence, date, history, annotation, and evaluation contracts.
+- Real Postgres account isolation, erasure permissions, and encrypted backup/restore.
+- Both development extraction baselines, including corpus/scorer fingerprints and zero failures.
+- Node API workflows, authentication, data controls, and interrupted-request recovery.
+- The React build and desktop/mobile browser suites, including keyboard and axe accessibility checks in both themes.
+- The production Docker image and its 512 MiB / 0.1 CPU resource profile.
+
+The quality gates require task, owner/date, and evidence metrics to meet their
+retained development values. Fingerprint changes need a reviewed baseline refresh.
+Latency and cost do not have unstable machine-dependent thresholds. Held-out
+scoring and real model calls are not run in CI.
+
+Reports, logs, and synthetic screenshots are retained as `ci-verification` artifacts
+with a run-attempt suffix for seven days, including on failure. New runs cancel
+older runs on the same ref. The workflow has a 20-minute timeout, read-only
+repository permissions, and pinned action revisions. Branch protection is a
+separate repository setting. Automated accessibility checks supplement manual
+screen-reader and usability review; they do not certify complete WCAG conformance.
+
+## Separate legacy backend
+
+The preserved FastAPI/RAG code in `app/` has its own `requirements-rag.txt` and
+[backend guide](rag-backend.md). It is not used by the BriefActions React UI or
+covered by these transcript-workflow CI checks. Use a separate Python environment
+for its dependencies.
