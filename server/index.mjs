@@ -183,7 +183,7 @@ export function createApp({historyPath, config=loadConfig(), maxWorkers=config.m
         try{accountId=await verifyAccount(token);}catch{throw new HttpError(503,'Authentication is temporarily unavailable.','auth.unavailable',2);}finally{authChecks--;}
         if(!UUID.test(accountId || ''))throw new HttpError(401,'Your session has expired. Sign in again.','auth.invalid');
         if(!allow(accountId))throw new HttpError(429,'Too many requests. Try again in a minute.','account.throttled',60);
-        if(req.method==='POST' && pathname==='/api/runs' && !allowAnalysis(accountId))throw new HttpError(429,'Analysis limit reached. Try again in a minute.','analysis.throttled',60);
+        if(req.method==='POST' && (pathname==='/api/runs' || /^\/api\/runs\/[a-f0-9]{32}\/updates$/.test(pathname)) && !allowAnalysis(accountId))throw new HttpError(429,'Analysis limit reached. Try again in a minute.','analysis.throttled',60);
       }
       const call=request=>runWorker(request,accountId);
       let match;
@@ -222,6 +222,10 @@ export function createApp({historyPath, config=loadConfig(), maxWorkers=config.m
       if (req.method === 'POST' && pathname === '/api/runs') {
         const input = await body(req);
         return json(res, 201, await call({transcript:input.transcript,reference_date:input.reference_date,clusters:input.clusters ?? 3,request_id:input.request_id,title:input.title ?? '',operation:'analyze'}));
+      }
+      if(req.method==='POST' && (match=pathname.match(/^\/api\/runs\/([a-f0-9]{32})\/(updates|update-draft|update-confirm)$/))){
+        const input=await body(req),operation={updates:'plan_update','update-draft':'plan_update_draft','update-confirm':'plan_update_confirm'}[match[2]];
+        return json(res,match[2]==='updates'?201:200,await call({...input,operation,run_id:match[1]}));
       }
       if ((match = pathname.match(/^\/api\/runs\/([a-f0-9]{32})(?:\/(finalize|draft|title|progress|manual-actions|history.json|tasks.csv))?$/))) {
         const [, run_id, action] = match;

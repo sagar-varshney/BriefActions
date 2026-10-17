@@ -32,7 +32,7 @@ important meeting records. Provider limits and available plans can change.
 ## Set up Supabase
 
 1. Create a project. Keep the database password server-side.
-2. Run all `deploy/migrations/*.sql` files in filename order (currently `001_accounts.sql`, `002_data_controls.sql`, and `003_backup_metadata.sql`), in the project's SQL editor as the
+2. Run all `deploy/migrations/*.sql` files in filename order (currently `001_accounts.sql`, `002_data_controls.sql`, `003_backup_metadata.sql`, and `004_plan_updates.sql`), in the project's SQL editor as the
    database administrator. It creates a private `flow` schema and restricted
    `flow_app` role. Never expose that schema through the browser Data API.
 3. In Auth, enable the GitHub OAuth provider and configure a GitHub OAuth app.
@@ -88,6 +88,14 @@ a public host. The local workspace remains available through `pnpm dev` without
 Supabase; hosted accounts do not inherit that local database or its browser drafts.
 Existing local transcripts are preserved on your machine and are not uploaded
 automatically.
+
+## Upgrading an existing deployment
+
+Apply `004_plan_updates.sql` before running the follow-up plan feature. It updates
+source erasure so all descendant plan versions containing copied transcript text
+are removed too. SQLite installations use the same application behavior without
+a separate migration. Generate and test a new backup after a migration; older
+backups require their matching repository/migration version for recovery.
 
 ## Other Docker hosts
 

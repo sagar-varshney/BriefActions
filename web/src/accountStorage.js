@@ -15,6 +15,7 @@ export default {
     }
     if(broadcast)localStorage.setItem(key('flow.erasure'),JSON.stringify({id,at:Date.now()}));
   },
+  broadcastErasure:ids=>localStorage.setItem(key('flow.erasure'),JSON.stringify({ids,at:Date.now()})),
   clearWorkspace:(broadcast=true)=>{
     const prefix=account?`flow.account.${account}.`:'flow.';
     for(const k of Object.keys(localStorage))if(k.startsWith(prefix) && k!=='flow.theme')localStorage.removeItem(k);

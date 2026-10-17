@@ -33,20 +33,32 @@ def delete_input(history,run_id,kind):
         conn.execute('BEGIN IMMEDIATE')
         row=conn.execute('SELECT kind FROM events WHERE run_id=? ORDER BY event_id',(run_id,)).fetchone()
         if not row:
-            if conn.execute('SELECT run_id FROM deleted_inputs WHERE run_id=?',(run_id,)).fetchone():return {'deleted':True}
+            if conn.execute('SELECT run_id FROM deleted_inputs WHERE run_id=?',(run_id,)).fetchone():
+                return {'deleted':True,'deleted_ids':[r[0] for r in conn.execute('SELECT run_id FROM deleted_inputs')]}
             raise KeyError(run_id)
         if row[0]!=kind:raise KeyError(run_id)
+        # Follow-up plans contain copied source evidence. Erase descendants too.
+        children={}
+        for child,payload in conn.execute("SELECT run_id,payload FROM events WHERE kind='extraction'"):
+            parent=json.loads(payload).get('settings',{}).get('plan_update',{}).get('base_run_id')
+            children.setdefault(parent,[]).append(child)
+        victims={run_id}
+        pending=[run_id]
+        while pending:
+            for child in children.get(pending.pop(),[]):
+                if child not in victims:victims.add(child);pending.append(child)
         if history.database_url:
             conn.execute('SELECT flow.erase_input(?)',(run_id,))
         else:
             snapshots=[json.loads(p)['snapshot'] for (p,) in conn.execute("SELECT payload FROM events WHERE run_id=? AND kind='annotation_split'",(run_id,))]
             for snapshot in snapshots:
-                victims=[eid for eid,k,p in conn.execute("SELECT event_id,kind,payload FROM events WHERE kind IN ('annotation_split','reviewed_benchmark')") if json.loads(p).get('snapshot')==snapshot]
-                for eid in victims:conn.execute('DELETE FROM events WHERE event_id=?',(eid,))
-            conn.execute('DELETE FROM events WHERE run_id=?',(run_id,))
-            conn.execute('DELETE FROM annotation_drafts WHERE case_id=?',(run_id,))
-            conn.execute('INSERT INTO deleted_inputs(run_id) VALUES (?) ON CONFLICT(run_id) DO NOTHING',(run_id,))
-    return {'deleted':True}
+                dependent_events=[eid for eid,k,p in conn.execute("SELECT event_id,kind,payload FROM events WHERE kind IN ('annotation_split','reviewed_benchmark')") if json.loads(p).get('snapshot')==snapshot]
+                for eid in dependent_events:conn.execute('DELETE FROM events WHERE event_id=?',(eid,))
+            for victim in victims:
+                conn.execute('DELETE FROM events WHERE run_id=?',(victim,))
+                conn.execute('DELETE FROM annotation_drafts WHERE case_id=?',(victim,))
+                conn.execute('INSERT INTO deleted_inputs(run_id) VALUES (?) ON CONFLICT(run_id) DO NOTHING',(victim,))
+    return {'deleted':True,'deleted_ids':sorted(victims)}
 
 def close_account(history):
     with history.connection(allow_closing=True) as conn:

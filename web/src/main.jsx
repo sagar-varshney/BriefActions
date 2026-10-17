@@ -15,6 +15,7 @@ import PrivacyPage from './PrivacyPage.jsx';
 import MeetingHistory from './MeetingHistory.jsx';
 import AllTasks,{initialTaskFilters} from './AllTasks.jsx';
 import PlanExport from './PlanExport.jsx';
+import PlanChangeReview,{FollowupForm} from './PlanUpdates.jsx';
 import ProductBrand from './ProductBrand.jsx';
 import SourceTranscript from './SourceTranscript.jsx';
 import WorkspaceSummary from './WorkspaceSummary.jsx';
@@ -195,7 +196,7 @@ function App({account,signOut,completeAccountDeletion,authError}) {
     return ()=>{alive=false;};
   },[]);
   useEffect(()=>{
-    const erased=e=>{if(e.key!==accountStorage.erasureKey() || !e.newValue)return;try{const value=JSON.parse(e.newValue);value.account?accountStorage.clearWorkspace(false):accountStorage.forgetInput(value.id,false);}finally{location.reload();}};
+    const erased=e=>{if(e.key!==accountStorage.erasureKey() || !e.newValue)return;try{const value=JSON.parse(e.newValue);value.account?accountStorage.clearWorkspace(false):(value.ids || [value.id]).forEach(id=>accountStorage.forgetInput(id,false));}finally{location.reload();}};
     window.addEventListener('storage',erased);return()=>window.removeEventListener('storage',erased);
   },[]);
   useEffect(()=>{
@@ -227,6 +228,26 @@ function App({account,signOut,completeAccountDeletion,authError}) {
         accountStorage.removeItem('flow.pendingAnalysis');setPending(null);stashInput(input,sourceContext);
       }
     }finally{analysisBusy.current=false;setBusy(false);}
+  }
+  async function startPlanUpdate(input){
+    if(!stashInput())throw new Error('Browser storage is unavailable. Copy your current transcript before continuing.');
+    setBusy(true);setError('');
+    try{
+      let value;
+      try{value=await api(`/runs/${run.id}/updates`,{method:'POST',body:JSON.stringify(input)});}
+      catch(e){if(!e.retryable)throw e;try{value=await api(`/runs/${input.request_id}`);}catch{throw e;}}
+      adopt(value);showInput(value);commitRoute({page:'extract',runId:value.id});
+      afterRender(()=>{const heading=document.getElementById('plan-comparison-title');heading?.focus({preventScroll:true});heading?.scrollIntoView({block:'start',behavior:'instant'});});
+    }finally{setBusy(false);}
+  }
+  async function confirmPlanUpdate(payload){
+    setBusy(true);setError('');
+    try{
+      let value;
+      try{value=await api(`/runs/${run.id}/update-confirm`,{method:'POST',body:JSON.stringify(payload)});}
+      catch(e){if(!e.retryable)throw e;try{value=await api(`/runs/${run.id}`);if(value.status!=='confirmed')throw e;}catch{throw e;}}
+      adopt(value);afterRender(()=>document.getElementById('confirmed-plan-title')?.focus());
+    }finally{setBusy(false);}
   }
   async function finalize(event) {
     event.preventDefault();setError('');setBusy(true);
@@ -279,7 +300,8 @@ function App({account,signOut,completeAccountDeletion,authError}) {
         {authError&&<div className="notice error" role="alert">{authError}</div>}{error&&<div className="notice error" role="alert">{error}{!config&&<button className="text-button" onClick={()=>location.reload()}>Retry workspace loading</button>}<button aria-label="Dismiss error" onClick={()=>setError('')}>×</button></div>}
         {page==='extract'&&<>
           {run?<div className="meeting-heading"><div className="meeting-title"><h1 tabIndex={-1}>{run.title || `Meeting ${run.reference_date}`}</h1><p>{run.reference_date} <span aria-hidden="true">·</span> {run.status==='confirmed'?'Your confirmed plan':'Review your suggested tasks'}</p></div><div className="meeting-heading-actions"><button type="button" className="button secondary" disabled={busy || restoring || !!pending} onClick={newMeeting}>New meeting</button><button type="button" className="text-button" aria-label="Edit meeting input" aria-expanded={editorVisible} aria-controls="meeting-editor" disabled={busy || restoring || !!pending} onClick={()=>editorVisible?setEditorOpen(false):openEditor()}>{editorVisible?'Close editor':'Edit meeting'}</button></div></div>:<div className="page-intro extraction-intro"><div><div className="eyebrow accent">LESS FOLLOW-UP. MORE FOLLOW-THROUGH.</div><h1 tabIndex={-1}>Make your next move <em>clear.</em></h1><p>Turn the conversation into a plan. Every task, grounded in what was said.</p></div><div className="intro-note"><Icon name="check" size={17}/><span>Evidence attached.<br/><strong>You make the final call.</strong></span></div></div>}
-          <WorkspaceSummary run={run} drafts={drafts} selected={selected}/>
+          {run?.superseded_by&&<div className="notice" role="status">This is an earlier plan version. Its tasks and evidence are preserved; All tasks uses the newer version.{run.superseded_available?<button className="text-button" disabled={busy} onClick={()=>openRun(run.superseded_by)}>Open newer plan</button>:<p>The newer version has been deleted.</p>}</div>}
+          {(!run?.settings?.plan_update||run.status==='confirmed')&&<WorkspaceSummary run={run} drafts={drafts} selected={selected}/>}
           <div className="review-flow-bar"><div className="steps"><span className={!run?'current':''}><b>1</b> Add transcript</span><span className={run?.status==='review'?'current':''}><b>2</b> Review proposals</span><span className={run?.status==='confirmed'?'current':''}><b>3</b> Confirm plan</span></div>{run&&<details className="layout-options"><summary>Layout options</summary><WorkspaceLayout width={sourceWidth} onChange={resizeSource}/></details>}</div>
           {!run&&(transcript || meetingTitle || meetingDate)&&<div className="meeting-actions"><button className="text-button" disabled={busy || restoring || !!pending} onClick={discardInput}>Discard transcript draft</button></div>}
           {analysisStatus&&<p className="analysis-feedback" role="status">{analysisStatus}</p>}
@@ -307,12 +329,14 @@ function App({account,signOut,completeAccountDeletion,authError}) {
             {run.status==='confirmed'?<>
               <div className="section-heading"><div><h2 id="confirmed-plan-title" tabIndex={-1}>Your confirmed plan</h2><p>{run.final_tasks.length} task{run.final_tasks.length===1?'':'s'} confirmed. Next: update their progress below.</p></div><Download href={`/api/runs/${run.id}/tasks.csv`}>Export CSV</Download></div>
               {run.final_tasks.length===0&&<div className="notice">You confirmed a plan with no tasks. All proposals were rejected.</div>}
+              {!run.superseded_by&&<FollowupForm key={`followup-${run.id}`} run={run} client={draftClient} busy={busy} onStart={startPlanUpdate}/>}
               <PlanExport key={`export-${run.id}`} run={run}/>
               <TaskFollowThrough key={`progress-${run.id}`} run={run} targetId={taskTarget} onViewChange={()=>{setActiveEvidence(null);evidenceTrigger.current=null;}} onUpdate={value=>{setRun(value);setActiveEvidence(null);evidenceTrigger.current=null;}} renderEvidence={(task,i)=><Evidence passages={task.evidence} onInspect={inspectEvidence} label={`confirmed task ${i+1}`}/>}/>
-            </>:<ReviewProposals key={`review-${run.id}`} run={run} drafts={drafts} busy={busy} onViewChange={()=>{setActiveEvidence(null);evidenceTrigger.current=null;}} onChange={updateReview} onConfirm={finalize} renderEvidence={(p,i)=><Evidence passages={p.evidence} onInspect={inspectEvidence} label={`task ${i+1}`}/>}>
+              {run.settings?.plan_update&&<details className="disclosure"><summary>Review the changes behind this plan</summary><PlanChangeReview key={`changes-${run.id}`} run={run} client={draftClient} busy={busy} onConfirm={confirmPlanUpdate} onOpen={openRun} onViewChange={()=>{setActiveEvidence(null);evidenceTrigger.current=null;}} renderEvidence={(task,label)=><Evidence passages={task.evidence} onInspect={inspectEvidence} label={label}/>} /></details>}
+            </>:run.settings?.plan_update?<PlanChangeReview key={`changes-${run.id}`} run={run} client={draftClient} busy={busy} onConfirm={confirmPlanUpdate} onOpen={openRun} onViewChange={()=>{setActiveEvidence(null);evidenceTrigger.current=null;}} renderEvidence={(task,label)=><Evidence passages={task.evidence} onInspect={inspectEvidence} label={label}/>} />:<ReviewProposals key={`review-${run.id}`} run={run} drafts={drafts} busy={busy} onViewChange={()=>{setActiveEvidence(null);evidenceTrigger.current=null;}} onChange={updateReview} onConfirm={finalize} renderEvidence={(p,i)=><Evidence passages={p.evidence} onInspect={inspectEvidence} label={`task ${i+1}`}/>}>
               <div className="review-save-state"><p role="status" className="form-hint">{saveStatus}</p><details className="review-recovery"><summary>Review help</summary><p>Missing owners and dates stay Unknown. Your edits save automatically; the original supporting passage stays attached. You can restore this browser’s review copy below.</p><button type="button" className="text-button" onClick={()=>{try{const cached=JSON.parse(accountStorage.getItem(draftKey(run.id))||'null');if(cached){const merged=reviewDrafts(run.proposals,cached.decisions);setDrafts(merged);scheduleSave(run.id,merged);}}catch{setError('Browser draft could not be restored.');}}}>Restore browser copy</button></details></div>
             </ReviewProposals>}
-            {run.status==='review'&&<MissedActionForm key={run.id} run={run} busy={busy} onAdd={addMissed}/>}
+            {run.status==='review'&&!run.settings?.plan_update&&<MissedActionForm key={run.id} run={run} busy={busy} onAdd={addMissed}/>}
             <ConversationChanges changes={run.settings?.conversation_changes} renderEvidence={(change,i)=><Evidence passages={change.evidence} onInspect={inspectEvidence} label={`conversation change ${i+1}`}/>}/>
             <details className="disclosure meeting-overview"><summary>Meeting details</summary>
             {run.summary&&<div className="summary"><div className="eyebrow accent">MEETING SUMMARY</div><p>{run.summary}</p></div>}

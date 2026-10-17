@@ -33,6 +33,50 @@ without changing your work, and open it again later.
 **Edit meeting** opens the input editor. Closing it preserves unfinished edits.
 Input changes do not replace existing evidence or automatically run another analysis.
 
+## Review a follow-up conversation
+
+Open a confirmed plan and expand **Review a follow-up conversation**. Paste the
+next conversation, choose its meeting date, then **Compare with this plan**. The
+comparison is a separate saved draft; the existing plan remains active.
+
+The review separates **Added**, **Changed**, **Cancelled**, and **Unchanged** tasks.
+Use the category buttons to narrow the view. Check **Previous plan** against
+**Proposed update**, correct the suggested fields if needed, and expand
+**Check supporting passages** to inspect the original and follow-up words.
+
+- Check **Add this task** to include an addition.
+- Check **Apply this update** to replace an existing task's details.
+- Check **Approve cancellation** to remove that task from the current plan.
+- Leave a change unchecked to keep the old task, or skip a new addition.
+  Tasks not mentioned in the follow-up remain unchanged.
+
+Nothing is approved automatically. **Confirm updated plan** saves your choices
+and replaces the old version in **All tasks**. Existing task progress carries over;
+new tasks start To do. The previous plan, its evidence, and its exports remain in
+history. An earlier version links to the newer one and cannot receive new progress
+updates. You can inspect the saved choices under **Review the changes behind this plan**.
+
+Follow-up input autosaves in this browser; comparison choices also save to history.
+If another tab changes a review, confirmation pauses. **Use saved review** replaces
+your browser choices with the server-saved review. Competing follow-up drafts cannot
+both replace the same plan; compare again against the current version if necessary.
+
+Matching is conservative: repeated task wording can identify an existing task,
+and a uniquely named reference such as “Move the report to Monday” can propose a
+deadline change. “Cancel that task” only resolves an immediate same-speaker action
+in the follow-up; it does not guess a task from the old plan. Ambiguous references
+show a reminder and keep existing work. Broad paraphrases may appear as additions;
+inspect both the task list and the passages before confirming. Missing details in a
+repeated task do not erase previously confirmed owners or deadlines.
+
+A follow-up contains the previous source plus the new conversation, with a dated
+separator. The follow-up date resolves new relative deadlines; existing dates do
+not shift. The combined source is limited to 100,000 characters and a comparison
+to 200 tasks. Deleting a source erases every later version containing a copy of it.
+Deleting a replacement does not reactivate historical tasks in All tasks.
+
+[Example change review](screenshots/plan-changes-light.png).
+
 ## Find tasks across meetings
 
 Open **All tasks** to see confirmed tasks. The initial view shows open work;

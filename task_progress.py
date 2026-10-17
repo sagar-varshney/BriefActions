@@ -36,6 +36,7 @@ def update(history, run_id, proposal_id, status, version, request_id):
             if (prior['proposal_id'],prior['after'],prior['base_version'])!=(proposal_id,status,version):
                 raise DataError('This progress request ID belongs to another change.',409)
             return  # A lost-response retry never overwrites newer progress.
+        if any(e['kind']=='plan_superseded' for e in events):raise DataError('This is an earlier plan version. Open the latest plan to update task progress.',409)
         current=states[proposal_id]
         if current['version']!=version:raise DataError('Task progress changed in another tab. Refresh progress before trying again.',409)
         if current['status']==status:return

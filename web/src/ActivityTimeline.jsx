@@ -14,6 +14,9 @@ function humanize(events,proposals){
    }previous=new Map(p.decisions.map(d=>[d.proposal_id,d]));if(!lines.length)lines.push('Review draft saved.');
   }
   else if(event.kind==='review'){heading='Submitted review decisions';for(const d of p.decisions){lines.push(`Task ${byId.get(d.proposal_id)?.number}: ${d.accept?'kept':'rejected'}.`);for(const [field,change] of Object.entries(d.corrections || {}))lines.push(`Task ${byId.get(d.proposal_id)?.number} ${field}: ${change.before} → ${change.after}`);}}
+  else if(event.kind==='plan_update_draft'){heading='Saved change review';lines.push(`${p.decisions.filter(d=>d.apply).length} proposed changes selected.`);}
+  else if(event.kind==='plan_update_review'){heading='Reviewed follow-up changes';lines.push(`${p.decisions.filter(d=>d.apply).length} changes approved. Previous plan preserved.`);}
+  else if(event.kind==='plan_superseded'){heading='Replaced by a reviewed follow-up';lines.push('This version remains in history. All tasks uses its approved replacement.');}
   else if(event.kind==='final'){heading='Confirmed plan';lines.push(`${p.tasks.length} task${p.tasks.length===1?'':'s'} saved in the immutable confirmed plan.`);}
   else if(event.kind==='meeting_title'){heading='Renamed meeting';lines.push(`Meeting name: ${title} → ${p.title || 'Unnamed meeting'}`);title=p.title || 'Unnamed meeting';}
   else if(event.kind==='task_progress'){heading='Updated task progress';lines.push(`${finalTasks.get(p.proposal_id) || 'Task'}: ${progressLabels[p.before] || p.before} → ${progressLabels[p.after] || p.after}`);}

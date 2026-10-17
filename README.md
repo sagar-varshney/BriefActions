@@ -14,7 +14,7 @@ Missing owners and dates stay **Unknown**.
 ![BriefActions task review beside the supporting transcript, in light mode](docs/screenshots/review-light.png)
 
 Screenshots use synthetic example conversations.
-[Homepage](docs/screenshots/homepage.png) · [Dark mode](docs/screenshots/review-dark.png) · [All tasks](docs/screenshots/all-tasks-light.png) · [Sign-in](docs/screenshots/sign-in-light.png)
+[Homepage](docs/screenshots/homepage.png) · [Dark mode](docs/screenshots/review-dark.png) · [All tasks](docs/screenshots/all-tasks-light.png) · [Plan changes](docs/screenshots/plan-changes-light.png) · [Sign-in](docs/screenshots/sign-in-light.png)
 
 ## How it works
 
@@ -36,6 +36,7 @@ model experiments are separate, explicit developer tools.
 | Evidence beside every proposal | Jump to the original words, then return to the task you were reviewing. |
 | Review before confirmation | Edit tasks, owners, and deadlines; reject suggestions or add an evidence-backed action. |
 | Repeated and changed commitments | Merge compatible repeats and inspect evidence for supported deadline revisions or cancellations. Ambiguous references still need review. |
+| Follow-up plan review | Compare Added, Changed, Cancelled, and Unchanged tasks; approve a new version while preserving the previous plan. |
 | Flexible review layouts | Choose compact rows, detailed cards, or one task at a time; adjust the transcript panel on desktop. |
 | Autosaved work | Recover unfinished inputs and reviews after a reload, with explicit recovery for interrupted analyses. |
 | All tasks | Search confirmed work by task, owner, or meeting; filter by progress, Today, Overdue, Upcoming, or Unassigned. |

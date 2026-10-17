@@ -43,6 +43,7 @@ def search(history, *, today=None, view='all', status='open', query='', page=0, 
             {field('e','reference_date')} reference_date
           FROM events f JOIN events e ON e.run_id=f.run_id AND e.kind='extraction'
             CROSS JOIN {expand} WHERE f.kind='final'
+            AND NOT EXISTS(SELECT 1 FROM events replacement WHERE replacement.run_id=f.run_id AND replacement.kind='plan_superseded')
         ), matches AS MATERIALIZED (
           SELECT * FROM tasks WHERE {statuses[status]} AND
             (?='' OR {contains}({lower}(task),{lower}(?))>0 OR

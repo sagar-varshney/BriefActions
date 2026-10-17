@@ -42,7 +42,14 @@ def run_snapshot(run_id):
         draft={**draft,'decisions':[decisions.get(p['proposal_id'],{k:p[k] for k in ('proposal_id','task','owner','deadline')}|{'accept':False}) for p in proposals]}
     final = next((e['payload']['tasks'] for e in events if e['kind'] == 'final'), None)
     name=next((e['payload'] for e in reversed(events) if e['kind']=='meeting_title'),None)
-    return {'id':run_id, 'created_at':events[0]['created_at'], **original,'proposals':proposals,
+    replacement=next((e['payload']['run_id'] for e in events if e['kind']=='plan_superseded'),None)
+    replacement_available=False
+    if replacement:
+        with store().connection() as conn:
+            replacement_available=bool(conn.execute("SELECT run_id FROM events WHERE run_id=? AND kind='final'",(replacement,)).fetchone())
+    update_draft=next((e['payload'] for e in reversed(events) if e['kind']=='plan_update_draft'),None)
+    return {'superseded_by':replacement,'superseded_available':replacement_available,'update_draft':update_draft,
+            'id':run_id, 'created_at':events[0]['created_at'], **original,'proposals':proposals,
             'title':name['title'] if name else original.get('title',''),'title_version':name['version'] if name else 0,
             'summary':original.get('settings',{}).get('summary',''),
             'task_progress':project_progress(events),
@@ -57,6 +64,14 @@ def report_paths():
 
 def handle(request):
     op = request.get('operation')
+    if op in ('plan_update','plan_update_draft','plan_update_confirm'):
+        from plan_updates import create, save_review
+        if op=='plan_update':
+            run_id=create(store(),request.get('run_id'),request.get('transcript'),request.get('reference_date'),request.get('request_id'))
+        else:
+            run_id=request.get('run_id')
+            save_review(store(),run_id,request.get('decisions'),request.get('version'),confirm=op=='plan_update_confirm')
+        return run_snapshot(run_id)
     if op=='task_search':
         from task_dashboard import search
         return search(store(), **{key:request[key] for key in ('today','view','status','query','page','page_size') if key in request})
@@ -88,7 +103,8 @@ def handle(request):
         if op=='reviewed_report':return reviewed.get(request.get('report_id'))
         return reviewed.run(request.get('snapshot'),request.get('split','dev'),request.get('acknowledge_heldout',False),request.get('request_id'))
     if op=='manual_action':
-        run_snapshot(request.get('run_id'))
+        snapshot=run_snapshot(request.get('run_id'))
+        if snapshot['settings'].get('plan_update'):raise ApiError('Review this follow-up with the comparison controls.',409)
         try:store().add_manual(request.get('run_id'),request.get('item'),request.get('request_id'))
         except ValueError as error:
             if 'already' in str(error) or 'Request ID' in str(error):raise ApiError(str(error),409) from error
@@ -120,7 +136,8 @@ def handle(request):
         if op=='annotation_export': return annotations.export(request.get('snapshot'))
         raise ApiError('Unknown annotation operation',404)
     if op == 'draft':
-        run_snapshot(request.get('run_id'))
+        snapshot=run_snapshot(request.get('run_id'))
+        if snapshot['settings'].get('plan_update'):raise ApiError('Review this follow-up with the comparison controls.',409)
         try:
             return store().save_draft(request.get('run_id'),request.get('decisions'),request.get('version'),request.get('client_id'),request.get('edit_id'))
         except ValueError as error:
@@ -181,6 +198,7 @@ def handle(request):
     if op == 'finalize':
         run_id = request.get('run_id')
         snapshot = run_snapshot(run_id)
+        if snapshot['settings'].get('plan_update'):raise ApiError('Confirm this follow-up with the comparison controls.',409)
         if snapshot['status'] == 'confirmed':
             raise ApiError('This plan is already confirmed. Analyze again to create a new run.',409)
         decisions = request.get('decisions')

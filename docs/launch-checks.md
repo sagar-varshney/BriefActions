@@ -126,3 +126,13 @@ two-account isolation, history after redeploy, and `/api/health`. Enable the bac
 secrets/variable, run a backup, and test restoration into an isolated empty database.
 Neither credentials nor live deployment configuration are supplied automatically.
 Follow [deployment setup](deployment.md) and [backup recovery](backups.md).
+
+## Follow-up plan review
+
+With two real hosted accounts, confirm that only the owner can compare a follow-up,
+restore its review draft, confirm changes, or export either plan version. Check that
+unapproved changes retain old tasks, All tasks shows only the current version,
+and task progress carries over. Submit competing drafts in separate tabs; only
+one may replace the same base plan. Erase the original input and verify that later
+versions containing its source disappear too, including after a backup restore
+with a fresh erasure ledger. Apply migration `004_plan_updates.sql` before this check.

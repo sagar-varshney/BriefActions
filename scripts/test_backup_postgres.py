@@ -43,7 +43,19 @@ try:
     rename(store,keep,'Reviewed planning meeting',0)
     from task_progress import update as track, project as progress
     track(store,keep,proposals[0]['proposal_id'],'in_progress',0,'a'*32)
+    from plan_updates import create as followup,save_review as review_changes
+    def approve_update(parent,text):
+        child=followup(store,parent,text,'2026-10-13',uuid4().hex)
+        rows=store.get_run(child)[0]['payload']['settings']['plan_update']['rows']
+        choices=[{'change_id':r['change_id'],'apply':True,**{k:(r['after'] or r['before'])[k] for k in ('task','owner','deadline')}} for r in rows if r['kind']!='unchanged']
+        review_changes(store,child,choices,0,confirm=True)
+        return child
+    plan_root=store.create_run(text,'2026-10-12',proposals,title='Versioned plan fixture')
+    store.finalize(plan_root,[dict(p,accept=True) for p in proposals])
+    plan_current=approve_update(plan_root,'Maya: Move send the report to Friday.')
     erased=store.create_run('Erased after backup.','2026-10-12',[])
+    store.finalize(erased,[])
+    erased_followup=approve_update(erased,'Ada will review the budget tomorrow.')
     bob_run=other.create_run('Account erased after backup.','2026-10-12',[])
     annotations=AnnotationStore(store);cases=[]
     for group in ['one','two','three']:
@@ -82,7 +94,11 @@ try:
         assert search(restored,'Reviewed planning')['items'][0]['title']=='Reviewed planning meeting'
         assert progress(self_snapshot)[proposals[0]['proposal_id']]['status']=='in_progress'
         assert self_snapshot==store.get_run(keep), 'Original input, evidence, corrections, final plan or IDs changed'
-        for rid in [erased,cases[0]]:
+        assert restored.get_run(plan_current)==store.get_run(plan_current), 'Plan comparison or approvals changed during restore'
+        from task_dashboard import search as tasks
+        active=tasks(restored,today='2026-10-13',status='',query='Versioned plan fixture')['items']
+        assert len(active)==1 and active[0]['run_id']==plan_current, 'Restored task dashboard duplicated superseded tasks'
+        for rid in [erased,erased_followup,cases[0]]:
             try:restored.get_run(rid)
             except KeyError:pass
             else:raise AssertionError('Post-backup erased transcript was restored')

@@ -3,7 +3,7 @@
 `scripts/backup.py` streams a consistent, repeatable-read PostgreSQL snapshot of
 all application accounts into an authenticated AES-256-GCM file. It includes
 events, original inputs/evidence, corrections, confirmed plans, annotation reviews,
-server-saved drafts, task progress events, frozen splits, comparisons, and deletion markers. Only encrypted
+server-saved drafts, task progress events, follow-up comparisons/approvals and version links, frozen splits, comparisons, and deletion markers. Only encrypted
 bytes are written during backup; output files have mode 0600 and cannot overwrite
 an existing file. Files are limited to 8 GiB and records to 64 MiB.
 
@@ -16,8 +16,9 @@ access requires the matching Auth users, not newly registered replacement accoun
 ## Setup and scheduled backups
 
 1. Apply all migrations in `deploy/migrations/` in filename order, including
-   `003_backup_metadata.sql`. It creates an administrator-only stable database ID
-   used to prevent mixing backups and erasure ledgers from different projects.
+   `003_backup_metadata.sql` (database identity) and `004_plan_updates.sql`
+   (erasure of dependent follow-up plans). The stable database ID prevents mixing
+   backups and erasure ledgers from different projects.
 2. Install `requirements-backup.txt` in a private operator environment. Use Python
    3.10+ and a database administrator connection with `BYPASSRLS` or superuser
    privileges. The tool rejects the restricted `flow_app` role to avoid quietly

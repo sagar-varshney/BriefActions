@@ -20,6 +20,7 @@ React / Vite → Node HTTP API → Python bridge → extraction and history
 | `web_bridge.py`, `export_bridge.py` | JSON worker protocol and streaming workspace export |
 | `extraction.py`, `baseline_extractor.py` | Current evidence-backed rules and frozen original rules |
 | `flow_engine.py` | Summaries, task groups, workstream classification, and heuristic suggestions |
+| `plan_updates.py` | Conservative follow-up comparisons, versioned change review, atomic plan replacement, and progress carryover |
 | `history.py`, `task_dashboard.py` | Saved runs, drafts, decisions, progress, and cross-meeting task search |
 | `annotations.py`, `annotation_drafts.py`, `corpus_library.py` | Review submissions, autosaved labels, and verified input-only practice imports |
 | `reviewed_benchmarks.py`, `evaluate.py` | Frozen-snapshot comparisons and extraction scoring |
@@ -92,6 +93,9 @@ and [web_bridge.py](../web_bridge.py).
 | `GET /api/runs`, `GET /api/runs/:id` | List and inspect saved runs |
 | `GET /api/runs/search` | Paginated meeting-name/transcript search, date range, and review status |
 | `GET /api/tasks` | Paginated confirmed-task search and date/progress views; requires the device's `today` date |
+| `POST /api/runs/:id/updates` | Create/recover a follow-up comparison using `{transcript, reference_date, request_id}` |
+| `POST /api/runs/:id/update-draft` | Save `{decisions, version}` for a comparison without changing the active plan |
+| `POST /api/runs/:id/update-confirm` | Approve selected changes atomically and replace the previous active version |
 | `POST /api/runs/:id/title` | Versioned, audited meeting rename |
 | `POST /api/runs/:id/progress` | Retry-safe `{proposal_id, status, version, request_id}` update, separate from the confirmed plan |
 | `POST /api/runs/:id/manual-actions` | Add an evidence-backed proposal before confirmation |
@@ -112,7 +116,12 @@ and [web_bridge.py](../web_bridge.py).
 
 ## Persistence and review rules
 
-Original extraction events and confirmed plans remain unchanged. Review corrections,
+Original extraction events and confirmed plans remain unchanged. Follow-up comparisons
+store their source link and before/after rows in the new extraction event. Versioned
+`plan_update_draft` events retain choices and corrections; `plan_update_review`
+records confirmation. A `plan_superseded` event removes the old plan from All tasks
+without rewriting its final result. Confirmation and retained-task progress carryover
+share the account write lock; another draft cannot replace that same version again. Review corrections,
 manual proposals, renames, and progress have separate saved records. Autosaved
 review drafts use optimistic versions to reject stale writes. Matching analysis
 and progress request IDs recover saved results without duplicating an operation.
