@@ -230,6 +230,7 @@ function App({account,signOut,completeAccountDeletion,authError}) {
     }finally{analysisBusy.current=false;setBusy(false);}
   }
   async function startPlanUpdate(input){
+    if(pending || analysisBusy.current || restoring)throw new Error('Finish recovering the saved analysis before starting a follow-up comparison.');
     if(!stashInput())throw new Error('Browser storage is unavailable. Copy your current transcript before continuing.');
     setBusy(true);setError('');
     try{
@@ -241,6 +242,7 @@ function App({account,signOut,completeAccountDeletion,authError}) {
     }finally{setBusy(false);}
   }
   async function confirmPlanUpdate(payload){
+    if(pending || analysisBusy.current || restoring)throw new Error('Finish recovering the saved analysis before confirming this updated plan.');
     setBusy(true);setError('');
     try{
       let value;

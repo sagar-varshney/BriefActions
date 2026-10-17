@@ -11,7 +11,7 @@ export default function DataControls({completeAccountDeletion,onClosing}){
   async function erase(confirmation){
     if(target.account){try{await api('/account/delete',{method:'POST',body:JSON.stringify({confirmation})});}catch(e){const value=await refresh();if(value?.state==='deleting'){accountStorage.clearWorkspace();onClosing();}throw e;}accountStorage.clearWorkspace();await completeAccountDeletion();return;}
     const result=await api(`/${target.kind==='extraction'?'runs':'annotations'}/${target.id}/delete`,{method:'POST',body:JSON.stringify({confirmation})});
-    const ids=result.deleted_ids||[target.id];ids.forEach(id=>accountStorage.forgetInput(id,false));accountStorage.broadcastErasure(ids);location.hash='data';location.reload();
+    const ids=result.deleted_ids||[target.id];ids.forEach(id=>accountStorage.forgetInput(id,false));accountStorage.broadcastErasure(ids,target.id);location.hash='data';location.reload();
   }
   return <section aria-label="Data and account controls"><div className="page-intro"><div><div className="eyebrow accent">YOUR WORKSPACE, YOUR CONTROL</div><h1 tabIndex={-1}>Data & account.</h1><p>Export your workspace or permanently erase saved transcripts.</p></div></div>
     {error&&<div className="notice error" role="alert">{error}<button className="text-button" onClick={refresh}>Retry loading</button></div>}
