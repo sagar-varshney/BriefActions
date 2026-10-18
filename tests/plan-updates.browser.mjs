@@ -30,7 +30,13 @@ try{
  await page.evaluate(id=>localStorage.setItem('flow.pendingAnalysis',JSON.stringify({request_id:'f'.repeat(32),transcript:'Another unfinished analysis.',reference_date:'2026-10-17',clusters:1,source_context:id})),child);
  await page.reload();await page.getByRole('status').filter({hasText:'An unfinished analysis is saved.'}).waitFor();await page.getByRole('button',{name:'Confirm updated plan',exact:true}).click();await page.getByRole('alert').filter({hasText:'Finish recovering the saved analysis before confirming'}).waitFor();assert.equal((await (await fetch(base+'/api/runs/'+child)).json()).status,'review');await page.evaluate(()=>localStorage.removeItem('flow.pendingAnalysis'));await page.reload();await page.getByRole('heading',{name:'Review plan changes',exact:true}).waitFor();
  assert.equal((await (await fetch(base+'/api/tasks?today=2026-10-17&status=')).json()).total,3);
- const group=page.getByRole('group',{name:'Plan change types'});for(const [label,count] of [['Added',1],['Changed',1],['Cancelled',1],['Unchanged',1]])assert.equal(await group.getByRole('button',{name:`${label} (${count})`,exact:true}).count(),1);
+ const group=page.getByRole('group',{name:'Plan change types'});
+ for(const [label,number] of [['Added',4],['Changed',1],['Cancelled',2],['Unchanged',3]]){
+  const filter=group.getByRole('button',{name:`${label} (1)`,exact:true}),card=page.getByRole('article',{name:`${label} task ${number}`,exact:true});
+  assert.equal(await filter.count(),1);assert.equal(await card.locator('.badge').textContent(),label);
+  for(const icon of [filter.locator('svg'),card.locator('.badge svg')]){assert.equal(await icon.getAttribute('aria-hidden'),'true');assert.equal(await icon.getAttribute('focusable'),'false');assert.ok(await icon.isVisible());}
+ }
+ await page.waitForFunction(()=>document.title==='Extract & review · BriefActions');
  assert.equal(await page.getByRole('checkbox',{checked:true}).count(),0);
  await page.getByLabel('Apply added change for task 4',{exact:true}).check();await page.getByLabel('Owner for change 4',{exact:true}).fill('Uma');await page.getByLabel('Deadline for change 4',{exact:true}).fill('2026-');
  await page.getByRole('status').filter({hasText:'Review saved to history.'}).waitFor();

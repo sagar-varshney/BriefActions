@@ -1,7 +1,9 @@
 import React from 'react';
 import ThemeControl from './ThemeControl.jsx';
+import useDocumentTitle from './useDocumentTitle.js';
 
 export default function PrivacyPage(){
+  useDocumentTitle('Privacy & your data');
   return <main className="public-page" id="privacy-main"><a className="skip-link" href="#privacy-title">Skip to privacy information</a>
     <header className="privacy-toolbar"><a className="text-button" href="/">Back to BriefActions</a><ThemeControl/></header>
     <article className="panel privacy-copy"><div className="eyebrow accent">BRIEFACTIONS</div><h1 id="privacy-title" tabIndex={-1}>Privacy & your data</h1><p>How this tool handles your conversations and the work you save. Updated 17 October 2026.</p>

@@ -27,6 +27,7 @@ import WorkspaceLayout from './WorkspaceLayout.jsx';
 import HelpGuide from './HelpGuide.jsx';
 import WorkflowGuide from './WorkflowGuide.jsx';
 import useAfterRender from './useAfterRender.js';
+import useDocumentTitle from './useDocumentTitle.js';
 import ComparisonResults,{ResultSummary} from './ComparisonResults.jsx';
 import {readRoute,routePath} from './routing.js';
 import {readInputDraft,saveInputDraft,removeInputDraft} from './inputDraft.js';
@@ -66,6 +67,7 @@ function App({account,signOut,completeAccountDeletion,authError}) {
   const [helpTopic,setHelpTopic]=useState(null);
   const [taskFilters,setTaskFilters]=useState(initialTaskFilters),[taskTarget,setTaskTarget]=useState(()=>readRoute().taskId || null);
   const [page,setPageState] = useState(()=>readRoute().page);
+  useDocumentTitle(pages.find(section=>section.id===page)?.name || 'Extract & review');
   const navigation=useRef(null),deferredNavigation=useRef(null),navigationEpoch=useRef(0),committedURL=useRef(routePath(readRoute()));
   const [sourceWidth,setSourceWidth]=useState(()=>{try{const width=Number(accountStorage.getItem('flow.workspaceWidth'));return Number.isInteger(width)&&width>=32&&width<=55?width:43;}catch{return 43;}});
   function resizeSource(width){setSourceWidth(width);try{accountStorage.setItem('flow.workspaceWidth',String(width));}catch{}}

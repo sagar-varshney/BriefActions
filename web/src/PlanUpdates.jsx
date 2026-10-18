@@ -5,6 +5,10 @@ import {reviewError} from './reviewTools.js';
 import useAfterRender from './useAfterRender.js';
 const labels={added:'Added',changed:'Changed',cancelled:'Cancelled',unchanged:'Unchanged'};
 const fields=['task','owner','deadline'];
+function ChangeIcon({kind}){
+ const paths={added:'M12 5v14M5 12h14',changed:'m15 4 5 5M4 20l5-1L21 7l-4-4L5 15z',cancelled:'m6 6 12 12M6 18 18 6',unchanged:'M5 9h14M5 15h14'};
+ return <svg className="plan-change-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false"><path d={paths[kind]}/></svg>;
+}
 const read=key=>{try{return JSON.parse(accountStorage.getItem(key)||'null');}catch{return null;}};
 
 export function FollowupForm({run,client,busy,onStart}){
@@ -52,13 +56,13 @@ export default function PlanChangeReview({run,client,busy,onConfirm,renderEviden
  return <section className="plan-comparison" aria-labelledby="plan-comparison-title">
   <div className="section-heading"><div><div className="eyebrow accent">A PLAN THAT KEEPS THE CONVERSATION</div><h2 id="plan-comparison-title" tabIndex={-1} ref={afterRef}>{confirmed?'Reviewed plan changes':'Review plan changes'}</h2><p>{confirmed?'Your choices are saved below.':'Compare the previous plan with this follow-up. Existing tasks stay unless you approve a change.'}</p></div></div>
   <button type="button" className="text-button" disabled={busy} onClick={()=>onOpen(update.base_run_id)}>Open previous plan</button>
-  <div className="plan-change-filters" role="group" aria-label="Plan change types"><button type="button" className="button secondary" aria-pressed={filter==='all'} onClick={()=>{onViewChange();setFilter('all');}}>All ({rows.length})</button>{Object.entries(labels).map(([kind,label])=><button type="button" className="button secondary" key={kind} aria-pressed={filter===kind} onClick={()=>{onViewChange();setFilter(kind);}}>{label} ({counts[kind]})</button>)}</div>
+  <div className="plan-change-filters" role="group" aria-label="Plan change types"><button type="button" className="button secondary" aria-pressed={filter==='all'} onClick={()=>{onViewChange();setFilter('all');}}>All ({rows.length})</button>{Object.entries(labels).map(([kind,label])=><button type="button" className="button secondary" key={kind} aria-pressed={filter===kind} onClick={()=>{onViewChange();setFilter(kind);}}><ChangeIcon kind={kind}/>{label} ({counts[kind]})</button>)}</div>
   {update.warnings.map((warning,i)=><div className="notice warning" key={i}><p>{warning.message}</p>{renderEvidence(warning,`unresolved change ${i+1}`)}</div>)}
   {blocked&&<p className="notice warning" role="alert">This comparison changed in another tab. Your browser copy is preserved. Reload the saved review before continuing.</p>}
   <form onSubmit={submit} noValidate>
    {!visible.length&&<p className="notice">No tasks in this change category.</p>}
    {visible.map((row,index)=>{const d=byId.get(row.change_id),number=rows.indexOf(row)+1,disabled=busy||blocked||confirmed;return <article className={`panel plan-change-card plan-change-${row.kind}`} key={row.change_id} aria-label={`${labels[row.kind]} task ${number}`}>
-    <div className="plan-change-heading"><span className="badge neutral">{labels[row.kind]}</span><h3>{(row.after||row.before).task}</h3></div>
+    <div className="plan-change-heading"><span className="badge neutral"><ChangeIcon kind={row.kind}/>{labels[row.kind]}</span><h3>{(row.after||row.before).task}</h3></div>
     {row.kind==='unchanged'?<><p className="form-hint">Kept from the previous plan. No approved change is needed.</p><FieldSummary task={row.before}/></>:<>
      <label className="plan-change-choice"><input type="checkbox" aria-label={`Apply ${row.kind} change for task ${number}`} checked={!!d?.apply} onChange={e=>change(row.change_id,{apply:e.target.checked})} disabled={disabled}/><span>{row.kind==='cancelled'?'Approve cancellation':row.kind==='added'?'Add this task':'Apply this update'}{confirmed?(d?.apply?' · Applied':' · Not applied'):''}</span></label>
      <div className="plan-change-columns">{row.before&&<div><h4>Previous plan</h4><FieldSummary task={row.before}/></div>}

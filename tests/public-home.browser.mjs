@@ -7,6 +7,8 @@ import {chromium} from 'playwright';
 import AxeBuilder from '@axe-core/playwright';
 import {createApp} from '../server/index.mjs';
 import {loadConfig} from '../server/config.mjs';
+import {navigate} from './browser-helpers.mjs';
+const titleIs=(page,title)=>page.waitForFunction(expected=>document.title===expected,title);
 const folder=await mkdtemp(path.join(tmpdir(),'flow-public-home-'));
 const shots=process.env.FLOW_SCREENSHOTS || path.join(folder,'screenshots');await mkdir(shots,{recursive:true});
 const user={id:'11111111-1111-4111-8111-111111111111',email:'alice@example.test',aud:'authenticated',role:'authenticated',app_metadata:{},user_metadata:{},created_at:'2026-10-16T00:00:00Z'};
@@ -31,7 +33,7 @@ try{
   return route.fulfill({contentType:'application/json',body:JSON.stringify(user)});
  });
  await page.goto(base);await page.getByRole('heading',{name:'Good conversations. Clear next steps.'}).waitFor();
- await page.getByRole('link',{name:'Sign in',exact:true}).first().waitFor();
+ await page.getByRole('link',{name:'Sign in',exact:true}).first().waitFor();await titleIs(page,'BriefActions');
  assert.deepEqual(privateRequests,[],'The public demo must not request private workspace data');
  assert.equal((await fetch(base+'/api/runs')).status,401,'Public HTML must not expose private API access');
  await page.getByRole('button',{name:'Show supporting passage for Review the release notes',exact:true}).focus();await page.keyboard.press('Enter');
@@ -53,6 +55,7 @@ try{
  assert.equal(expectedPalette['.landing-close'].background,'rgb(19, 21, 24)');
  for(const preference of ['light','dark','system']){
   await page.goto(base+'/sign-in');await page.getByRole('button',{name:'Continue with GitHub',exact:true}).waitFor();
+  await titleIs(page,'Sign in · BriefActions');
   await page.getByLabel('Color theme').selectOption(preference);
   await page.getByRole('link',{name:'← Back to home',exact:true}).click();await page.getByRole('heading',{name:'Good conversations. Clear next steps.'}).waitFor();
   for(const scheme of ['light','dark']){
@@ -82,14 +85,14 @@ try{
  await page.goto(base+'/tasks');await page.getByRole('button',{name:'Continue with GitHub',exact:true}).waitFor();assert.equal(new URL(page.url()).pathname,'/sign-in');assert.equal(await page.evaluate(()=>sessionStorage.getItem('flow.authReturn')),'/tasks');assert.deepEqual(privateRequests,[]);
  await page.getByRole('button',{name:'Continue with GitHub',exact:true}).click();await page.getByRole('heading',{name:'Fixture identity provider'}).waitFor();
  const authorize=new URL(page.url());assert.equal(authorize.searchParams.get('provider'),'github');assert.equal(authorize.searchParams.get('redirect_to'),base+'/auth/callback');assert.equal(authorize.searchParams.get('code_challenge_method'),'s256');assert.ok(authorize.searchParams.get('code_challenge'));
- await page.goto(base+'/auth/callback?code=fixture-code');await page.getByText('alice@example.test',{exact:true}).waitFor();assert.equal(new URL(page.url()).pathname,'/tasks');assert.equal(new URL(page.url()).search,'');assert.equal(exchange.auth_code,'fixture-code');assert.ok(exchange.code_verifier);
+ await page.goto(base+'/auth/callback?code=fixture-code');await page.getByText('alice@example.test',{exact:true}).waitFor();assert.equal(new URL(page.url()).pathname,'/tasks');assert.equal(new URL(page.url()).search,'');await titleIs(page,'All tasks · BriefActions');assert.equal(exchange.auth_code,'fixture-code');assert.ok(exchange.code_verifier);
  assert.equal(await page.evaluate(()=>sessionStorage.getItem('flow.authReturn')),null);
  await page.goto(base);await page.getByRole('heading',{name:'Good conversations. Clear next steps.'}).waitFor();await page.getByRole('link',{name:'Open workspace',exact:true}).first().waitFor();
  // A stored redirect is untrusted, including when it was written outside this UI.
  await page.evaluate(()=>sessionStorage.setItem('flow.authReturn','//untrusted.example/private'));await page.goto(base+'/sign-in');await page.getByText('alice@example.test',{exact:true}).waitFor();assert.equal(new URL(page.url()).origin,base);assert.equal(new URL(page.url()).pathname,'/meetings');
  // A fresh failed callback exposes no provider text or private data and allows retry.
  await context.clearCookies();await page.evaluate(()=>localStorage.clear());await page.goto(base+'/auth/callback?error=access_denied&error_description=private-provider-message');await page.getByRole('alert').filter({hasText:'couldn’t finish'}).waitFor();assert.equal(new URL(page.url()).pathname,'/sign-in');assert.equal(new URL(page.url()).search,'');assert.ok(!(await page.locator('body').textContent()).includes('private-provider-message'));await page.getByRole('button',{name:'Continue with GitHub',exact:true}).waitFor();
- await page.goto(base+'/#error=access_denied&error_description=private-provider-message');await page.getByRole('alert').filter({hasText:'couldn’t finish'}).waitFor();assert.equal(new URL(page.url()).pathname,'/sign-in');assert.equal(new URL(page.url()).hash,'');
+ await page.goto(base+'/#error=access_denied&error_description=private-provider-message');await page.getByRole('alert').filter({hasText:'couldn’t finish'}).waitFor();assert.equal(new URL(page.url()).pathname,'/sign-in');assert.equal(new URL(page.url()).hash,'');await titleIs(page,'Sign in · BriefActions');
  await page.goto(base+'/sign-in');await page.getByRole('button',{name:'Continue with GitHub',exact:true}).waitFor();await page.setViewportSize({width:1440,height:1000});await page.getByLabel('Color theme').selectOption('light');await page.screenshot({path:path.join(shots,'sign-in-light.png'),fullPage:true});
  for(const width of [1440,320])for(const theme of ['light','dark']){
   await page.setViewportSize({width,height:1000});await page.getByLabel('Color theme').selectOption(theme);const result=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa','wcag22aa']).analyze();checks.push({label:`email-signin-${width}-${theme}`,violations:result.violations});assert.equal(result.violations.length,0);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
@@ -103,5 +106,19 @@ try{
  await page.emulateMedia({forcedColors:'active'});
  for(const selector of ['.app-shell','.workspace-header','.review-placeholder'])assert.equal(await page.locator(selector).evaluate(el=>getComputedStyle(el).backgroundImage),'none');
  assert.ok(await page.getByRole('button',{name:'Try an example',exact:true}).isVisible());await page.emulateMedia({forcedColors:'none'});
+ // Section titles follow navigation, reloads and browser history without private content.
+ const sections=[['All tasks','/tasks'],['Meeting history','/history'],['Compare extraction methods','/research/evaluation'],['Label & review examples','/research/annotations'],['Data & account','/account'],['Extract & review','/meetings']];
+ await titleIs(page,'Extract & review · BriefActions');
+ for(const [name,route] of sections){
+  await navigate(page,name);await titleIs(page,`${name} · BriefActions`);assert.equal(new URL(page.url()).pathname,route);
+ }
+ await page.goBack();await titleIs(page,'Data & account · BriefActions');
+ await page.goForward();await titleIs(page,'Extract & review · BriefActions');
+ for(const [name,route] of sections){
+  await page.goto(localBase+route);await titleIs(page,`${name} · BriefActions`);
+  await page.reload();await titleIs(page,`${name} · BriefActions`);
+ }
+ await page.goto(localBase+'/privacy');await page.getByRole('heading',{name:'Privacy & your data',exact:true}).waitFor();await titleIs(page,'Privacy & your data · BriefActions');
+ await page.getByRole('link',{name:'Back to BriefActions',exact:true}).click();await titleIs(page,'BriefActions');
  assert.deepEqual(errors,[]);console.log('Public entry checks passed: fixed light/dark homepage, preserved sign-in/workspace theme preferences, sample-only demo, private API gate, responsive accessibility, forced-color fallbacks, keyboard evidence, email and GitHub PKCE callbacks, intended route, unsafe redirect rejection, callback failure recovery, and honest local preview.');
 }finally{await writeFile(path.join(shots,'public-accessibility.json'),JSON.stringify(checks,null,2));await browser?.close();for(const server of [managed,local]){server.closeAllConnections();await server.shutdown();}await rm(folder,{recursive:true,force:true});}

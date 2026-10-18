@@ -6,6 +6,7 @@ import ProductBrand from './ProductBrand.jsx';
 import LandingPage from './LandingPage.jsx';
 import {readRoute} from './routing.js';
 import {authScreen,workspaceDestination} from './authRouting.js';
+import useDocumentTitle from './useDocumentTitle.js';
 
 function clearDestination(){try{sessionStorage.removeItem('flow.authReturn');}catch{}}
 function destination(){let target;try{target=sessionStorage.getItem('flow.authReturn');}catch{}clearDestination();return workspaceDestination(target);}
@@ -24,6 +25,7 @@ export default function AuthShell({children}) {
   const [screen,setScreen]=useState(authScreen),[ready,setReady]=useState(false),[local,setLocal]=useState(false),[client,setClient]=useState(null),[session,setSession]=useState(null);
   const [error,setError]=useState(''),[notice,setNotice]=useState(''),[busy,setBusy]=useState(false),[email,setEmail]=useState(''),[emailEnabled,setEmailEnabled]=useState(false);
   const [authUrl,setAuthUrl]=useState(''),leaving=useRef(false);
+  useDocumentTitle(screen==='workspace' && ready && (local || session)?null:screen==='landing'?'':screen==='callback'?'Signing in':'Sign in');
   useEffect(()=>{
     let alive=true,subscription;
     const callback=authScreen()==='callback';
