@@ -50,7 +50,9 @@ Use the category buttons to narrow the view. Check **Previous plan** against
 - Leave a change unchecked to keep the old task, or skip a new addition.
   Tasks not mentioned in the follow-up remain unchanged.
 
-Nothing is approved automatically. **Confirm updated plan** saves your choices
+The approved-change count and **Confirm updated plan** button stay visible while
+you scroll through the comparison. Nothing is approved automatically.
+**Confirm updated plan** saves your choices
 and replaces the old version in **All tasks**. Existing task progress carries over;
 new tasks start To do. The previous plan, its evidence, and its exports remain in
 history. An earlier version links to the newer one and cannot receive new progress

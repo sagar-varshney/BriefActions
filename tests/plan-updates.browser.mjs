@@ -39,6 +39,24 @@ try{
  await page.getByLabel('Deadline for change 4',{exact:true}).fill('2026-10-18');await page.getByLabel('Apply cancelled change for task 2',{exact:true}).check();
  const changed=page.getByRole('article',{name:'Changed task 1',exact:true});await changed.locator('summary').click();await changed.getByRole('button',{name:'Locate passage 1 for follow-up task 1',exact:true}).click();await page.waitForFunction(()=>document.activeElement?.id==='saved-source');assert.equal(await page.locator('#saved-source mark').textContent(),'Maya: Move the report to Monday.');await page.getByRole('button',{name:'Back to task',exact:true}).click();assert.ok(await changed.getByRole('button',{name:'Locate passage 1 for follow-up task 1',exact:true}).evaluate(e=>e===document.activeElement));
  await group.getByRole('button',{name:'Added (1)',exact:true}).click();assert.equal(await page.getByRole('button',{name:'Back to task',exact:true}).count(),0);await group.getByRole('button',{name:'All (4)',exact:true}).click();await page.getByRole('status').filter({hasText:'Review saved to history.'}).waitFor();
+ // Confirmation stays reachable during long reviews, without hiding focused fields.
+ for(const [width,height] of [[1440,800],[320,640],[320,400]]){
+  await page.setViewportSize({width,height});
+  for(const theme of ['light','dark']){
+   await page.getByLabel('Color theme').selectOption(theme);
+   await page.locator('.plan-change-card').nth(1).evaluate(el=>scrollTo({top:scrollY+el.getBoundingClientRect().top-100,behavior:'instant'}));
+   const bar=page.getByRole('region',{name:'Review confirmation',exact:true});
+   await page.waitForFunction(()=>{const r=document.querySelector('.plan-confirmation').getBoundingClientRect();return r.top>=0&&Math.abs(r.bottom-(innerHeight-8))<=2;});
+   assert.equal(await bar.getByRole('status').textContent(),'2 of 3 changes approved.');
+   const reachable=await bar.getByRole('button',{name:'Confirm updated plan',exact:true}).evaluate(el=>{const r=el.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth&&r.bottom<=innerHeight&&el.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2));});assert.ok(reachable,`Sticky confirm is reachable: ${width}x${height} ${theme}`);
+   await page.getByLabel('Deadline for change 4',{exact:true}).focus();
+   const bounds=await page.evaluate(()=>{const field=document.activeElement.getBoundingClientRect(),bar=document.querySelector('.plan-confirmation').getBoundingClientRect();return {fieldTop:field.top,fieldBottom:field.bottom,barTop:bar.top,headerBottom:Math.max(0,document.querySelector('.workspace-header').getBoundingClientRect().bottom)};});assert.ok(bounds.fieldTop>=bounds.headerBottom&&bounds.fieldBottom<=bounds.barTop,`Focused field stays above controls: ${JSON.stringify(bounds)}`);
+   await page.keyboard.press('Tab');assert.equal(await page.evaluate(()=>document.activeElement.tagName),'SUMMARY');
+   const clear=await page.evaluate(()=>document.activeElement.getBoundingClientRect().bottom<=document.querySelector('.plan-confirmation').getBoundingClientRect().top);assert.ok(clear,'Keyboard focus must not be hidden under the action bar');
+   await page.keyboard.press('Tab');assert.ok(await bar.getByRole('button',{name:'Confirm updated plan',exact:true}).evaluate(el=>el===document.activeElement));
+   await scan(page,`sticky-confirmation-${width}-${height}-${theme}`);await page.screenshot({path:path.join(shots,`sticky-confirmation-${width}-${height}-${theme}.png`)});
+  }
+ }
  for(const width of [1440,320]){await page.setViewportSize({width,height:1000});for(const theme of ['light','dark']){await page.getByLabel('Color theme').selectOption(theme);await scan(page,`plan-changes-${width}-${theme}`);await page.getByRole('heading',{name:'Review plan changes',exact:true}).scrollIntoViewIfNeeded();await page.screenshot({path:path.join(shots,`plan-changes-${width}-${theme}.png`),fullPage:true});}}
  await page.setViewportSize({width:1440,height:1000});
  // Confirmation also recovers a committed result after a lost response.

@@ -366,5 +366,8 @@ main.signin-shell{
 .plan-change-columns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}.plan-change-columns>div:only-child{grid-column:1/-1}.plan-change-columns .field-label{margin:10px 0}.plan-change-columns input{width:100%}
 .plan-task-name{color:var(--text);overflow-wrap:anywhere}.plan-change-meta{margin:12px 0;display:grid;gap:8px}.plan-change-meta dt{font-size:11px;color:var(--muted)}.plan-change-meta dd{margin:2px 0;font-size:13px;color:var(--text);overflow-wrap:anywhere}
 .plan-change-evidence{margin-top:16px;border-top:1px solid var(--line);padding-top:12px}.plan-change-evidence>summary{font-size:12px;font-weight:600;color:var(--accent)}.plan-change-evidence>div{margin-top:16px}
-.plan-confirmation{border-top:1px solid var(--line);padding:18px 0;display:grid;gap:16px}.plan-confirmation .button{justify-self:start}.plan-confirmation strong{color:var(--text)}.plan-change-actions{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0}
+.plan-confirmation-help{margin-top:18px}.plan-confirmation{position:sticky;bottom:max(8px,env(safe-area-inset-bottom,0px));z-index:3;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:14px 16px;margin-top:14px;background:var(--surface);border:1px solid var(--control-border);border-top:3px solid var(--primary)}.plan-confirmation .button{flex-shrink:0}.plan-confirmation strong{color:var(--text);font-size:13px}:root:has(.plan-confirmation){scroll-padding-bottom:180px}.plan-change-actions{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0}
 @media(max-width:760px){.plan-change-columns{grid-template-columns:minmax(0,1fr)}.plan-change-card{padding:14px}.plan-change-filters .button{padding:9px 11px;white-space:normal}.plan-confirmation .button{white-space:normal}}
+
+@media(max-width:760px){.plan-confirmation{padding:12px}.plan-confirmation .button{width:100%}}
+@media print{.plan-confirmation{position:static}}
