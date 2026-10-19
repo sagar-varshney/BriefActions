@@ -15,6 +15,7 @@ import PrivacyPage from './PrivacyPage.jsx';
 import MeetingHistory from './MeetingHistory.jsx';
 import AllTasks,{initialTaskFilters} from './AllTasks.jsx';
 import Calendar from './Calendar.jsx';
+import MyDay from './MyDay.jsx';
 import {initialCalendar} from './calendarDates.js';
 import PlanExport from './PlanExport.jsx';
 import PlanChangeReview,{FollowupForm} from './PlanUpdates.jsx';
@@ -47,6 +48,7 @@ function Icon({name, size = 20}) {
     history:<><path d="M3 11a9 9 0 1 1 2.5 7M3 4v7h7"/><path d="M12 7v5l3 2"/></>,
     chart:<><path d="M4 3v17h17M8 15v-4M13 15V7M18 15V4"/></>,
     calendar:<><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 11h18M8 15h2M14 15h2"/></>,
+    day:<><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M5 19l1.5-1.5M17.5 6.5 19 5"/></>,
     arrow:<path d="M5 12h14m-5-5 5 5-5 5"/>,
     check:<path d="m5 12 4 4L19 6"/>,
     download:<><path d="M12 3v12m-4-4 4 4 4-4M4 16v4h16v-4"/></>,
@@ -64,9 +66,10 @@ function downloadJson(value, filename) {
   const link = document.createElement('a'); link.href=url; link.download=filename; link.click();
   setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
-const pages = [{id:'extract',name:'Extract & review',icon:'extract'},{id:'tasks',name:'All tasks',icon:'check'},{id:'calendar',name:'Calendar',icon:'calendar'},{id:'history',name:'Meeting history',icon:'history'},{id:'benchmark',name:'Compare extraction methods',icon:'chart'},{id:'annotations',name:'Label & review examples',icon:'quote'},{id:'data',name:'Data & account',icon:'history'}];
+const pages = [{id:'today',name:'My day',icon:'day'},{id:'extract',name:'Extract & review',icon:'extract'},{id:'tasks',name:'All tasks',icon:'check'},{id:'calendar',name:'Calendar',icon:'calendar'},{id:'history',name:'Meeting history',icon:'history'},{id:'benchmark',name:'Compare extraction methods',icon:'chart'},{id:'annotations',name:'Label & review examples',icon:'quote'},{id:'data',name:'Data & account',icon:'history'}];
 
 function App({account,signOut,completeAccountDeletion,authError}) {
+  const [historyStatus,setHistoryStatus]=useState('');
   const [calendarFilters,setCalendarFilters]=useState(initialCalendar);
   const [helpTopic,setHelpTopic]=useState(null);
   const [taskFilters,setTaskFilters]=useState(initialTaskFilters),[taskTarget,setTaskTarget]=useState(()=>readRoute().taskId || null);
@@ -76,7 +79,7 @@ function App({account,signOut,completeAccountDeletion,authError}) {
   const [sourceWidth,setSourceWidth]=useState(()=>{try{const width=Number(accountStorage.getItem('flow.workspaceWidth'));return Number.isInteger(width)&&width>=32&&width<=55?width:43;}catch{return 43;}});
   function resizeSource(width){setSourceWidth(width);try{accountStorage.setItem('flow.workspaceWidth',String(width));}catch{}}
   function commitRoute(next,mode='push'){const url=routePath(next);if(mode!=='pop' && (location.pathname+location.search+location.hash!==url))history[mode==='replace'?'replaceState':'pushState']({},'',url);committedURL.current=url;setPageState(next.page);setTaskTarget(next.taskId || null);}
-  function setPage(next){return navigate({page:next,runId:next==='extract'?run?.id:null});}
+  function setPage(next){if(next==='history')setHistoryStatus('');return navigate({page:next,runId:next==='extract'?run?.id:null});}
   async function navigate(next,mode='push'){
     if(restoring && mode==='pop'){deferredNavigation.current=next;return;}
     if(closing && next.page!=='data' || busy || restoring){if(mode==='pop')history.replaceState({},'',committedURL.current);return;}
@@ -297,14 +300,15 @@ function App({account,signOut,completeAccountDeletion,authError}) {
   return <div className="app-shell">
     <a className="skip-link" href="#workspace-main">Skip to workspace</a>
     <header className="workspace-header">
-      <ProductBrand href="/meetings" onClick={e=>{e.preventDefault();setPage('extract');}}/>
+      <ProductBrand href="/today" onClick={e=>{e.preventDefault();setPage('today');}}/>
       <nav aria-label="Main navigation">{pages.filter(p=>!['benchmark','annotations'].includes(p.id)).map(p=><button key={p.id} disabled={busy || restoring || closing && p.id!=='data'} className={`nav-item ${page===p.id?'active':''}`} aria-current={page===p.id?'page':undefined} onClick={()=>setPage(p.id)}><Icon name={p.icon} size={17}/><span>{p.name}</span></button>)}<ResearchNavigation page={page} disabled={closing || busy || restoring} onNavigate={setPage}/></nav>
-      <div className="topbar-actions"><button type="button" className="text-button help-entry" onClick={()=>setHelpTopic(page==='calendar'?'calendar':page==='annotations'?'annotations':page==='benchmark'?'benchmark':'meetings')}>Help</button><ThemeControl/>{account&&<><span className="account-name" title={account.email}>{account.email || 'Signed in'}</span><button className="text-button" onClick={signOut}>Sign out</button></>}</div>
+      <div className="topbar-actions"><button type="button" className="text-button help-entry" onClick={()=>setHelpTopic(page==='today'?'today':page==='calendar'?'calendar':page==='annotations'?'annotations':page==='benchmark'?'benchmark':'meetings')}>Help</button><ThemeControl/>{account&&<><span className="account-name" title={account.email}>{account.email || 'Signed in'}</span><button className="text-button" onClick={signOut}>Sign out</button></>}</div>
     </header>
     {helpTopic&&<HelpGuide initialTopic={helpTopic} onClose={()=>setHelpTopic(null)} onNavigate={setPage} navigationDisabled={busy || restoring || closing || !!pending}/>}
     <main id="workspace-main" tabIndex={-1} aria-busy={restoring || busy}>
       <div className="topbar"><span>Workspace <span className="slash">/</span> {pages.find(p=>p.id===page).name}</span><span className="local-badge"><span/> {account?'Private account':'Local workspace'}</span></div>
       <div className={`content ${run && page==='extract'?'meeting-content':''}`}>
+        {page==='today'&&pending&&<div className="notice" role="status">An interrupted analysis is saved in this browser. Recover it before starting another meeting.<button className="text-button" type="button" disabled={busy||restoring} onClick={()=>setPage('extract')}>Recover saved analysis</button></div>}
         {authError&&<div className="notice error" role="alert">{authError}</div>}{error&&<div className="notice error" role="alert">{error}{!config&&<button className="text-button" onClick={()=>location.reload()}>Retry workspace loading</button>}<button aria-label="Dismiss error" onClick={()=>setError('')}>×</button></div>}
         {page==='extract'&&<>
           {run?<div className="meeting-heading"><div className="meeting-title"><h1 tabIndex={-1}>{run.title || `Meeting ${run.reference_date}`}</h1><p>{run.reference_date} <span aria-hidden="true">·</span> {run.status==='confirmed'?'Your confirmed plan':'Review your suggested tasks'}</p></div><div className="meeting-heading-actions"><button type="button" className="button secondary" disabled={busy || restoring || !!pending} onClick={newMeeting}>New meeting</button><button type="button" className="text-button" aria-label="Edit meeting input" aria-expanded={editorVisible} aria-controls="meeting-editor" disabled={busy || restoring || !!pending} onClick={()=>editorVisible?setEditorOpen(false):openEditor()}>{editorVisible?'Close editor':'Edit meeting'}</button></div></div>:<div className="page-intro extraction-intro"><div><div className="eyebrow accent">LESS FOLLOW-UP. MORE FOLLOW-THROUGH.</div><h1 tabIndex={-1}>Make your next move <em>clear.</em></h1><p>Turn the conversation into a plan. Every task, grounded in what was said.</p></div><div className="intro-note"><Icon name="check" size={17}/><span>Evidence attached.<br/><strong>You make the final call.</strong></span></div></div>}
@@ -357,8 +361,9 @@ function App({account,signOut,completeAccountDeletion,authError}) {
         {page==='annotations'&&<AnnotationReviewer api={api} downloadJson={downloadJson} onHelp={()=>setHelpTopic('annotations')}/>}
         {page==='data'&&<DataControls completeAccountDeletion={completeAccountDeletion} onClosing={()=>{clearTimeout(saveTimer.current);activeRun.current=null;setClosing(true);setRun(null);setDrafts([]);setTranscript('');setMeetingTitle('');setInputSaveStatus('');setReport(null);setPending(null);setAnalysisStatus('');}}/>}
         {page==='tasks'&&<AllTasks filters={taskFilters} onFilters={setTaskFilters} onOpen={item=>openRun(item.run_id,'push',item.proposal_id)} busy={busy || restoring || !!pending}/>}
+        {page==='today'&&<MyDay busy={busy || restoring || !!pending} onStart={newMeeting} onOpen={item=>openRun(item.run_id,'push',item.proposal_id)} onTasks={view=>{setTaskFilters({...initialTaskFilters,view});setPage('tasks');}} onReviews={()=>{setHistoryStatus('review');navigate({page:'history'});}} onCalendar={()=>setPage('calendar')}/>}
         {page==='calendar'&&<Calendar filters={calendarFilters} onFilters={setCalendarFilters} onOpen={item=>openRun(item.run_id,'push',item.proposal_id)} busy={busy || restoring || !!pending}/>}
-        {page==='history'&&<MeetingHistory onOpen={openRun} busy={busy || restoring || !!pending}/> }
+        {page==='history'&&<MeetingHistory key={historyStatus} initialStatus={historyStatus} onOpen={openRun} busy={busy || restoring || !!pending}/> }
         {page==='benchmark'&&<>
           <div className="page-intro"><div><div className="eyebrow accent">QUALITY BEFORE GUESSWORK</div><h1 tabIndex={-1}>Compare extraction methods.</h1><p>See how different methods turn conversations into tasks. You can use this app without setting up these optional checks.</p></div></div>
           <WorkflowGuide id="comparison-guide" title="Check a method in three steps" description="Test suggestions against expected answers, then inspect the differences." onHelp={()=>setHelpTopic('benchmark')} steps={[

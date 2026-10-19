@@ -38,7 +38,7 @@ test('Authenticated routes isolate all private state and authenticated downloads
   const get=(route,token)=>fetch(base+route,{headers:token?{Authorization:`Bearer ${token}`}:{}});
   const post=(route,data,token,origin='https://flow.example')=>fetch(base+route,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`,Origin:origin},body:JSON.stringify(data)});
   try {
-    for(const route of ['/api/calendar?month=2026-09','/api/tasks?today=2026-09-15','/api/config','/api/runs','/api/annotations','/api/benchmarks','/api/reviewed-snapshots','/api/reviewed-benchmarks'])assert.equal((await get(route)).status,401);
+    for(const route of ['/api/today?today=2026-09-15','/api/calendar?month=2026-09','/api/tasks?today=2026-09-15','/api/config','/api/runs','/api/annotations','/api/benchmarks','/api/reviewed-snapshots','/api/reviewed-benchmarks'])assert.equal((await get(route)).status,401);
     assert.equal((await get('/api/runs','tampered')).status,401);
     const publicConfig=await (await get('/api/auth-config')).json();assert.equal(publicConfig.mode,'supabase');assert.equal(publicConfig.databaseUrl,undefined);
     assert.equal((await post('/api/runs',{},'alice','https://evil.example')).status,403);

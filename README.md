@@ -33,6 +33,7 @@ model experiments are separate, explicit developer tools.
 
 | Feature | What it helps you do |
 | --- | --- |
+| My day | Start with overdue work, today’s deadlines, the next seven days, and saved reviews awaiting confirmation. Open a short preview or the complete filtered list. |
 | Evidence beside every proposal | Jump to the original words, then return to the task you were reviewing. |
 | Review before confirmation | Edit tasks, owners, and deadlines; reject suggestions or add an evidence-backed action. |
 | Repeated and changed commitments | Merge compatible repeats and inspect evidence for supported deadline revisions or cancellations. Ambiguous references still need review. |
@@ -48,7 +49,8 @@ model experiments are separate, explicit developer tools.
 
 **A public introduction, then your workspace.** The homepage includes an interactive
 sample and a mix of light and dark sections. A separate sign-in page leads to the
-private tool. Hosted deployments support GitHub sign-in through Supabase, with
+private tool, starting at **My day**. Saved meeting and task links return to their
+original destination after sign-in. Hosted deployments support GitHub sign-in through Supabase, with
 email links available when configured.
 
 **Choose your appearance.** Sign-in and the workspace offer Light, Dark, and System

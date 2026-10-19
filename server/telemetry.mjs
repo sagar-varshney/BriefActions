@@ -3,6 +3,7 @@ import {readFile} from 'node:fs/promises';
 
 const BOUNDS=[50,100,250,500,1000,2500,5000,10000,30000,60000,90000];
 const ROUTES=new Map([
+  ['/api/today','today.overview'],
   ['/api/calendar','calendar.search'],
   ['/api/live','live'],['/api/health','readiness'],['/api/auth-config','auth.config'],
   ['/api/config','workspace.config'],['/api/account','account.status'],['/api/account/export','account.export'],['/api/account/delete','account.delete'],

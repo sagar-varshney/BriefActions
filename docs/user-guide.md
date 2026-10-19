@@ -2,16 +2,37 @@
 
 The public homepage explains the workflow with a sample conversation. Choose
 **Get started** or **Sign in**, then continue with GitHub (or an email link when
-enabled). After sign-in, BriefActions opens your private workspace. A saved meeting
+enabled). After sign-in, BriefActions opens **My day** in your private workspace. A saved meeting
 or task link returns to that item after sign-in. Local development instead shows
 **Open local workspace**, with no account required. Choose **Light**, **Dark**, or
 **System** from **Theme** on the sign-in page; the workspace remembers that choice.
 The public homepage always uses its own mix of light and dark sections.
 
-Start with **Extract & review**. The research tools are optional; you do not need
+Use **My day** to choose your next step, or **Extract & review** to add a transcript. The research tools are optional; you do not need
 a machine-learning background to turn a meeting into tasks. Open **Help** anywhere
 in the workspace for a short walkthrough and glossary. You can close or skip it
 without changing your work, and open it again later.
+
+## Start your day
+
+**My day** brings together overdue work, deadlines today, the next seven days, and
+saved meetings awaiting confirmation. It includes tasks for every named owner in
+your private workspace; owner names are not linked to sign-in accounts.
+Completed tasks are excluded. Dates use your device's calendar day.
+
+Each section previews up to four items and shows its complete count. **View all**
+opens the corresponding task filter or meetings **Awaiting review**. **Open task &
+evidence** goes to the exact confirmed task and its supporting conversation;
+**Continue review** resumes a saved task or follow-up review.
+
+**Refresh My day**, returning from another screen, or refocusing the browser checks
+for saved changes. The date updates when a long-lived tab crosses midnight.
+Tasks without deadlines remain **Unknown** in Calendar's **Unscheduled tasks**;
+later deadlines remain available in **All tasks** and **Calendar**.
+
+**Add a conversation** opens the transcript workflow and preserves existing draft
+recovery. If an interrupted analysis is saved, choose **Recover saved analysis**
+before starting new work. **My day** does not create or confirm tasks automatically.
 
 ## Turn a conversation into tasks
 

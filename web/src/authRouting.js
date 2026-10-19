@@ -10,10 +10,10 @@ export function authScreen(url=new URL(location.href)){
 // Only known, same-origin workspace routes can be authentication destinations.
 // Reconstructing the route drops provider codes, arbitrary queries and fragments.
 export function workspaceDestination(value,origin=location.origin){
- if(typeof value!=='string' || !value.startsWith('/') || value.startsWith('//') || value.includes('\\'))return '/meetings';
+ if(typeof value!=='string' || !value.startsWith('/') || value.startsWith('//') || value.includes('\\'))return '/today';
  try{
   const url=new URL(value,origin),route=readRoute(url);
-  if(url.origin!==origin || route.invalid || url.pathname==='/' && url.hash!=='#data')return '/meetings';
+  if(url.origin!==origin || route.invalid || url.pathname==='/' && url.hash!=='#data')return '/today';
   return routePath(route);
- }catch{return '/meetings';}
+ }catch{return '/today';}
 }

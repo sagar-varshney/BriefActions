@@ -26,7 +26,7 @@ try{
   await page.goto(base);await page.getByRole('heading',{name:'Good conversations. Clear next steps.'}).waitFor();await page.getByRole('link',{name:'Sign in',exact:true}).first().click();await page.getByRole('button',{name:'Continue with GitHub'}).waitFor();assert.equal(await (await meetingField(page,'Meeting transcript')).count(),0);
   await page.getByLabel('Color theme').selectOption('dark');await page.screenshot({path:path.join(screenshotDir,'sign-in-dark.png'),fullPage:true});
   await page.evaluate(value=>localStorage.setItem('sb-test-project-auth-token',JSON.stringify(value)),first);await page.reload();
-  await page.getByText('alice@example.test',{exact:true}).waitFor();await page.getByRole('button',{name:'Try an example',exact:true}).click();await page.getByRole('button',{name:'Analyze transcript'}).click();await page.getByRole('heading',{name:/Review action proposals/}).waitFor();
+  await page.getByText('alice@example.test',{exact:true}).waitFor();await page.getByRole('heading',{name:'My day',exact:true}).waitFor();await page.getByRole('button',{name:'Extract & review',exact:true}).click();await page.getByRole('button',{name:'Try an example',exact:true}).click();await page.getByRole('button',{name:'Analyze transcript'}).click();await page.getByRole('heading',{name:/Review action proposals/}).waitFor();
   for(const width of [1440,1366,1280]){await page.setViewportSize({width,height:1000});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`Signed-in navigation must fit at ${width}px`);}
   await page.setViewportSize({width:1440,height:1000});
   const active=await page.evaluate(id=>localStorage.getItem(`flow.account.${id}.flow.activeRun`),alice);assert.match(active,/^[a-f0-9]{32}$/);
@@ -41,7 +41,7 @@ try{
   await page.getByRole('button',{name:'Sign out',exact:true}).click();await page.getByRole('button',{name:'Continue with GitHub'}).waitFor();assert.equal(await page.getByRole('heading',{name:'Your confirmed plan'}).count(),0);
   // Same browser, different account: the previous run and drafts remain inaccessible.
   await page.evaluate(value=>localStorage.setItem('sb-test-project-auth-token',JSON.stringify(value)),second);await page.reload();
-  await page.getByText('bob@example.test',{exact:true}).waitFor();assert.equal(await (await meetingField(page,'Meeting transcript')).inputValue(),'');assert.equal(await page.getByRole('heading',{name:'Your confirmed plan'}).count(),0);
+  await page.getByText('bob@example.test',{exact:true}).waitFor();await page.getByRole('button',{name:'Extract & review',exact:true}).click();assert.equal(await (await meetingField(page,'Meeting transcript')).inputValue(),'');assert.equal(await page.getByRole('heading',{name:'Your confirmed plan'}).count(),0);
   await page.getByRole('button',{name:'Meeting history',exact:true}).click();await page.getByRole('heading',{name:'No saved meetings yet.'}).waitFor();
   await page.getByRole('button',{name:'Extract & review',exact:true}).click();await page.setViewportSize({width:390,height:844});
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await page.screenshot({path:path.join(screenshotDir,'mobile-account-dark.png'),fullPage:true});

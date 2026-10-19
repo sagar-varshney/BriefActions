@@ -1,6 +1,11 @@
 import useAfterRender from './useAfterRender.js';
 import React,{useEffect,useRef,useState} from 'react';
 const guides={
+ today:{label:'My day',page:'today',steps:[
+  ['Choose your next step','My day brings together overdue tasks, today’s deadlines, the next seven days, and saved reviews waiting for confirmation. It includes every named owner in your private workspace.','Completed tasks are excluded. Dates use your device’s calendar day.'],
+  ['Open the complete list','Each section previews a few items. View all opens the corresponding task filter or the meetings awaiting review. Open task & evidence goes straight to the saved task and its supporting conversation.','A task without a deadline stays Unknown. Calendar’s Unscheduled list keeps that work visible.'],
+  ['Pick up where you left off','Continue review opens your saved proposals and corrections. Add a conversation starts the transcript workflow. Return to My day or use Refresh My day to see the latest saved changes.','Reading this overview does not confirm a review or change any task.']
+ ]},
  calendar:{label:'Calendar',page:'calendar',steps:[
   ['Find a date','Open a month and select a date. Meeting cards use the conversation date; task cards use confirmed deadlines. On small screens, the agenda lists dates with events.','The calendar does not schedule a time of day or send reminders.'],
   ['Inspect the conversation','Open a meeting to see its transcript, or open a task to inspect its confirmed plan and supporting passage. Use browser Back to return to the same calendar view.','Task status filters affect tasks only. Earlier meetings remain visible, while task deadlines follow the current confirmed plan.'],

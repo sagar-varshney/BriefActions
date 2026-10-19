@@ -64,6 +64,9 @@ def report_paths():
 
 def handle(request):
     op = request.get('operation')
+    if op=='daily_overview':
+        from daily_overview import overview
+        return overview(store(), **{key:request[key] for key in ('today','limit') if key in request})
     if op=='calendar_search':
         from calendar_view import search
         return search(store(), **{key:request[key] for key in ('month','day','kind','status','page','unscheduled_page','page_size') if key in request})

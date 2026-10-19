@@ -22,7 +22,7 @@ test('Due date filters exclude done tasks and handle seven-day and calendar boun
  assert.equal(localToday(new Date(2026,9,14,23,30)),'2026-10-14');
 });
 test('Workspace routes encode sections and validated meeting identifiers without input content',()=>{
- for(const page of ['extract','tasks','history','benchmark','annotations','data'])assert.equal(readRoute(new URL(routePath({page}),'https://flow.example')).page,page);
+ for(const page of ['today','extract','tasks','history','benchmark','annotations','data'])assert.equal(readRoute(new URL(routePath({page}),'https://flow.example')).page,page);
  const id='a'.repeat(32);assert.deepEqual(readRoute(new URL(`https://flow.example/meetings/${id}`)),{page:'extract',runId:id});
  assert.equal(readRoute(new URL('https://flow.example/meetings/not-an-id')).invalid,true);
  assert.equal(readRoute(new URL('https://flow.example/#data')).page,'data');
@@ -91,7 +91,7 @@ test('Keyboard passage selection preserves Unicode characters and selection anch
 test('Authentication destinations keep task context while rejecting external, public and malformed routes',async()=>{
  const {workspaceDestination:destination,authScreen}=await import('../web/src/authRouting.js'),origin='https://flow.example',runId='a'.repeat(32);
  assert.equal(destination(`/meetings/${runId}?task=manual-123&code=secret#private`,origin),`/meetings/${runId}?task=manual-123`);
- for(const value of [null,'https://untrusted.example/tasks','//untrusted.example/tasks','/\\untrusted.example/tasks','/sign-in','/auth/callback','/privacy','/missing','/meetings/not-an-id','/?code=secret'])assert.equal(destination(value,origin),'/meetings',String(value));
+ for(const value of [null,'https://untrusted.example/tasks','//untrusted.example/tasks','/\\untrusted.example/tasks','/sign-in','/auth/callback','/privacy','/missing','/meetings/not-an-id','/?code=secret'])assert.equal(destination(value,origin),'/today',String(value));
  assert.equal(destination('/#data',origin),'/account');assert.equal(destination('/tasks?unused=value',origin),'/tasks');
  for(const [path,screen] of [['/','landing'],['/#how','landing'],['/sign-in/','signin'],['/auth/callback?code=secret','callback'],['/?code=secret','callback'],['/#access_token=secret','callback'],['/#error=access_denied','callback'],['/?error_description=expired','callback'],['/#data','workspace'],['/tasks','workspace']])assert.equal(authScreen(new URL(path,origin)),screen);
 });

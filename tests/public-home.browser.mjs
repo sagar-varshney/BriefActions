@@ -89,7 +89,7 @@ try{
  assert.equal(await page.evaluate(()=>sessionStorage.getItem('flow.authReturn')),null);
  await page.goto(base);await page.getByRole('heading',{name:'Good conversations. Clear next steps.'}).waitFor();await page.getByRole('link',{name:'Open workspace',exact:true}).first().waitFor();
  // A stored redirect is untrusted, including when it was written outside this UI.
- await page.evaluate(()=>sessionStorage.setItem('flow.authReturn','//untrusted.example/private'));await page.goto(base+'/sign-in');await page.getByText('alice@example.test',{exact:true}).waitFor();assert.equal(new URL(page.url()).origin,base);assert.equal(new URL(page.url()).pathname,'/meetings');
+ await page.evaluate(()=>sessionStorage.setItem('flow.authReturn','//untrusted.example/private'));await page.goto(base+'/sign-in');await page.getByText('alice@example.test',{exact:true}).waitFor();assert.equal(new URL(page.url()).origin,base);assert.equal(new URL(page.url()).pathname,'/today');
  // A fresh failed callback exposes no provider text or private data and allows retry.
  await context.clearCookies();await page.evaluate(()=>localStorage.clear());await page.goto(base+'/auth/callback?error=access_denied&error_description=private-provider-message');await page.getByRole('alert').filter({hasText:'couldn’t finish'}).waitFor();assert.equal(new URL(page.url()).pathname,'/sign-in');assert.equal(new URL(page.url()).search,'');assert.ok(!(await page.locator('body').textContent()).includes('private-provider-message'));await page.getByRole('button',{name:'Continue with GitHub',exact:true}).waitFor();
  await page.goto(base+'/#error=access_denied&error_description=private-provider-message');await page.getByRole('alert').filter({hasText:'couldn’t finish'}).waitFor();assert.equal(new URL(page.url()).pathname,'/sign-in');assert.equal(new URL(page.url()).hash,'');await titleIs(page,'Sign in · BriefActions');
@@ -102,13 +102,13 @@ try{
  assert.equal(await page.getByRole('button',{name:'Continue with GitHub',exact:true}).evaluate(el=>getComputedStyle(el).backgroundImage),'none');
  assert.ok(await page.getByRole('button',{name:'Continue with GitHub',exact:true}).isVisible());
  await page.emulateMedia({forcedColors:'none'});
- await page.goto(localBase+'/sign-in');await page.getByRole('link',{name:'Open local workspace',exact:true}).waitFor();assert.equal(await page.getByRole('button',{name:'Continue with GitHub'}).count(),0);await page.getByLabel('Color theme').selectOption('dark');await page.getByRole('link',{name:'Open local workspace',exact:true}).click();await page.getByRole('button',{name:'Try an example',exact:true}).waitFor();assert.equal(await page.getByLabel('Color theme').inputValue(),'dark');assert.equal(await page.locator('html').getAttribute('data-theme'),'dark');
+ await page.goto(localBase+'/sign-in');await page.getByRole('link',{name:'Open local workspace',exact:true}).waitFor();assert.equal(await page.getByRole('button',{name:'Continue with GitHub'}).count(),0);await page.getByLabel('Color theme').selectOption('dark');await page.getByRole('link',{name:'Open local workspace',exact:true}).click();await page.getByRole('heading',{name:'My day',exact:true}).waitFor();await page.getByRole('heading',{name:'Your day starts with a conversation.',exact:true}).waitFor();assert.equal(await page.getByLabel('Color theme').inputValue(),'dark');assert.equal(await page.locator('html').getAttribute('data-theme'),'dark');
  await page.emulateMedia({forcedColors:'active'});
- for(const selector of ['.app-shell','.workspace-header','.review-placeholder'])assert.equal(await page.locator(selector).evaluate(el=>getComputedStyle(el).backgroundImage),'none');
- assert.ok(await page.getByRole('button',{name:'Try an example',exact:true}).isVisible());await page.emulateMedia({forcedColors:'none'});
+ for(const selector of ['.app-shell','.workspace-header','.daily-welcome'])assert.equal(await page.locator(selector).evaluate(el=>getComputedStyle(el).backgroundImage),'none');
+ assert.ok(await page.getByRole('button',{name:'Start your first meeting',exact:true}).isVisible());await page.emulateMedia({forcedColors:'none'});
  // Section titles follow navigation, reloads and browser history without private content.
- const sections=[['All tasks','/tasks'],['Calendar','/calendar'],['Meeting history','/history'],['Compare extraction methods','/research/evaluation'],['Label & review examples','/research/annotations'],['Data & account','/account'],['Extract & review','/meetings']];
- await titleIs(page,'Extract & review · BriefActions');
+ const sections=[['My day','/today'],['All tasks','/tasks'],['Calendar','/calendar'],['Meeting history','/history'],['Compare extraction methods','/research/evaluation'],['Label & review examples','/research/annotations'],['Data & account','/account'],['Extract & review','/meetings']];
+ await titleIs(page,'My day · BriefActions');
  for(const [name,route] of sections){
   await navigate(page,name);await titleIs(page,`${name} · BriefActions`);assert.equal(new URL(page.url()).pathname,route);
  }

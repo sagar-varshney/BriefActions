@@ -1,8 +1,8 @@
 import React,{useEffect,useState} from 'react';
 import {api} from './api.js';
 const stamp=value=>new Date(value).toLocaleString(undefined,{dateStyle:'medium',timeStyle:'short'});
-export default function MeetingHistory({onOpen,busy}){
-  const [query,setQuery]=useState(''),[status,setStatus]=useState(''),[from,setFrom]=useState(''),[to,setTo]=useState(''),[page,setPage]=useState(0),[result,setResult]=useState(null),[loading,setLoading]=useState(true),[error,setError]=useState(''),[retry,setRetry]=useState(0);
+export default function MeetingHistory({onOpen,busy,initialStatus=''}){
+  const [query,setQuery]=useState(''),[status,setStatus]=useState(initialStatus),[from,setFrom]=useState(''),[to,setTo]=useState(''),[page,setPage]=useState(0),[result,setResult]=useState(null),[loading,setLoading]=useState(true),[error,setError]=useState(''),[retry,setRetry]=useState(0);
   useEffect(()=>{
     let alive=true;setLoading(true);setError('');
     const timer=setTimeout(()=>{api('/runs/search?'+new URLSearchParams({query,status,date_from:from,date_to:to,page:String(page),page_size:'12'})).then(value=>{if(alive)setResult(value);}).catch(e=>{if(alive)setError(e.message);}).finally(()=>{if(alive)setLoading(false);});},250);
