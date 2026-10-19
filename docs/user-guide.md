@@ -2,14 +2,21 @@
 
 The public homepage explains the workflow with a sample conversation. Choose
 **Get started** or **Sign in**, then continue with GitHub (or an email link when
-enabled). After sign-in, BriefActions opens **My day** in your private workspace. A saved meeting
+enabled). After sign-in, a workspace with no saved meetings opens **Extract & review**;
+a returning workspace opens **My day**. This uses your account’s saved meetings,
+so it works on another browser or device too. A saved meeting
 or task link returns to that item after sign-in. Local development instead shows
 **Open local workspace**, with no account required. Choose **Light**, **Dark**, or
 **System** from **Theme** on the sign-in page; the workspace remembers that choice.
 The public homepage always uses its own mix of light and dark sections.
 
-Use **My day** to choose your next step, or **Extract & review** to add a transcript. The research tools are optional; you do not need
-a machine-learning background to turn a meeting into tasks. Open **Help** anywhere
+Navigation follows this order: **Extract & review → My day → All tasks → Calendar → Meeting history**.
+Start in **Extract & review**: add a transcript, check proposed actions, then confirm
+your plan. Its **Start here** label, three-step progress bar, sample, and optional
+walkthrough help you get started. Use **My day** to choose your next step once work
+is saved. **Data & account** sits beside the theme and account controls.
+The optional **Research tools** menu stays collapsed until you open it; you do not
+need a machine-learning background to turn a meeting into tasks. Open **Help** anywhere
 in the workspace for a short walkthrough and glossary. You can close or skip it
 without changing your work, and open it again later.
 

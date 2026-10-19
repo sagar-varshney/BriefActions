@@ -56,7 +56,8 @@ input[type=date]{color-scheme:inherit} textarea{resize:vertical} summary{cursor:
 .nav-item{display:flex;align-items:center;justify-content:center;gap:7px;background:none;color:var(--muted);border:1px solid transparent;border-radius:2px;padding:11px 10px;font-size:12px;font-weight:550;min-height:44px;white-space:nowrap}
 .nav-item:hover{background:var(--surface-soft);color:var(--text)}
 .nav-item.active{background:var(--surface-soft);color:var(--text);border-bottom:2px solid var(--primary);font-weight:700}
-.topbar-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;min-width:0}
+.topbar-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;min-width:0;flex-wrap:wrap}
+.account-entry.active{color:var(--text);text-decoration:underline;text-decoration-color:var(--primary);text-underline-offset:6px}.workspace-entry .signin-toolbar{flex-wrap:wrap}.workspace-entry .signin-card{margin:60px auto;padding:28px;max-width:540px}.workspace-entry .notice p{margin-bottom:16px}
 .theme-control{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--muted)}
 .theme-control select{padding:6px 8px;min-height:40px;font-size:11px}
 .account-name{display:block;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;color:var(--muted)}

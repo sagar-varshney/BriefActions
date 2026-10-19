@@ -206,6 +206,17 @@ repository permissions, and pinned action revisions. Branch protection is a
 separate repository setting. Automated accessibility checks supplement manual
 screen-reader and usability review; they do not certify complete WCAG conformance.
 
+## Workspace entry routing
+
+`/workspace` is an authenticated entry route, not a saved section. It checks the
+account state, then reads one page of saved-meeting history (`page_size=1`). An
+empty workspace opens `/meetings`; an account with saved meetings opens `/today`.
+Accounts with pending deletion open `/account`. The public homepage does not make
+these private requests. Explicit section, meeting, and task links bypass this
+default selection, and authentication redirects still discard untrusted queries.
+A failed entry check offers a read-only retry rather than guessing a destination.
+
+
 ## Separate legacy backend
 
 The preserved FastAPI/RAG code in `app/` has its own `requirements-rag.txt` and

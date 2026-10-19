@@ -91,7 +91,7 @@ test('Keyboard passage selection preserves Unicode characters and selection anch
 test('Authentication destinations keep task context while rejecting external, public and malformed routes',async()=>{
  const {workspaceDestination:destination,authScreen}=await import('../web/src/authRouting.js'),origin='https://flow.example',runId='a'.repeat(32);
  assert.equal(destination(`/meetings/${runId}?task=manual-123&code=secret#private`,origin),`/meetings/${runId}?task=manual-123`);
- for(const value of [null,'https://untrusted.example/tasks','//untrusted.example/tasks','/\\untrusted.example/tasks','/sign-in','/auth/callback','/privacy','/missing','/meetings/not-an-id','/?code=secret'])assert.equal(destination(value,origin),'/today',String(value));
- assert.equal(destination('/#data',origin),'/account');assert.equal(destination('/tasks?unused=value',origin),'/tasks');
- for(const [path,screen] of [['/','landing'],['/#how','landing'],['/sign-in/','signin'],['/auth/callback?code=secret','callback'],['/?code=secret','callback'],['/#access_token=secret','callback'],['/#error=access_denied','callback'],['/?error_description=expired','callback'],['/#data','workspace'],['/tasks','workspace']])assert.equal(authScreen(new URL(path,origin)),screen);
+ for(const value of [null,'https://untrusted.example/tasks','//untrusted.example/tasks','/\\untrusted.example/tasks','/sign-in','/auth/callback','/privacy','/missing','/meetings/not-an-id','/?code=secret'])assert.equal(destination(value,origin),'/workspace',String(value));
+ assert.equal(destination('/workspace',origin),'/workspace');assert.equal(destination('/today',origin),'/today');assert.equal(destination('/#data',origin),'/account');assert.equal(destination('/tasks?unused=value',origin),'/tasks');
+ for(const [path,screen] of [['/workspace','entry'],['/','landing'],['/#how','landing'],['/sign-in/','signin'],['/auth/callback?code=secret','callback'],['/?code=secret','callback'],['/#access_token=secret','callback'],['/#error=access_denied','callback'],['/?error_description=expired','callback'],['/#data','workspace'],['/tasks','workspace']])assert.equal(authScreen(new URL(path,origin)),screen);
 });

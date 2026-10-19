@@ -45,11 +45,12 @@ model experiments are separate, explicit developer tools.
 | Task progress | Move work through To do, In progress, and Done without rewriting the confirmed plan or its evidence. |
 | Searchable meeting history | Name meetings, filter by date or review status, and inspect the activity behind a saved plan. |
 | Shareable plans | Copy a plan, download Markdown or CSV, or export the complete saved history. |
-| Guided onboarding | Use optional walkthroughs, plain-language explanations, and a glossary. Research tools are separate from everyday work. |
+| Guided onboarding | Start with Extract & review, then use My day, All tasks, Calendar, and Meeting history. Optional walkthroughs and a glossary explain each step; research tools stay separate. |
 
 **A public introduction, then your workspace.** The homepage includes an interactive
 sample and a mix of light and dark sections. A separate sign-in page leads to the
-private tool, starting at **My day**. Saved meeting and task links return to their
+private tool. Workspaces with no saved meetings start at **Extract & review** with
+a short guide; returning workspaces open **My day**. Saved meeting and task links return to their
 original destination after sign-in. Hosted deployments support GitHub sign-in through Supabase, with
 email links available when configured.
 

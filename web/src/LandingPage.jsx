@@ -8,7 +8,7 @@ const examples=[
 
 export default function LandingPage({signedIn=false}){
  const [active,setActive]=useState('checklist');
- const href=signedIn?'/today':'/sign-in',action=signedIn?'Open workspace':'Get started';
+ const href=signedIn?'/workspace':'/sign-in',action=signedIn?'Open workspace':'Get started';
  return <div className="landing-shell landing-light"><a className="skip-link" href="#home-title">Skip to content</a>
   <div className="landing-intro landing-dark"><header className="landing-header landing-container"><ProductBrand/><nav aria-label="Website navigation"><a href="#how">How it works</a><a href="#features">Features</a><a href="#questions">Questions</a></nav><div className="landing-header-actions"><a className="button secondary" href={href}>{signedIn?'Open workspace':'Sign in'}</a></div></header></div>
   <main id="home-main"><div className="landing-intro landing-dark landing-stage"><div className="landing-container">
