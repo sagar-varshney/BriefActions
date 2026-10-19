@@ -14,6 +14,8 @@ import TranscriptImport from './TranscriptImport.jsx';
 import PrivacyPage from './PrivacyPage.jsx';
 import MeetingHistory from './MeetingHistory.jsx';
 import AllTasks,{initialTaskFilters} from './AllTasks.jsx';
+import Calendar from './Calendar.jsx';
+import {initialCalendar} from './calendarDates.js';
 import PlanExport from './PlanExport.jsx';
 import PlanChangeReview,{FollowupForm} from './PlanUpdates.jsx';
 import ProductBrand from './ProductBrand.jsx';
@@ -44,6 +46,7 @@ function Icon({name, size = 20}) {
     extract:<><rect x="4" y="3" width="16" height="18" rx="3"/><path d="M8 8h8M8 12h5M8 16h8"/></>,
     history:<><path d="M3 11a9 9 0 1 1 2.5 7M3 4v7h7"/><path d="M12 7v5l3 2"/></>,
     chart:<><path d="M4 3v17h17M8 15v-4M13 15V7M18 15V4"/></>,
+    calendar:<><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 11h18M8 15h2M14 15h2"/></>,
     arrow:<path d="M5 12h14m-5-5 5 5-5 5"/>,
     check:<path d="m5 12 4 4L19 6"/>,
     download:<><path d="M12 3v12m-4-4 4 4 4-4M4 16v4h16v-4"/></>,
@@ -61,9 +64,10 @@ function downloadJson(value, filename) {
   const link = document.createElement('a'); link.href=url; link.download=filename; link.click();
   setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
-const pages = [{id:'extract',name:'Extract & review',icon:'extract'},{id:'tasks',name:'All tasks',icon:'check'},{id:'history',name:'Meeting history',icon:'history'},{id:'benchmark',name:'Compare extraction methods',icon:'chart'},{id:'annotations',name:'Label & review examples',icon:'quote'},{id:'data',name:'Data & account',icon:'history'}];
+const pages = [{id:'extract',name:'Extract & review',icon:'extract'},{id:'tasks',name:'All tasks',icon:'check'},{id:'calendar',name:'Calendar',icon:'calendar'},{id:'history',name:'Meeting history',icon:'history'},{id:'benchmark',name:'Compare extraction methods',icon:'chart'},{id:'annotations',name:'Label & review examples',icon:'quote'},{id:'data',name:'Data & account',icon:'history'}];
 
 function App({account,signOut,completeAccountDeletion,authError}) {
+  const [calendarFilters,setCalendarFilters]=useState(initialCalendar);
   const [helpTopic,setHelpTopic]=useState(null);
   const [taskFilters,setTaskFilters]=useState(initialTaskFilters),[taskTarget,setTaskTarget]=useState(()=>readRoute().taskId || null);
   const [page,setPageState] = useState(()=>readRoute().page);
@@ -295,7 +299,7 @@ function App({account,signOut,completeAccountDeletion,authError}) {
     <header className="workspace-header">
       <ProductBrand href="/meetings" onClick={e=>{e.preventDefault();setPage('extract');}}/>
       <nav aria-label="Main navigation">{pages.filter(p=>!['benchmark','annotations'].includes(p.id)).map(p=><button key={p.id} disabled={busy || restoring || closing && p.id!=='data'} className={`nav-item ${page===p.id?'active':''}`} aria-current={page===p.id?'page':undefined} onClick={()=>setPage(p.id)}><Icon name={p.icon} size={17}/><span>{p.name}</span></button>)}<ResearchNavigation page={page} disabled={closing || busy || restoring} onNavigate={setPage}/></nav>
-      <div className="topbar-actions"><button type="button" className="text-button help-entry" onClick={()=>setHelpTopic(page==='annotations'?'annotations':page==='benchmark'?'benchmark':'meetings')}>Help</button><ThemeControl/>{account&&<><span className="account-name" title={account.email}>{account.email || 'Signed in'}</span><button className="text-button" onClick={signOut}>Sign out</button></>}</div>
+      <div className="topbar-actions"><button type="button" className="text-button help-entry" onClick={()=>setHelpTopic(page==='calendar'?'calendar':page==='annotations'?'annotations':page==='benchmark'?'benchmark':'meetings')}>Help</button><ThemeControl/>{account&&<><span className="account-name" title={account.email}>{account.email || 'Signed in'}</span><button className="text-button" onClick={signOut}>Sign out</button></>}</div>
     </header>
     {helpTopic&&<HelpGuide initialTopic={helpTopic} onClose={()=>setHelpTopic(null)} onNavigate={setPage} navigationDisabled={busy || restoring || closing || !!pending}/>}
     <main id="workspace-main" tabIndex={-1} aria-busy={restoring || busy}>
@@ -353,6 +357,7 @@ function App({account,signOut,completeAccountDeletion,authError}) {
         {page==='annotations'&&<AnnotationReviewer api={api} downloadJson={downloadJson} onHelp={()=>setHelpTopic('annotations')}/>}
         {page==='data'&&<DataControls completeAccountDeletion={completeAccountDeletion} onClosing={()=>{clearTimeout(saveTimer.current);activeRun.current=null;setClosing(true);setRun(null);setDrafts([]);setTranscript('');setMeetingTitle('');setInputSaveStatus('');setReport(null);setPending(null);setAnalysisStatus('');}}/>}
         {page==='tasks'&&<AllTasks filters={taskFilters} onFilters={setTaskFilters} onOpen={item=>openRun(item.run_id,'push',item.proposal_id)} busy={busy || restoring || !!pending}/>}
+        {page==='calendar'&&<Calendar filters={calendarFilters} onFilters={setCalendarFilters} onOpen={item=>openRun(item.run_id,'push',item.proposal_id)} busy={busy || restoring || !!pending}/>}
         {page==='history'&&<MeetingHistory onOpen={openRun} busy={busy || restoring || !!pending}/> }
         {page==='benchmark'&&<>
           <div className="page-intro"><div><div className="eyebrow accent">QUALITY BEFORE GUESSWORK</div><h1 tabIndex={-1}>Compare extraction methods.</h1><p>See how different methods turn conversations into tasks. You can use this app without setting up these optional checks.</p></div></div>

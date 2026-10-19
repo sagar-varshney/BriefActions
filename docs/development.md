@@ -93,6 +93,7 @@ and [web_bridge.py](../web_bridge.py).
 | `GET /api/runs`, `GET /api/runs/:id` | List and inspect saved runs |
 | `GET /api/runs/search` | Paginated meeting-name/transcript search, date range, and review status |
 | `GET /api/tasks` | Paginated confirmed-task search and date/progress views; requires the device's `today` date |
+| `GET /api/calendar` | Account-scoped month counts, selected-day entries, and global undated tasks. Requires `month` (YYYY-MM); optional `day`, `kind` (all/meetings/tasks), `status` (open/empty/todo/in_progress/done), `page`, `unscheduled_page`, and `page_size` (1–50, default 12). |
 | `POST /api/runs/:id/updates` | Create/recover a follow-up comparison using `{transcript, reference_date, request_id}` |
 | `POST /api/runs/:id/update-draft` | Save `{decisions, version}` for a comparison without changing the active plan |
 | `POST /api/runs/:id/update-confirm` | Approve selected changes atomically and replace the previous active version |

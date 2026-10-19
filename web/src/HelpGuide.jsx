@@ -1,6 +1,11 @@
 import useAfterRender from './useAfterRender.js';
 import React,{useEffect,useRef,useState} from 'react';
 const guides={
+ calendar:{label:'Calendar',page:'calendar',steps:[
+  ['Find a date','Open a month and select a date. Meeting cards use the conversation date; task cards use confirmed deadlines. On small screens, the agenda lists dates with events.','The calendar does not schedule a time of day or send reminders.'],
+  ['Inspect the conversation','Open a meeting to see its transcript, or open a task to inspect its confirmed plan and supporting passage. Use browser Back to return to the same calendar view.','Task status filters affect tasks only. Earlier meetings remain visible, while task deadlines follow the current confirmed plan.'],
+  ['Check unscheduled work','The Unscheduled list shows confirmed tasks whose deadline is Unknown, across all months. Use the status filter and page controls to find more work.','Viewing the calendar never assigns dates or changes your plan.']
+ ]},
  meetings:{label:'Meeting tasks',page:'extract',steps:[
   ['Add a conversation','Paste a transcript, import a file, or use Try an example. Choose the meeting date so words like “tomorrow” can be understood.','The example is invented. Loading it does not start analysis.'],
   ['Check suggested tasks','Click Analyze transcript to save the input and get suggestions. Open Edit & evidence to correct a task, owner, or date. Locate passage shows the original words.','Unknown means no value was identified. Check the source before filling it in.'],

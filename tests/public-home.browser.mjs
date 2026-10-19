@@ -107,7 +107,7 @@ try{
  for(const selector of ['.app-shell','.workspace-header','.review-placeholder'])assert.equal(await page.locator(selector).evaluate(el=>getComputedStyle(el).backgroundImage),'none');
  assert.ok(await page.getByRole('button',{name:'Try an example',exact:true}).isVisible());await page.emulateMedia({forcedColors:'none'});
  // Section titles follow navigation, reloads and browser history without private content.
- const sections=[['All tasks','/tasks'],['Meeting history','/history'],['Compare extraction methods','/research/evaluation'],['Label & review examples','/research/annotations'],['Data & account','/account'],['Extract & review','/meetings']];
+ const sections=[['All tasks','/tasks'],['Calendar','/calendar'],['Meeting history','/history'],['Compare extraction methods','/research/evaluation'],['Label & review examples','/research/annotations'],['Data & account','/account'],['Extract & review','/meetings']];
  await titleIs(page,'Extract & review · BriefActions');
  for(const [name,route] of sections){
   await navigate(page,name);await titleIs(page,`${name} · BriefActions`);assert.equal(new URL(page.url()).pathname,route);

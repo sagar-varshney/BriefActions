@@ -94,6 +94,32 @@ its meeting, where you can change progress or use **Locate passage**. Task links
 remain private to your account. Browser Back restores the dashboard filters during
 the same session; reloading the dashboard starts with the default filters.
 
+## See meetings and deadlines on the calendar
+
+Open **Calendar** to browse a month. Meeting cards use the conversation's meeting
+date; task cards use the confirmed deadline. The labels and colored borders tell
+them apart. The calendar shows dates, without scheduling a time of day or sending
+reminders. Dates do not shift with time zones.
+
+Choose a date to see its entries. Use arrow keys between dates in the month grid,
+then Enter to select. **Agenda** lists dates with events; small screens use this
+view automatically. **Today** returns to your device's current date.
+
+Choose **Meetings only**, **Tasks only**, or both. Task status filters apply only
+to tasks; choose **All statuses** to include completed work. Earlier meetings
+remain in history, while task deadlines follow the current confirmed plan.
+Unconfirmed suggestions do not appear as task deadlines.
+
+**Open meeting & transcript** returns to the saved meeting. **Open task & evidence**
+opens the exact confirmed task, where **Locate passage** shows its supporting
+words. Browser Back restores your calendar selection and filters in the same tab;
+reloading starts at the current month. **Refresh calendar** checks for changes.
+
+**Unscheduled tasks** lists confirmed work with an Unknown deadline, across all
+months and using the selected task status filter. Page controls show further
+entries on busy dates and in Unscheduled. The calendar never invents a deadline
+or changes your saved plans.
+
 ## Share a confirmed action plan
 
 Choose **Copy task** on an individual task in **All tasks** or a confirmed meeting

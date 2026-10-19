@@ -64,6 +64,9 @@ def report_paths():
 
 def handle(request):
     op = request.get('operation')
+    if op=='calendar_search':
+        from calendar_view import search
+        return search(store(), **{key:request[key] for key in ('month','day','kind','status','page','unscheduled_page','page_size') if key in request})
     if op in ('plan_update','plan_update_draft','plan_update_confirm'):
         from plan_updates import create, save_review
         if op=='plan_update':

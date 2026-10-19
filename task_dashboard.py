@@ -5,6 +5,25 @@ import re
 from data_controls import DataError
 
 
+def projection_sql(pg):
+    field = lambda alias, key: f"{alias}.payload::jsonb->>'{key}'" if pg else f"json_extract({alias}.payload,'$.{key}')"
+    task_field = lambda key: f"t.value->>'{key}'" if pg else f"json_extract(t.value,'$.{key}')"
+    expand = "jsonb_array_elements(f.payload::jsonb->'tasks') WITH ORDINALITY AS t(value,ordinality)" if pg else "json_each(f.payload,'$.tasks') t"
+    position = 't.ordinality' if pg else 'CAST(t.key AS INTEGER)'
+    return f"""SELECT f.run_id,f.event_id,{position} task_index,
+            {task_field('proposal_id')} proposal_id,{task_field('task')} task,
+            {task_field('owner')} owner,{task_field('deadline')} deadline,
+            COALESCE((SELECT {field('p','after')} FROM events p WHERE p.run_id=f.run_id
+              AND p.kind='task_progress' AND {field('p','proposal_id')}={task_field('proposal_id')}
+              ORDER BY p.event_id DESC LIMIT 1),'todo') status,
+            COALESCE((SELECT {field('n','title')} FROM events n WHERE n.run_id=f.run_id
+              AND n.kind='meeting_title' ORDER BY n.event_id DESC LIMIT 1),{field('e','title')},'') title,
+            {field('e','reference_date')} reference_date
+          FROM events f JOIN events e ON e.run_id=f.run_id AND e.kind='extraction'
+            CROSS JOIN {expand} WHERE f.kind='final'
+            AND NOT EXISTS(SELECT 1 FROM events replacement WHERE replacement.run_id=f.run_id AND replacement.kind='plan_superseded')"""
+
+
 def search(history, *, today=None, view='all', status='open', query='', page=0, page_size=12):
     if not isinstance(today, str) or not re.fullmatch(r'\d{4}-\d{2}-\d{2}', today):
         raise DataError('Choose a valid device date for task filters.', 400)
@@ -23,27 +42,12 @@ def search(history, *, today=None, view='all', status='open', query='', page=0, 
     if type(page) is not int or not 0 <= page <= 100_000 or type(page_size) is not int or not 1 <= page_size <= 50:
         raise DataError('Invalid task page or page size.', 400)
     pg = bool(history.database_url)
-    field = lambda alias, key: f"{alias}.payload::jsonb->>'{key}'" if pg else f"json_extract({alias}.payload,'$.{key}')"
-    task_field = lambda key: f"t.value->>'{key}'" if pg else f"json_extract(t.value,'$.{key}')"
-    expand = "jsonb_array_elements(f.payload::jsonb->'tasks') WITH ORDINALITY AS t(value,ordinality)" if pg else "json_each(f.payload,'$.tasks') t"
-    position = 't.ordinality' if pg else 'CAST(t.key AS INTEGER)'
     lower, contains = ('lower', 'strpos') if pg else ('flow_lower', 'instr')
     with history.connection() as conn:
         if not pg:
             conn.create_function('flow_lower', 1, lambda value: value.lower() if isinstance(value, str) else '', deterministic=True)
         rows = conn.execute(f"""WITH tasks AS MATERIALIZED (
-          SELECT f.run_id,f.event_id,{position} task_index,
-            {task_field('proposal_id')} proposal_id,{task_field('task')} task,
-            {task_field('owner')} owner,{task_field('deadline')} deadline,
-            COALESCE((SELECT {field('p','after')} FROM events p WHERE p.run_id=f.run_id
-              AND p.kind='task_progress' AND {field('p','proposal_id')}={task_field('proposal_id')}
-              ORDER BY p.event_id DESC LIMIT 1),'todo') status,
-            COALESCE((SELECT {field('n','title')} FROM events n WHERE n.run_id=f.run_id
-              AND n.kind='meeting_title' ORDER BY n.event_id DESC LIMIT 1),{field('e','title')},'') title,
-            {field('e','reference_date')} reference_date
-          FROM events f JOIN events e ON e.run_id=f.run_id AND e.kind='extraction'
-            CROSS JOIN {expand} WHERE f.kind='final'
-            AND NOT EXISTS(SELECT 1 FROM events replacement WHERE replacement.run_id=f.run_id AND replacement.kind='plan_superseded')
+          {projection_sql(pg)}
         ), matches AS MATERIALIZED (
           SELECT * FROM tasks WHERE {statuses[status]} AND
             (?='' OR {contains}({lower}(task),{lower}(?))>0 OR
