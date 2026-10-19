@@ -96,6 +96,10 @@ the same session; reloading the dashboard starts with the default filters.
 
 ## Share a confirmed action plan
 
+Choose **Copy task** on an individual task in **All tasks** or a confirmed meeting
+plan to copy its task, owner, and deadline. Unknown details stay **Unknown**.
+If clipboard access is unavailable, select and copy the text shown in the card.
+
 Once a plan is confirmed, choose **Copy action plan** or **Download Markdown**.
 Group it by owner, deadline, or original task order. Exports contain all confirmed
 tasks and their supporting passages, even when the on-screen task list is filtered.

@@ -26,6 +26,13 @@ try{
  await post(`/api/runs/${customer.id}/progress`,{proposal_id:customer.final_tasks[1].proposal_id,status:'done',version:0,request_id:'b'.repeat(32)});
  const review=await create('Deadline choices',`Maya will send the summary by ${shift(1)}.\nMaya will send the summary by ${shift(3)}.\nPlease prepare the handover notes soon.`);
  await page.getByRole('button',{name:'Refresh tasks',exact:true}).click();await page.getByRole('status').filter({hasText:'6 tasks'}).waitFor();assert.equal(await page.locator('.dashboard-task').count(),6);
+ // Copy one confirmed task without opening it, preserving unknown details.
+ const taskText=task=>`Task: ${task.task}\nOwner: ${task.owner}\nDeadline: ${task.deadline}`;
+ const agenda=launch.final_tasks.find(task=>task.owner==='Unknown');
+ const agendaCard=page.locator('.dashboard-task').filter({has:page.getByRole('heading',{name:agenda.task,exact:true})});
+ const copyAgenda=agendaCard.getByRole('button',{name:`Copy task: ${agenda.task}`,exact:true});
+ await copyAgenda.focus();await page.keyboard.press('Enter');await agendaCard.getByRole('status').filter({hasText:'Task copied.'}).waitFor();
+ assert.equal(await page.evaluate(()=>navigator.clipboard.readText()),taskText(agenda));assert.equal(new URL(page.url()).pathname,'/tasks');assert.ok(await copyAgenda.evaluate(el=>el===document.activeElement));
  const view=name=>page.getByRole('group',{name:'Task views'}).getByRole('button',{name:new RegExp('^'+name+'(?:\\s|$)')});
  for(const [label,task] of [['Today','review the budget'],['Overdue','send the report'],['Upcoming','draft the notes'],['Unassigned','prepare the agenda']]){
   await view(label).click();await page.waitForFunction(expected=>document.querySelectorAll('.dashboard-task').length===1 && document.querySelector('.dashboard-task h2')?.textContent.includes(expected),task);assert.match(await page.locator('.dashboard-task h2').textContent(),new RegExp(task));
@@ -46,10 +53,15 @@ try{
  await page.goBack();await page.getByRole('heading',{name:'All tasks',exact:true}).waitFor();assert.equal(await page.getByLabel('Search tasks',{exact:true}).inputValue(),'Launch');assert.equal(await view('Upcoming').getAttribute('aria-pressed'),'true');
  await page.goForward();await page.waitForFunction(id=>document.activeElement?.id===`confirmed-task-${id}`,target.proposal_id);
  await page.reload();await page.waitForFunction(id=>document.activeElement?.id===`confirmed-task-${id}`,target.proposal_id);
+ const confirmedCard=page.locator(`#confirmed-task-${target.proposal_id}`);
+ await confirmedCard.getByRole('button',{name:`Copy task: ${target.task}`,exact:true}).click();await confirmedCard.getByRole('status').filter({hasText:'Task copied.'}).waitFor();assert.equal(await page.evaluate(()=>navigator.clipboard.readText()),taskText(target));
  await page.getByRole('button',{name:'Copy action plan',exact:true}).click();await page.getByRole('status').filter({hasText:'Action plan copied.'}).waitFor();const copied=await page.evaluate(()=>navigator.clipboard.readText());assert.ok(copied.includes('Owner: Unknown'));assert.ok(copied.includes(target.evidence[0].text));assert.ok(copied.includes('send the report'));
  await page.getByLabel('Group action plan by',{exact:true}).selectOption('deadline');
  const download=page.waitForEvent('download');await page.getByRole('button',{name:'Download Markdown',exact:true}).click();const file=await download;assert.equal(file.suggestedFilename(),`briefactions-plan-${launch.id.slice(0,8)}.md`);const markdown=await readFile(await file.path(),'utf8');assert.match(markdown,/^# Launch planning/);assert.ok(markdown.indexOf('Deadline: '+shift(-1))<markdown.indexOf('Deadline: Unknown'));
  await page.evaluate(()=>Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async()=>{throw new Error('Denied');}}}));await page.getByRole('button',{name:'Copy action plan',exact:true}).click();await page.getByRole('alert').filter({hasText:'Clipboard access is unavailable'}).waitFor();await page.getByLabel('Action plan preview',{exact:true}).waitFor();await page.getByRole('button',{name:'Select plan text',exact:true}).click();assert.equal(await page.getByLabel('Action plan preview',{exact:true}).evaluate(el=>el.selectionEnd-el.selectionStart),await page.getByLabel('Action plan preview',{exact:true}).inputValue().then(text=>text.length));
+ await confirmedCard.getByRole('button',{name:`Copy task: ${target.task}`,exact:true}).click();
+ const taskPreview=confirmedCard.getByLabel('Task text to copy',{exact:true});await taskPreview.waitFor();assert.equal(await taskPreview.inputValue(),taskText(target));assert.ok(await taskPreview.evaluate(el=>el.readOnly&&el===document.activeElement&&el.selectionEnd-el.selectionStart===el.value.length));
+ await confirmedCard.getByRole('button',{name:'Select task text',exact:true}).click();assert.equal(await taskPreview.evaluate(el=>el.selectionEnd-el.selectionStart),taskText(target).length);
  await scan(page,'clipboard-fallback');await page.getByLabel('Group action plan by',{exact:true}).selectOption('owner');await page.locator('.plan-export details>summary').click();
  for(const width of [1440,320]){await page.setViewportSize({width,height:1000});for(const theme of ['light','dark']){await page.getByLabel('Color theme').selectOption(theme);await scan(page,`plan-export-${width}-${theme}`);await page.getByRole('region',{name:'Export action plan',exact:true}).scrollIntoViewIfNeeded();await page.screenshot({path:path.join(shots,`action-plan-${width}-${theme}.png`)});}}
  // A manually added task also has a private, reloadable link to the exact card.
@@ -61,6 +73,10 @@ try{
  await page.getByLabel('Deadline 2',{exact:true}).fill(shift(1));assert.equal(await page.getByRole('region',{name:'What to check for task 1',exact:true}).count(),0);
  await page.getByRole('button',{name:'All tasks',exact:true}).click();await page.getByLabel('Search tasks',{exact:true}).fill('');await view('All tasks').click();await page.getByRole('status').filter({hasText:'6 tasks'}).waitFor();
  for(const width of [1440,1180,768,390,320]){await page.setViewportSize({width,height:1000});for(const theme of ['light','dark']){await page.getByLabel('Color theme').selectOption(theme);await scan(page,`task-dashboard-${width}-${theme}`);await page.evaluate(()=>scrollTo(0,0));if([1440,320].includes(width))await page.screenshot({path:path.join(shots,`task-dashboard-${width}-${theme}.png`),fullPage:width===320});}}
+ // Missing clipboard support also offers a keyboard-accessible dashboard fallback.
+ await page.evaluate(()=>Object.defineProperty(navigator,'clipboard',{configurable:true,value:undefined}));
+ await agendaCard.getByRole('button',{name:`Copy task: ${agenda.task}`,exact:true}).click();const dashboardPreview=agendaCard.getByLabel('Task text to copy',{exact:true});await dashboardPreview.waitFor();assert.equal(await dashboardPreview.inputValue(),taskText(agenda));assert.ok(await dashboardPreview.evaluate(el=>el===document.activeElement&&el.selectionEnd-el.selectionStart===el.value.length));
+ for(const width of [1440,320])for(const theme of ['light','dark']){await page.setViewportSize({width,height:1000});await page.getByLabel('Color theme').selectOption(theme);await scan(page,`copy-task-fallback-${width}-${theme}`);await agendaCard.scrollIntoViewIfNeeded();await page.screenshot({path:path.join(shots,`copy-task-fallback-${width}-${theme}.png`)});}
  // Bounded pagination and deleting a source meeting update the dashboard projection.
  await confirm(await create('Pagination fixture',Array.from({length:13},(_,i)=>`Ada will review item ${i}.`).join('\n')));
  await page.getByRole('button',{name:'Refresh tasks',exact:true}).click();await page.getByRole('status').filter({hasText:'19 tasks'}).waitFor();await page.getByRole('button',{name:'Next tasks',exact:true}).click();await page.getByRole('status').filter({hasText:'Page 2 of 2'}).waitFor();assert.equal(await page.locator('.dashboard-task').count(),7);
