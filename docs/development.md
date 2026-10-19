@@ -99,6 +99,7 @@ and [web_bridge.py](../web_bridge.py).
 | `POST /api/runs/:id/update-draft` | Save `{decisions, version}` for a comparison without changing the active plan |
 | `POST /api/runs/:id/update-confirm` | Approve selected changes atomically and replace the previous active version |
 | `POST /api/runs/:id/title` | Versioned, audited meeting rename |
+| `POST /api/runs/:id/deadline` | Versioned, retry-safe `{proposal_id, deadline, reason, version, request_id}` correction. Date must be YYYY-MM-DD or Unknown; reason is required (1–500 characters). |
 | `POST /api/runs/:id/progress` | Retry-safe `{proposal_id, status, version, request_id}` update, separate from the confirmed plan |
 | `POST /api/runs/:id/manual-actions` | Add an evidence-backed proposal before confirmation |
 | `POST /api/runs/:id/draft` | Save incomplete decisions with an optimistic draft version |
@@ -215,6 +216,23 @@ Accounts with pending deletion open `/account`. The public homepage does not mak
 these private requests. Explicit section, meeting, and task links bypass this
 default selection, and authentication redirects still discard untrusted queries.
 A failed entry check offers a read-only retry rather than guessing a destination.
+
+
+## Deadline correction projection
+
+`task_deadlines.py` appends `task_deadline` events under the account write lock.
+Optimistic versions are per task and separate from progress. A reused request ID
+recovers the original write without rolling back later changes. New writes to
+unconfirmed, superseded, deleted, or another account’s tasks are rejected.
+
+Run snapshots keep immutable `final_tasks` and add `current_tasks` and
+`task_deadlines`. The shared SQLite/Postgres task projection applies the latest
+correction for Calendar, My day, and task search. CSV includes `confirmed_deadline`
+and `deadline_correction_reason`; readable plan exports identify the correction.
+Follow-up comparisons snapshot deadline versions. Confirmation rechecks those
+versions atomically, so a stale comparison cannot overwrite a newer correction.
+Inherited corrected dates retain their reason until a reviewed follow-up changes
+that date. No schema migration or new service is required.
 
 
 ## Separate legacy backend

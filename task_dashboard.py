@@ -12,7 +12,10 @@ def projection_sql(pg):
     position = 't.ordinality' if pg else 'CAST(t.key AS INTEGER)'
     return f"""SELECT f.run_id,f.event_id,{position} task_index,
             {task_field('proposal_id')} proposal_id,{task_field('task')} task,
-            {task_field('owner')} owner,{task_field('deadline')} deadline,
+            {task_field('owner')} owner,
+            COALESCE((SELECT {field('d','after')} FROM events d WHERE d.run_id=f.run_id
+              AND d.kind='task_deadline' AND {field('d','proposal_id')}={task_field('proposal_id')}
+              ORDER BY d.event_id DESC LIMIT 1),{task_field('deadline')}) deadline,
             COALESCE((SELECT {field('p','after')} FROM events p WHERE p.run_id=f.run_id
               AND p.kind='task_progress' AND {field('p','proposal_id')}={task_field('proposal_id')}
               ORDER BY p.event_id DESC LIMIT 1),'todo') status,

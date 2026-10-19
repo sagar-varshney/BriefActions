@@ -10,6 +10,7 @@ from pathlib import Path
 from data_controls import DataError, identifier
 from extraction import UNKNOWN, extract_action_items, normalize_task, parse_deadline, passages
 from task_progress import project as progress
+from task_deadlines import project as deadlines, effective_tasks
 
 FIELDS = ('task', 'owner', 'deadline')
 CANCEL = re.compile(r'^(?:Actually,?\s+)?(?:cancel|drop)\s+(.+?)[.!?]*$', re.I)
@@ -30,7 +31,7 @@ def current_base(events):
         raise DataError('Confirm this plan before comparing a follow-up.', 409)
     if any(e['kind'] == 'plan_superseded' for e in events):
         raise DataError('A newer plan has replaced this version. Open the latest plan before comparing another follow-up.', 409)
-    return final
+    return effective_tasks(events)
 
 
 def compare(tasks, followup, reference, offset):
@@ -97,6 +98,11 @@ def compare(tasks, followup, reference, offset):
         if before is None and after is None:
             continue  # A newly mentioned action cancelled in this same follow-up.
         kind = 'added' if before is None else 'cancelled' if after is None else 'changed' if any(before[k] != after[k] for k in FIELDS) else 'unchanged'
+        if before and after:
+            if before['deadline'] == after['deadline'] and before.get('deadline_correction'):
+                after['deadline_correction'] = deepcopy(before['deadline_correction'])
+            else:
+                after.pop('deadline_correction', None)
         if before and after and before.get('source') == 'manual':
             after['source'] = 'manual'
         rows.append({**slot, 'kind': kind, 'change_id': (before or after)['proposal_id']})
@@ -136,7 +142,8 @@ def create(history, base_run_id, transcript, reference_date, request_id):
         rows, warnings = compare(tasks, transcript, reference, len(prefix))
         name = next((e['payload']['title'] for e in reversed(events) if e['kind'] == 'meeting_title'), original.get('title', ''))
         title = ((name or 'Meeting ' + original['reference_date'])[:90] + ' · Update ' + reference_date)[:120]
-        update = {'base_run_id': base_run_id, 'followup_start': len(prefix), 'rows': rows, 'warnings': warnings}
+        update = {'base_run_id': base_run_id, 'followup_start': len(prefix), 'rows': rows, 'warnings': warnings,
+                  'base_deadline_versions': {key:value['version'] for key,value in deadlines(events).items()}}
         payload = {'title': title, 'transcript': combined, 'reference_date': reference_date,
                    'proposals': [r['after'] or r['before'] for r in rows],
                    'settings': {'extractor': 'plan-update-rules-v1', 'extractor_sha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest(), 'clusters': original.get('settings', {}).get('clusters', 3),
@@ -203,6 +210,9 @@ def save_review(history, run_id, decisions, version, *, confirm=False):
             return
         base_events = events_in(conn, update['base_run_id'])
         current_base(base_events)
+        expected = update.get('base_deadline_versions', {})
+        if any(value['version'] != expected.get(key, 0) for key,value in deadlines(base_events).items()):
+            raise DataError('A deadline was corrected after this comparison began. Start a new follow-up comparison from the latest plan.', 409)
         states = progress(base_events)
         by_id = {d['change_id']: d for d in clean}
         final_tasks = []
@@ -213,6 +223,10 @@ def save_review(history, run_id, decisions, version, *, confirm=False):
                 continue
             if d and d['apply']:
                 task.update({key: d[key] for key in FIELDS})
+                if row['before'] and task['deadline'] != row['before']['deadline']:
+                    task.pop('deadline_correction', None)
+                elif row['before'] and row['before'].get('deadline_correction'):
+                    task['deadline_correction'] = deepcopy(row['before']['deadline_correction'])
             from evaluate import validate_item
             validate_item(task, events[0]['payload']['transcript'])
             final_tasks.append(task)

@@ -61,6 +61,25 @@ before starting new work. **My day** does not create or confirm tasks automatica
 **Edit meeting** opens the input editor. Closing it preserves unfinished edits.
 Input changes do not replace existing evidence or automatically run another analysis.
 
+## Correct a confirmed task’s deadline
+
+Open a task from **All tasks**, **My day**, **Calendar**, or its meeting. Choose
+**Correct deadline**, enter the new date (or select **No known deadline**), and give
+a reason before saving. A correction requires a different date. It does not edit
+the confirmed plan, task description, owner, or supporting transcript.
+
+The task shows the current deadline, originally confirmed date, and latest reason.
+**Activity** records every before/after date and reason. Calendar, My day, due-date
+filters, copied plans, Markdown, and CSV use the current deadline. Plan exports
+also include the original date and correction reason; raw history keeps all events.
+If a date is Unknown, the task moves to Calendar’s **Unscheduled tasks** list.
+
+A failed save keeps the submitted correction in this browser. Use **Retry deadline
+correction** to recover the same request, including after a reload. If another tab
+changes the date first, refresh the saved tasks and reopen the correction. An older
+plan version is read-only. A follow-up comparison created before a deadline
+correction cannot be confirmed: start a new comparison from the latest plan.
+
 ## Review a follow-up conversation
 
 Open a confirmed plan and expand **Review a follow-up conversation**. Paste the
@@ -125,7 +144,7 @@ the same session; reloading the dashboard starts with the default filters.
 ## See meetings and deadlines on the calendar
 
 Open **Calendar** to browse a month. Meeting cards use the conversation's meeting
-date; task cards use the confirmed deadline. The labels and colored borders tell
+date; task cards use the current deadline, including any saved correction. The labels and colored borders tell
 them apart. The calendar shows dates, without scheduling a time of day or sending
 reminders. Dates do not shift with time zones.
 

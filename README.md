@@ -42,6 +42,7 @@ model experiments are separate, explicit developer tools.
 | Autosaved work | Recover unfinished inputs and reviews after a reload, with explicit recovery for interrupted analyses. |
 | All tasks | Search confirmed work by task, owner, or meeting; filter by progress, Today, Overdue, Upcoming, or Unassigned. |
 | Calendar | Browse meeting dates and current task deadlines in a month view or mobile agenda; inspect the original plan and find undated work in Unscheduled. |
+| Traceable deadline corrections | Change a confirmed task’s date or mark it Unknown with a reason. Keep the original plan and date history while Calendar, My day, task filters, and exports use the current deadline. |
 | Task progress | Move work through To do, In progress, and Done without rewriting the confirmed plan or its evidence. |
 | Searchable meeting history | Name meetings, filter by date or review status, and inspect the activity behind a saved plan. |
 | Shareable plans | Copy a plan, download Markdown or CSV, or export the complete saved history. |

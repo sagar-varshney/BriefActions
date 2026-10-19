@@ -19,6 +19,7 @@ function humanize(events,proposals){
   else if(event.kind==='plan_superseded'){heading='Replaced by a reviewed follow-up';lines.push('This version remains in history. All tasks uses its approved replacement.');}
   else if(event.kind==='final'){heading='Confirmed plan';lines.push(`${p.tasks.length} task${p.tasks.length===1?'':'s'} saved in the immutable confirmed plan.`);}
   else if(event.kind==='meeting_title'){heading='Renamed meeting';lines.push(`Meeting name: ${title} → ${p.title || 'Unnamed meeting'}`);title=p.title || 'Unnamed meeting';}
+  else if(event.kind==='task_deadline'){heading='Corrected task deadline';lines.push(`${finalTasks.get(p.proposal_id) || 'Task'}: ${p.before} → ${p.after}`,`Reason: ${p.reason}`);}
   else if(event.kind==='task_progress'){heading='Updated task progress';lines.push(`${finalTasks.get(p.proposal_id) || 'Task'}: ${progressLabels[p.before] || p.before} → ${progressLabels[p.after] || p.after}`);}
   else{heading=event.kind.replaceAll('_',' ');lines.push('Saved event; inspect the raw record for details.');}
   return {...event,heading,lines};

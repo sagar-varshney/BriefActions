@@ -12,6 +12,7 @@ import sys
 from history import HistoryStore, proposals_from_events
 from data_controls import DataError
 from task_progress import project as project_progress
+from task_deadlines import project as project_deadlines, effective_tasks
 
 ROOT = Path(__file__).resolve().parent
 MAX_TRANSCRIPT = 100_000
@@ -53,6 +54,7 @@ def run_snapshot(run_id):
             'title':name['title'] if name else original.get('title',''),'title_version':name['version'] if name else 0,
             'summary':original.get('settings',{}).get('summary',''),
             'task_progress':project_progress(events),
+            'task_deadlines':project_deadlines(events), 'current_tasks':effective_tasks(events),
             'status':'confirmed' if final is not None else 'review', 'final_tasks':final, 'events':events, 'draft':draft}
 
 
@@ -84,6 +86,10 @@ def handle(request):
     if op=='task_progress':
         from task_progress import update
         update(store(),request.get('run_id'),request.get('proposal_id'),request.get('status'),request.get('version'),request.get('request_id'))
+        return run_snapshot(request.get('run_id'))
+    if op=='task_deadline':
+        from task_deadlines import update
+        update(store(),request.get('run_id'),request.get('proposal_id'),request.get('deadline'),request.get('reason'),request.get('version'),request.get('request_id'))
         return run_snapshot(request.get('run_id'))
     if op=='meeting_search':
         from meeting_history import search
@@ -226,11 +232,15 @@ def handle(request):
         if snapshot['final_tasks'] is None:
             raise ApiError('Confirm the plan before exporting tasks.',409)
         output = io.StringIO()
-        fields = ['proposal_id','task','owner','deadline','source','supporting_transcript_passages']
+        fields = ['proposal_id','task','owner','deadline','source','supporting_transcript_passages','confirmed_deadline','deadline_correction_reason']
         writer = csv.DictWriter(output,fieldnames=fields)
         writer.writeheader()
-        for task in snapshot['final_tasks']:
-            writer.writerow({k:task[k] for k in fields[:4]} | {'source':task.get('source','extraction')} | {'supporting_transcript_passages':'\n\n'.join(e['text'] for e in task['evidence'])})
+        for task in snapshot['current_tasks']:
+            correction=task.get('deadline_correction',{})
+            writer.writerow({k:task[k] for k in fields[:4]} | {'source':task.get('source','extraction'),
+                'supporting_transcript_passages':'\n\n'.join(e['text'] for e in task['evidence']),
+                'confirmed_deadline':correction.get('confirmed_deadline',task['deadline']),
+                'deadline_correction_reason':correction.get('reason','')})
         return output.getvalue()
     if op == 'benchmarks':
         reports = []

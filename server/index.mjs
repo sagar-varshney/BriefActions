@@ -241,8 +241,10 @@ export function createApp({historyPath, config=loadConfig(), maxWorkers=config.m
         const input=await body(req),operation={updates:'plan_update','update-draft':'plan_update_draft','update-confirm':'plan_update_confirm'}[match[2]];
         return json(res,match[2]==='updates'?201:200,await call({...input,operation,run_id:match[1]}));
       }
-      if ((match = pathname.match(/^\/api\/runs\/([a-f0-9]{32})(?:\/(finalize|draft|title|progress|manual-actions|history.json|tasks.csv))?$/))) {
+      if ((match = pathname.match(/^\/api\/runs\/([a-f0-9]{32})(?:\/(finalize|draft|title|progress|deadline|manual-actions|history.json|tasks.csv))?$/))) {
         const [, run_id, action] = match;
+        if(action==='deadline' && req.method!=='POST')throw new HttpError(405,'Deadline corrections require POST.');
+        if(req.method==='POST' && action==='deadline'){const input=await body(req);return json(res,200,await call({operation:'task_deadline',run_id,proposal_id:input.proposal_id,deadline:input.deadline,reason:input.reason,version:input.version,request_id:input.request_id}));}
         if(action==='progress' && req.method!=='POST')throw new HttpError(405,'Task progress requires POST.');
         if(req.method==='POST' && action==='progress'){const input=await body(req);return json(res,200,await call({operation:'task_progress',run_id,proposal_id:input.proposal_id,status:input.status,version:input.version,request_id:input.request_id}));}
         if(req.method==='POST' && action==='title'){const input=await body(req);return json(res,200,await call({operation:'meeting_title',run_id,title:input.title,version:input.version}));}

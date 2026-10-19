@@ -1,7 +1,7 @@
 import React from 'react';
 export default function WorkspaceSummary({run,drafts,selected}){
   if(!run)return null;
-  const confirmed=run.status==='confirmed',items=confirmed?run.final_tasks:drafts;
+  const confirmed=run.status==='confirmed',items=confirmed?(run.current_tasks || run.final_tasks):drafts;
   const missing=items.filter(item=>!item.owner?.trim() || item.owner.trim()==='Unknown' || !item.deadline?.trim() || item.deadline.trim()==='Unknown').length;
   const cards=[
     [run.settings?.plan_update?'Compared tasks':'Proposed actions',run.proposals.length,run.settings?.plan_update?'Tasks in the follow-up comparison':'Extracted and user-added proposals'],
