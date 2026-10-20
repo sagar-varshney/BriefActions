@@ -10,7 +10,7 @@ or task link returns to that item after sign-in. Local development instead shows
 **System** from **Theme** on the sign-in page; the workspace remembers that choice.
 The public homepage always uses its own mix of light and dark sections.
 
-Navigation follows this order: **Extract & review → My day → All tasks → By owner → Calendar → Meeting history**.
+Navigation follows this order: **Extract & review → My day → All tasks → Tasks by owner → Calendar → Meeting history**.
 Start in **Extract & review**: add a transcript, check proposed actions, then confirm
 your plan. Its **Start here** label, three-step progress bar, sample, and optional
 walkthrough help you get started. Use **My day** to choose your next step once work
@@ -141,9 +141,9 @@ its meeting, where you can change progress or use **Locate passage**. Task links
 remain private to your account. Browser Back restores the dashboard filters during
 the same session; reloading the dashboard starts with the default filters.
 
-## See work by owner
+## Tasks by owner
 
-Open **By owner**, beside **All tasks**, to see confirmed tasks grouped by owner
+Open **Tasks by owner**, beside **All tasks**, to see confirmed tasks grouped by owner
 name. The initial view includes groups with open work. Choose **All owner groups**
 to include completed-only groups, or narrow the list to overdue or unassigned work.
 Search follows owner labels; it does not search transcript text.

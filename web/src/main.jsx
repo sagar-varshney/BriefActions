@@ -68,7 +68,7 @@ function downloadJson(value, filename) {
   const link = document.createElement('a'); link.href=url; link.download=filename; link.click();
   setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
-const pages = [{id:'extract',name:'Extract & review',icon:'extract'},{id:'today',name:'My day',icon:'day'},{id:'tasks',name:'All tasks',icon:'check'},{id:'owners',name:'By owner',icon:'owners'},{id:'calendar',name:'Calendar',icon:'calendar'},{id:'history',name:'Meeting history',icon:'history'},{id:'benchmark',name:'Compare extraction methods',icon:'chart'},{id:'annotations',name:'Label & review examples',icon:'quote'},{id:'data',name:'Data & account',icon:'history'}];
+const pages = [{id:'extract',name:'Extract & review',icon:'extract'},{id:'today',name:'My day',icon:'day'},{id:'tasks',name:'All tasks',icon:'check'},{id:'owners',name:'Tasks by owner',icon:'owners'},{id:'calendar',name:'Calendar',icon:'calendar'},{id:'history',name:'Meeting history',icon:'history'},{id:'benchmark',name:'Compare extraction methods',icon:'chart'},{id:'annotations',name:'Label & review examples',icon:'quote'},{id:'data',name:'Data & account',icon:'history'}];
 
 function App({account,signOut,completeAccountDeletion,authError}) {
   const [historyStatus,setHistoryStatus]=useState('');
