@@ -70,5 +70,7 @@ def search(history, *, today=None, query='', view='open', page=0, page_size=12):
         item['unassigned']=item['owner']=='Unknown'
         item['next_task']=row[15] if isinstance(row[15],dict) or row[15] is None else json.loads(row[15])
         items.append(item)
+    # Postgres SUM(bigint) returns Decimal; API counts must be JSON integers.
+    summary=dict(zip(('groups','named_owners','open_tasks','overdue_tasks','unassigned_open'),map(int,rows[0][2:7])))
     return {'today':today,'query':query.strip(),'view':view,'page':rows[0][1],'page_size':page_size,'total':rows[0][0],
-            'summary':dict(zip(('groups','named_owners','open_tasks','overdue_tasks','unassigned_open'),rows[0][2:7])),'items':items}
+            'summary':summary,'items':items}

@@ -1,5 +1,6 @@
 """Owner labels, bounded summaries, current task versions and exact drill-downs on both stores."""
 from copy import deepcopy
+import json
 from pathlib import Path
 import tempfile
 import unittest
@@ -79,3 +80,10 @@ class OwnerOverviewTests(unittest.TestCase):
             with self.assertRaises(DataError):search(self.history,**({'today':'2026-12-29'}|change))
         for owner in (None,[],'x'*10001):
             with self.assertRaises(DataError):tasks(self.history,today='2026-12-29',owner=owner)
+
+    def test_empty_and_populated_responses_are_json_serializable_with_integer_counts(self):
+        for populated in (False,True):
+            if populated:self.create([('Missing','Unknown','2026-12-28'),('Named','Maya','Unknown')])
+            value=search(self.history,today='2026-12-29',view='all')
+            self.assertEqual(json.loads(json.dumps(value)),value)
+            self.assertTrue(all(type(count) is int for count in value['summary'].values()))
