@@ -203,6 +203,17 @@ export function createApp({historyPath, config=loadConfig(), maxWorkers=config.m
         return json(res,200,await call({operation:'delete_input',run_id:match[2],kind:match[1]==='runs'?'extraction':'annotation_input'}));
       }
       if (req.method === 'GET' && pathname === '/api/config') return json(res, 200, await call({operation:'config'}));
+      if(req.method==='GET' && pathname==='/api/weekly-review'){
+        const keys=new Set(['today','time_zone','view','page','page_size']);
+        for(const key of url.searchParams.keys())if(!keys.has(key) || url.searchParams.getAll(key).length!==1)throw new HttpError(400,'Invalid weekly review parameter.');
+        const input=Object.fromEntries(url.searchParams);
+        for(const key of ['page','page_size'])if(key in input){if(!/^\d{1,6}$/.test(input[key]))throw new HttpError(400,'Invalid weekly review page or page size.');input[key]=Number(input[key]);}
+        return json(res,200,await call({...input,operation:'weekly_review'}));
+      }
+      if(req.method==='POST' && (match=pathname.match(/^\/api\/runs\/([a-f0-9]{32})\/followup-draft$/))){
+        const input=await body(req);
+        return json(res,200,await call({...input,operation:'followup_draft',run_id:match[1]}));
+      }
       if(req.method==='GET' && pathname==='/api/today'){
         const keys=new Set(['today','limit']);
         for(const key of url.searchParams.keys())if(!keys.has(key) || url.searchParams.getAll(key).length!==1)throw new HttpError(400,'Invalid My day parameter.');

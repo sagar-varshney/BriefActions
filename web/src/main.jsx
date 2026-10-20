@@ -19,6 +19,7 @@ import MyDay from './MyDay.jsx';
 import OwnerOverview,{initialOwnerFilters} from './OwnerOverview.jsx';
 import {initialCalendar} from './calendarDates.js';
 import PlanExport from './PlanExport.jsx';
+import FollowupDraft from './FollowupDraft.jsx';
 import PlanChangeReview,{FollowupForm} from './PlanUpdates.jsx';
 import ProductBrand from './ProductBrand.jsx';
 import SourceTranscript from './SourceTranscript.jsx';
@@ -346,6 +347,7 @@ function App({account,signOut,completeAccountDeletion,authError}) {
               {run.final_tasks.length===0&&<div className="notice">You confirmed a plan with no tasks. All proposals were rejected.</div>}
               {!run.superseded_by&&<FollowupForm key={`followup-${run.id}`} run={run} client={draftClient} busy={busy} onStart={startPlanUpdate}/>}
               <PlanExport key={`export-${run.id}`} run={run}/>
+              <FollowupDraft key={`message-${run.id}`} run={run} client={draftClient} disabled={busy} onUpdate={value=>setRun(value)}/>
               <TaskFollowThrough key={`progress-${run.id}`} run={run} targetId={taskTarget} onViewChange={()=>{setActiveEvidence(null);evidenceTrigger.current=null;}} onUpdate={value=>{setRun(value);setActiveEvidence(null);evidenceTrigger.current=null;}} renderEvidence={(task,i)=><Evidence passages={task.evidence} onInspect={inspectEvidence} label={`confirmed task ${i+1}`}/>}/>
               {run.settings?.plan_update&&<details className="disclosure"><summary>Review the changes behind this plan</summary><PlanChangeReview key={`changes-${run.id}`} run={run} client={draftClient} busy={busy} onConfirm={confirmPlanUpdate} onOpen={openRun} onViewChange={()=>{setActiveEvidence(null);evidenceTrigger.current=null;}} renderEvidence={(task,label)=><Evidence passages={task.evidence} onInspect={inspectEvidence} label={label}/>} /></details>}
             </>:run.settings?.plan_update?<PlanChangeReview key={`changes-${run.id}`} run={run} client={draftClient} busy={busy} onConfirm={confirmPlanUpdate} onOpen={openRun} onViewChange={()=>{setActiveEvidence(null);evidenceTrigger.current=null;}} renderEvidence={(task,label)=><Evidence passages={task.evidence} onInspect={inspectEvidence} label={label}/>} />:<ReviewProposals key={`review-${run.id}`} run={run} drafts={drafts} busy={busy} onViewChange={()=>{setActiveEvidence(null);evidenceTrigger.current=null;}} onChange={updateReview} onConfirm={finalize} renderEvidence={(p,i)=><Evidence passages={p.evidence} onInspect={inspectEvidence} label={`task ${i+1}`}/>}>

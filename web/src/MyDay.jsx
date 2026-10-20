@@ -3,6 +3,7 @@ import {api} from './api.js';
 import {localToday,progressLabels} from './reviewTools.js';
 import {dateLabel} from './calendarDates.js';
 import CopyTask from './CopyTask.jsx';
+import WeeklyReview from './WeeklyReview.jsx';
 
 const sections=[{id:'overdue',label:'Overdue',hint:'Start with commitments whose deadlines have passed.',empty:'No overdue tasks.'},{id:'today',label:'Due today',hint:'Confirmed work due on your device’s current date.',empty:'No tasks due today.'},{id:'upcoming',label:'Next 7 days',hint:'Deadlines after today, through the next seven days.',empty:'No tasks due in the next seven days.'},{id:'reviews',label:'Unfinished reviews',hint:'Saved meetings waiting for your confirmation.',empty:'No saved reviews waiting for confirmation.'}];
 export default function MyDay({busy,onStart,onOpen,onTasks,onReviews,onCalendar}){
@@ -13,7 +14,8 @@ export default function MyDay({busy,onStart,onOpen,onTasks,onReviews,onCalendar}
  const show=id=>id==='reviews'?onReviews():onTasks(id),attention=result&&Object.values(result.sections).reduce((total,section)=>total+section.total,0);
  return <section className="daily-workspace" aria-labelledby="daily-title">
   <div className="page-intro daily-intro"><div><div className="eyebrow accent">A CLEAR PLACE TO START</div><h1 id="daily-title" tabIndex={-1}>My day</h1><p>{dateLabel(today)} · Your workspace’s next steps, together.</p></div><div className="daily-intro-actions"><button className="button secondary" type="button" onClick={()=>{setToday(localToday());setRetry(value=>value+1);}}>Refresh My day</button><button className="button primary" type="button" disabled={busy} onClick={onStart}>Add a conversation</button></div></div>
-  <p className="form-hint daily-scope">Includes tasks for every named owner in your private workspace. Completed tasks are excluded. Today is {today}, using your device’s date.</p>
+  <p className="form-hint daily-scope">Includes tasks for every named owner in your private workspace. Daily task lists exclude completed work; the weekly review includes recent completions. Today is {today}, using your device’s date.</p>
+  <WeeklyReview busy={busy} onOpen={onOpen} onCalendar={onCalendar}/>
   {error?<div role="alert" className="notice error">{error}<button className="text-button" type="button" onClick={()=>setRetry(value=>value+1)}>Retry My day loading</button></div>:waiting?<p className="empty-state" role="status">Loading your day…</p>:result&&<>
    {!result.meta.saved_meetings?<div className="panel daily-welcome"><div className="eyebrow accent">FROM CONVERSATION TO COMMITMENT</div><h2>Your day starts with a conversation.</h2><p>Add a transcript, review the suggested tasks, and confirm a plan. Your deadlines and unfinished reviews will appear here.</p><button className="button primary" disabled={busy} type="button" onClick={onStart}>Start your first meeting</button></div>:!attention&&<div className="notice daily-clear" role="status"><strong>{result.meta.open_tasks?'No dated work needs attention this week.':'All caught up.'}</strong><p>{result.meta.open_tasks?'Open tasks with later or unknown deadlines are available in All tasks and Calendar.':'You have no open tasks or saved reviews waiting for confirmation.'}</p></div>}
    <p className="sr-only" role="status">Overview ready for {result.today}. {result.sections.overdue.total} overdue; {result.sections.today.total} due today; {result.sections.upcoming.total} upcoming; {result.sections.reviews.total} reviews.</p>

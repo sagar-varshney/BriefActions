@@ -21,6 +21,7 @@ React / Vite → Node HTTP API → Python bridge → extraction and history
 | `extraction.py`, `baseline_extractor.py` | Current evidence-backed rules and frozen original rules |
 | `flow_engine.py` | Summaries, task groups, workstream classification, and heuristic suggestions |
 | `plan_updates.py` | Conservative follow-up comparisons, versioned change review, atomic plan replacement, and progress carryover |
+| `followup_drafts.py`, `weekly_review.py` | Versioned follow-up messages and timezone-aware weekly snapshots |
 | `history.py`, `task_dashboard.py` | Saved runs, drafts, decisions, progress, and cross-meeting task search |
 | `annotations.py`, `annotation_drafts.py`, `corpus_library.py` | Review submissions, autosaved labels, and verified input-only practice imports |
 | `reviewed_benchmarks.py`, `evaluate.py` | Frozen-snapshot comparisons and extraction scoring |
@@ -95,6 +96,8 @@ and [web_bridge.py](../web_bridge.py).
 | `GET /api/owners` | Account-scoped owner-label groups, summary counts, and one priority task per group. Requires device `today`; optional `query` (200 characters), `view` (open/all/overdue/unassigned), `page`, and `page_size` (1–50). |
 | `GET /api/tasks` | Paginated confirmed-task search and date/progress views; requires the device's `today` date; optional exact `owner` label (`Unknown` selects missing owners) |
 | `GET /api/today` | Private daily overview. Requires device date `today` (YYYY-MM-DD); optional preview `limit` (1–12, default 4). Complete counts and bounded previews for overdue, today, next-seven-day tasks and unfinished reviews, plus open/undated totals. |
+| `GET /api/weekly-review` | Timezone-aware recent completions and current overdue/upcoming/review counts, with paginated lists |
+| `POST /api/runs/:id/followup-draft` | Versioned follow-up subject/message, stable retries, and source-freshness checks |
 | `GET /api/calendar` | Account-scoped month counts, selected-day entries, and global undated tasks. Requires `month` (YYYY-MM); optional `day`, `kind` (all/meetings/tasks), `status` (open/empty/todo/in_progress/done), `page`, `unscheduled_page`, and `page_size` (1–50, default 12). |
 | `POST /api/runs/:id/updates` | Create/recover a follow-up comparison using `{transcript, reference_date, request_id}` |
 | `POST /api/runs/:id/update-draft` | Save `{decisions, version}` for a comparison without changing the active plan |
@@ -259,3 +262,40 @@ The preserved FastAPI/RAG code in `app/` has its own `requirements-rag.txt` and
 [backend guide](rag-backend.md). It is not used by the BriefActions React UI or
 covered by these transcript-workflow CI checks. Use a separate Python environment
 for its dependencies.
+
+## Follow-up messages and weekly reviews
+
+`POST /api/runs/:id/followup-draft` accepts `subject` (1–300 characters, one line),
+`body` (1–100,000 characters), optimistic `version`, `source_revision`, and a stable
+32-character hex `request_id`. `followup_drafts.py` saves `followup_draft` events
+under the existing account write lock. Confirmed task/evidence events stay intact.
+Retries recover their original write, while snapshots return the newest saved
+message. Stale versions, changed source details, unconfirmed/superseded plans,
+and foreign/deleted inputs cannot receive new message edits.
+
+Run snapshots expose `followup_draft` and `followup_revision`. The SHA-256 revision
+covers the current title, meeting date, effective tasks, progress, and supersession
+state; message saves do not invalidate it. The plain-text message template runs
+in the browser and uses confirmed fields only. Unsaved edits and pending requests
+use the existing account-scoped browser storage, additionally keyed by tab client
+and meeting. Explicit Save syncs a version to the server. Copy rechecks freshness;
+regeneration requires an explicit replacement action. There is no email transport,
+external language-model call, or new schema migration.
+
+`GET /api/weekly-review?today=YYYY-MM-DD&time_zone=IANA_ZONE&view=completed&page=0&page_size=8`
+requires a valid device date, accepts `completed`, `overdue`, `upcoming`, or `reviews`,
+and returns complete counts with bounded items (maximum 50). It is a read-only,
+account-scoped, single-statement SQLite/Postgres projection of current plans.
+Completion times use seven local calendar dates, converted to UTC boundaries by
+`zoneinfo`; `tzdata` supplies portable IANA data, including in the Docker image.
+A recursive projection follows inherited progress events' `carried_from` chain to
+its original timestamp, so plan replacement cannot manufacture a new completion.
+Currently reopened tasks are excluded. Overdue/upcoming counts use current dates;
+unfinished reviews are not restricted to the completion window. Neither endpoint
+logs message text or query parameters. Events participate in existing exports,
+encrypted backups, storage quotas, account separation, and erasure.
+
+`tests/test_followup_drafts.py` and `tests/test_weekly_review.py` run on SQLite and
+real Postgres in CI. API and browser checks cover concurrency, source freshness,
+lost-response recovery, time-zone/DST boundaries, copied plan history, complete
+pagination, plain-text clipboard fallbacks, and both-theme responsive accessibility.

@@ -41,6 +41,26 @@ later deadlines remain available in **All tasks** and **Calendar**.
 recovery. If an interrupted analysis is saved, choose **Recover saved analysis**
 before starting new work. **My day** does not create or confirm tasks automatically.
 
+### Review your week
+
+Choose **Open weekly review** inside **My day**. **Completed recently** shows tasks
+still marked Done whose completion was recorded during the last seven calendar
+dates, including today, in your device's time zone. A task carried into a follow-up
+plan keeps its original completion date; copying a plan does not count it again.
+Reopened tasks and earlier plan versions are excluded.
+
+Select **Overdue now**, **Due soon**, or **Unfinished reviews** to inspect work that
+needs attention. Due soon includes today through seven days ahead, using current
+corrected deadlines. Unfinished reviews includes all saved reviews awaiting
+confirmation, regardless of meeting date. Each list has pagination and links to
+the exact task or review. Undated open tasks remain available in Calendar.
+
+**Copy weekly summary** copies counts and their date/time-zone labels, rather than
+only the visible page of tasks. If clipboard access is blocked, select and copy
+the text provided. **Refresh weekly review** reloads saved changes; the view also
+refreshes when the browser regains focus or its date/time zone changes. This is a
+current workspace snapshot, not a historical report or scheduled email.
+
 ## Turn a conversation into tasks
 
 1. Paste a conversation, import a TXT/VTT/SRT file, or choose **Try an example**.
@@ -207,6 +227,34 @@ confirmed plan and do not change this export.
 Expand **Preview action plan** to inspect the text. If copying is blocked, choose
 **Select plan text** and use your device's copy command. Exported files and copied
 text can contain private meeting information; you control where you share them.
+
+## Draft a follow-up message
+
+In a current confirmed meeting, expand **Draft follow-up**, then choose **Create
+follow-up draft**. It prepares a subject and editable message from the current
+confirmed task descriptions, owners, corrected deadlines, and progress. Completed
+tasks have their own section. Missing owners and dates stay Unknown and open tasks
+with missing details appear under **Details to confirm**. No language-model API
+is called, and transcript summary text is not used to invent extra commitments.
+
+Edit the subject and message, then choose **Save follow-up draft** to keep a
+version in your private workspace, available on other devices. **Activity** keeps
+saved versions, and workspace exports/backups include them. Before saving, edits
+are recovered in the same browser and tab, scoped to your account; they are not
+included in workspace exports. Deleting a meeting removes its saved message
+versions and associated browser drafts.
+
+**Copy follow-up** checks the latest saved meeting before copying the subject and
+body. If task details changed, check the current tasks and update the message,
+then choose **I've checked the current tasks**, or regenerate it. Regeneration
+asks before replacing your edits. A newer saved message from another tab is shown
+for comparison; choose **Use saved draft** or **Keep my edits** before saving again.
+A failed connection preserves the exact save request for recovery. If copying is
+blocked, select and copy the displayed text manually.
+
+You choose where to share the message and review its recipients there. Drafting,
+saving, and copying do not send email or change the plan, task owners, or evidence.
+Earlier plan versions retain their saved messages but cannot create new drafts.
 
 ## Understand review reminders
 

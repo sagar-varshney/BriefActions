@@ -49,7 +49,10 @@ def run_snapshot(run_id):
         with store().connection() as conn:
             replacement_available=bool(conn.execute("SELECT run_id FROM events WHERE run_id=? AND kind='final'",(replacement,)).fetchone())
     update_draft=next((e['payload'] for e in reversed(events) if e['kind']=='plan_update_draft'),None)
+    from followup_drafts import revision
+    followup_draft=next((e['payload'] for e in reversed(events) if e['kind']=='followup_draft'),None)
     return {'superseded_by':replacement,'superseded_available':replacement_available,'update_draft':update_draft,
+            'followup_draft':followup_draft,'followup_revision':revision(events),
             'id':run_id, 'created_at':events[0]['created_at'], **original,'proposals':proposals,
             'title':name['title'] if name else original.get('title',''),'title_version':name['version'] if name else 0,
             'summary':original.get('settings',{}).get('summary',''),
@@ -66,6 +69,13 @@ def report_paths():
 
 def handle(request):
     op = request.get('operation')
+    if op=='weekly_review':
+        from weekly_review import overview
+        return overview(store(), **{key:request[key] for key in ('today','time_zone','view','page','page_size') if key in request})
+    if op=='followup_draft':
+        from followup_drafts import save
+        save(store(),request.get('run_id'),**{key:request.get(key) for key in ('subject','body','version','source_revision','request_id')})
+        return run_snapshot(request.get('run_id'))
     if op=='owner_search':
         from owner_overview import search
         return search(store(), **{key:request[key] for key in ('today','query','view','page','page_size') if key in request})

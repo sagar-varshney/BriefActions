@@ -34,6 +34,8 @@ model experiments are separate, explicit developer tools.
 | Feature | What it helps you do |
 | --- | --- |
 | My day | Start with overdue work, today’s deadlines, the next seven days, and saved reviews awaiting confirmation. Open a short preview or the complete filtered list. |
+| Weekly review | Review recent completions, overdue work, due-soon tasks, and unfinished reviews inside My day. Inspect complete paginated lists or copy a count summary. |
+| Follow-up drafts | Prepare an editable message from confirmed tasks and current progress/dates. Save versions to your workspace, recover unfinished edits, and copy the message after checking it. |
 | Evidence beside every proposal | Jump to the original words, then return to the task you were reviewing. |
 | Review before confirmation | Edit tasks, owners, and deadlines; reject suggestions or add an evidence-backed action. |
 | Repeated and changed commitments | Merge compatible repeats and inspect evidence for supported deadline revisions or cancellations. Ambiguous references still need review. |
@@ -98,7 +100,8 @@ runtime settings, architecture, API routes, and verification commands.
   account-scoped Postgres storage. A private meeting link still requires its
   owner's account.
 - **Traceable decisions:** original inputs, proposals, corrections, confirmations,
-  and progress are retained. Confirmed plans remain fixed; progress is tracked separately.
+  progress, and saved follow-up messages are retained. Confirmed plans remain fixed;
+  progress and message edits are tracked separately.
 - **Draft recovery:** input drafts stay in your browser, scoped by account and tab.
   Saved review drafts also reach the server. Browser-only drafts do not sync to
   other devices and are excluded from workspace exports.
