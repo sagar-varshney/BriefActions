@@ -1,9 +1,11 @@
 """Destructive restore drills use two newly created, disposable CI databases only."""
 from dataclasses import asdict
 from datetime import date
+import json
 import os
 from pathlib import Path
 import sys
+import subprocess
 import tempfile
 from uuid import uuid4
 
@@ -30,7 +32,13 @@ try:
             conn.execute(sql.SQL('CREATE DATABASE {}').format(sql.Identifier(name)));created.append(name)
     for url in urls:
         with psycopg.connect(url,autocommit=True) as conn:
-            for migration in sorted((ROOT/'deploy/migrations').glob('*.sql')):conn.execute(migration.read_text(),prepare=False)
+            for migration in sorted((ROOT/'deploy/migrations').glob('*.sql')):
+                if migration.name=='005_series_agenda_erasure.sql':
+                    probe=subprocess.run([sys.executable,'-B',str(ROOT/'readiness_bridge.py')],input='{"operation":"probe"}\n',capture_output=True,text=True,timeout=10,env={**os.environ,'FLOW_DATABASE_URL':url})
+                    assert probe.returncode==0 and json.loads(probe.stdout)=={'ok':False}, 'Older erasure schema reported ready'
+                conn.execute(migration.read_text(),prepare=False)
+            probe=subprocess.run([sys.executable,'-B',str(ROOT/'readiness_bridge.py')],input='{"operation":"probe"}\n',capture_output=True,text=True,timeout=10,env={**os.environ,'FLOW_DATABASE_URL':url})
+            assert probe.returncode==0 and json.loads(probe.stdout)=={'ok':True}, 'Migrated schema did not recover readiness'
     source,target=urls;alice,bob=str(uuid4()),str(uuid4())
     store=HistoryStore('/unused',database_url=source,owner=alice)
     other=HistoryStore('/unused',database_url=source,owner=bob)
@@ -56,6 +64,12 @@ try:
     erased=store.create_run('Erased after backup.','2026-10-12',[])
     store.finalize(erased,[])
     erased_followup=approve_update(erased,'Ada will review the budget tomorrow.')
+    from meeting_series import create as create_series,assign,preparation,save_agenda
+    kept_series=create_series(store,'Retained series',uuid4().hex);erased_series=create_series(store,'Source-erased agenda series',uuid4().hex)
+    assign(store,keep,kept_series['id'],0,uuid4().hex);assign(store,erased,erased_series['id'],0,uuid4().hex)
+    for series in (kept_series,erased_series):
+        prep=preparation(store,series['id'],today='2026-10-13')
+        save_agenda(store,series['id'],**prep['suggestion'],version=0,source_revision=prep['source_revision'],today='2026-10-13',request_id=uuid4().hex)
     bob_run=other.create_run('Account erased after backup.','2026-10-12',[])
     annotations=AnnotationStore(store);cases=[]
     for group in ['one','two','three']:
@@ -95,6 +109,10 @@ try:
         assert progress(self_snapshot)[proposals[0]['proposal_id']]['status']=='in_progress'
         assert self_snapshot==store.get_run(keep), 'Original input, evidence, corrections, final plan or IDs changed'
         assert restored.get_run(plan_current)==store.get_run(plan_current), 'Plan comparison or approvals changed during restore'
+        retained=preparation(restored,kept_series['id'],today='2026-10-13')
+        assert retained['agenda']['body']==preparation(store,kept_series['id'],today='2026-10-13')['agenda']['body'], 'Saved series agenda changed during restore'
+        purged=preparation(restored,erased_series['id'],today='2026-10-13')
+        assert purged['agenda'] is None and purged['counts']['agendas']==0 and purged['agenda_version']==1, 'Erased transcript survived in a copied agenda'
         from task_dashboard import search as tasks
         active=tasks(restored,today='2026-10-13',status='',query='Versioned plan fixture')['items']
         assert len(active)==1 and active[0]['run_id']==plan_current, 'Restored task dashboard duplicated superseded tasks'

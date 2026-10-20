@@ -197,11 +197,34 @@ export function createApp({historyPath, config=loadConfig(), maxWorkers=config.m
         try{await deleteAccount(accountId);}catch{throw new HttpError(503,'Your workspace data was erased. Sign-in account deletion is pending; retry from Data & account.');}
         return json(res,200,{deleted:true});
       }
-      if(req.method==='POST' && (match=pathname.match(/^\/api\/(runs|annotations)\/([a-f0-9]{32})\/delete$/))){
+      if(req.method==='POST' && (match=pathname.match(/^\/api\/(runs|annotations|series)\/([a-f0-9]{32})\/delete$/))){
         const input=await body(req);
-        if(input.confirmation!=='DELETE TRANSCRIPT')throw new HttpError(400,'Type DELETE TRANSCRIPT to confirm.');
-        return json(res,200,await call({operation:'delete_input',run_id:match[2],kind:match[1]==='runs'?'extraction':'annotation_input'}));
+        const phrase=match[1]==='series'?'DELETE SERIES':'DELETE TRANSCRIPT';
+        if(input.confirmation!==phrase)throw new HttpError(400,`Type ${phrase} to confirm.`);
+        return json(res,200,await call({operation:'delete_input',run_id:match[2],kind:match[1]==='runs'?'extraction':match[1]==='series'?'meeting_series':'annotation_input'}));
       }
+      if(pathname==='/api/series' && req.method==='GET'){
+        const keys=new Set(['query','page','page_size']);
+        for(const key of url.searchParams.keys())if(!keys.has(key)||url.searchParams.getAll(key).length!==1)throw new HttpError(400,'Invalid series search parameter.');
+        const input=Object.fromEntries(url.searchParams);
+        for(const key of ['page','page_size'])if(key in input){if(!/^\d{1,6}$/.test(input[key]))throw new HttpError(400,'Invalid series page or page size.');input[key]=Number(input[key]);}
+        return json(res,200,await call({...input,operation:'series_list'}));
+      }
+      if(pathname==='/api/series' && req.method==='POST')return json(res,201,await call({...await body(req),operation:'series_create'}));
+      if(req.method==='GET' && (match=pathname.match(/^\/api\/series\/([a-f0-9]{32})$/)))return json(res,200,await call({operation:'series_get',series_id:match[1]}));
+      if((match=pathname.match(/^\/api\/series\/([a-f0-9]{32})\/(preparation|name|agenda|agendas\/(\d{1,7}))$/))){
+        const series_id=match[1],action=match[2];
+        if(req.method==='GET' && action==='preparation'){
+          const keys=new Set(['today','view','page','page_size']);
+          for(const key of url.searchParams.keys())if(!keys.has(key)||url.searchParams.getAll(key).length!==1)throw new HttpError(400,'Invalid preparation parameter.');
+          const input=Object.fromEntries(url.searchParams);
+          for(const key of ['page','page_size'])if(key in input){if(!/^\d{1,6}$/.test(input[key]))throw new HttpError(400,'Invalid preparation page or page size.');input[key]=Number(input[key]);}
+          return json(res,200,await call({...input,operation:'series_preparation',series_id}));
+        }
+        if(req.method==='GET' && match[3])return json(res,200,await call({operation:'series_agenda_version',series_id,version:Number(match[3])}));
+        if(req.method==='POST' && ['name','agenda'].includes(action))return json(res,200,await call({...await body(req),operation:action==='name'?'series_name':'series_agenda',series_id}));
+      }
+      if(req.method==='POST' && (match=pathname.match(/^\/api\/runs\/([a-f0-9]{32})\/series$/)))return json(res,200,await call({...await body(req),operation:'series_assign',run_id:match[1]}));
       if (req.method === 'GET' && pathname === '/api/config') return json(res, 200, await call({operation:'config'}));
       if(req.method==='GET' && pathname==='/api/weekly-review'){
         const keys=new Set(['today','time_zone','view','page','page_size']);
@@ -254,7 +277,7 @@ export function createApp({historyPath, config=loadConfig(), maxWorkers=config.m
       if (req.method === 'GET' && pathname === '/api/runs') return json(res, 200, await call({operation:'runs'}));
       if (req.method === 'POST' && pathname === '/api/runs') {
         const input = await body(req);
-        return json(res, 201, await call({transcript:input.transcript,reference_date:input.reference_date,clusters:input.clusters ?? 3,request_id:input.request_id,title:input.title ?? '',operation:'analyze'}));
+        return json(res, 201, await call({transcript:input.transcript,reference_date:input.reference_date,clusters:input.clusters ?? 3,request_id:input.request_id,title:input.title ?? '',series_id:input.series_id,operation:'analyze'}));
       }
       if(req.method==='POST' && (match=pathname.match(/^\/api\/runs\/([a-f0-9]{32})\/(updates|update-draft|update-confirm)$/))){
         const input=await body(req),operation={updates:'plan_update','update-draft':'plan_update_draft','update-confirm':'plan_update_confirm'}[match[2]];

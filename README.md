@@ -35,6 +35,8 @@ model experiments are separate, explicit developer tools.
 | --- | --- |
 | My day | Start with overdue work, today’s deadlines, the next seven days, and saved reviews awaiting confirmation. Open a short preview or the complete filtered list. |
 | Weekly review | Review recent completions, overdue work, due-soon tasks, and unfinished reviews inside My day. Inspect complete paginated lists or copy a count summary. |
+| Meeting series | Group recurring conversations from Meeting history or a saved meeting. Original plans and reviewed follow-up versions stay together without duplicating tasks. |
+| Next-meeting preparation | Review current unfinished commitments and updates since the last saved agenda. Edit, save, and copy an agenda built from all current tasks, with source freshness checks and version history. |
 | Follow-up drafts | Prepare an editable message from confirmed tasks and current progress/dates. Save versions to your workspace, recover unfinished edits, and copy the message after checking it. |
 | Evidence beside every proposal | Jump to the original words, then return to the task you were reviewing. |
 | Review before confirmation | Edit tasks, owners, and deadlines; reject suggestions or add an evidence-backed action. |

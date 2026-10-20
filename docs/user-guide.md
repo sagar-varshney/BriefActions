@@ -63,6 +63,12 @@ current workspace snapshot, not a historical report or scheduled email.
 
 ## Turn a conversation into tasks
 
+For a recurring conversation, you can first open **Meeting history → Meeting
+series** and choose **Add next conversation**. The transcript and date still need
+your review before analysis. The series is assigned when the analysis is saved;
+opening the editor does not create a meeting. Existing unfinished transcript text
+is preserved, so check any restored draft before analyzing it.
+
 1. Paste a conversation, import a TXT/VTT/SRT file, or choose **Try an example**.
    Include speaker names where available. The example is invented and loading it
    does not analyze it or save a meeting to history.
@@ -227,6 +233,54 @@ confirmed plan and do not change this export.
 Expand **Preview action plan** to inspect the text. If copying is blocked, choose
 **Select plan text** and use your device's copy command. Exported files and copied
 text can contain private meeting information; you control where you share them.
+
+## Group recurring meetings and prepare the next agenda
+
+Open **Meeting history → Meeting series** and give the recurring conversation a
+name, such as Weekly product sync. You can search and page through your series.
+From a saved meeting, expand **Meeting series**, choose its group, and select
+**Save meeting series**. Removing a group uses **No series**. A meeting and all
+its reviewed follow-up versions share one choice; moving any version moves the
+whole conversation family. Task contents, evidence, progress, and dates do not change.
+
+Choose **Prepare next meeting** from the series or its saved meeting. The view shows:
+
+- **Unfinished tasks:** all open tasks in current confirmed plans, using corrected
+  deadlines and latest progress. Completed tasks and replaced plan versions are excluded.
+- **Meetings:** every saved conversation and plan version in this series, including
+  reviews awaiting confirmation. Links return to the original record.
+- **Updates:** task progress, deadline corrections, and plan confirmations since
+  the last available saved agenda. Before an agenda is saved, or after its source
+  is erased, the view shows all recorded updates still available.
+- **Saved agendas:** previous saved versions, with their title, save time, and
+  read-only text. These are historical notes, not the current task state.
+
+Counts cover complete lists; pagination limits the visible items. **Create agenda
+from current tasks** includes every open task, not only the current page. If the
+complete text is too long for one agenda, the app explains this and offers a blank
+agenda instead of silently dropping tasks. Missing owners and deadlines stay Unknown.
+
+Edit **Agenda title** and **Agenda notes**, then choose **Save agenda** to sync a
+version to your private workspace. Before saving, edits stay in this browser and
+tab. Interrupted saves retain their request for recovery. **Copy agenda** checks
+current task details, membership, preparation date, and saved version first.
+Changes require you to check the preparation or explicitly regenerate the agenda.
+Regeneration asks before replacing your edits; blocked clipboard access offers
+selectable text. Saving and copying do not schedule meetings or create tasks.
+
+**Add next conversation** creates a separate meeting plan inside the series. To
+revise existing commitments instead, open their meeting and use **Review a
+follow-up conversation**. Independent plans are not automatically merged just
+because they belong to the same series.
+
+You can rename a series or choose **Delete series**, then type **DELETE SERIES**.
+Deletion removes its name, agendas, and series history while keeping conversations
+and plans. Deleting a source transcript also removes saved agenda versions that
+used it, even if the meeting was moved out of the series afterwards. Online
+browser caches containing that source are cleared too; separate downloaded copies
+and other-browser copies have the same limits described under Data & account.
+Small non-content version markers remain so erased agendas cannot reuse old save
+versions. Workspace erasure also invalidates preparation freshness checks.
 
 ## Draft a follow-up message
 

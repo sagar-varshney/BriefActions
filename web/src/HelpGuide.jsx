@@ -1,6 +1,11 @@
 import useAfterRender from './useAfterRender.js';
 import React,{useEffect,useRef,useState} from 'react';
 const guides={
+ series:{label:'Meeting series',page:'series',steps:[
+  ['Group recurring conversations','Open Meeting history, then Meeting series. Name a recurring conversation such as Weekly product sync. In a saved meeting, use Meeting series to choose its group.','The original meeting and its reviewed follow-up versions stay together. Groups are private to your workspace.'],
+  ['Prepare the next meeting','Open Prepare next meeting to review unfinished tasks, saved conversations, and updates since the last saved agenda. Completed tasks and replaced plan versions do not add duplicate work.','Add next conversation starts a separate plan in the series. To revise existing commitments, open their meeting and use Review a follow-up conversation.'],
+  ['Write and check the agenda','Create an agenda from all current unfinished tasks, then edit the title and discussion topics. Save it to sync across devices or copy it after checking the latest details.','Missing owners and dates stay Unknown. Saving an agenda does not schedule a meeting or create tasks. Erasing a transcript also removes saved agenda versions that used it.']
+ ]},
  meetings:{label:'Meeting tasks',page:'extract',steps:[
   ['Add a conversation','Paste a transcript, import a file, or use Try an example. Choose the meeting date so words like “tomorrow” can be understood.','The example is invented. Loading it does not start analysis.'],
   ['Check suggested tasks','Click Analyze transcript to save the input and get suggestions. Open Edit & evidence to correct a task, owner, or date. Locate passage shows the original words.','Unknown means no value was identified. Check the source before filling it in.'],

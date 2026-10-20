@@ -82,7 +82,7 @@ class HistoryStore:
             return request_id
         return None
 
-    def create_run(self, transcript, reference_date, proposals, settings=None,request_id=None,title=""):
+    def create_run(self, transcript, reference_date, proposals, settings=None,request_id=None,title="",series_id=None):
         run_id = request_id or uuid4().hex
         with self.connection() as conn:
             conn.execute('BEGIN IMMEDIATE')
@@ -95,6 +95,9 @@ class HistoryStore:
                     return run_id
             self._append(conn,run_id,'extraction',{'transcript':transcript,'reference_date':reference_date,
                           'settings':settings or {},'proposals':proposals,**({'title':title} if title else {})})
+            if series_id is not None:
+                from meeting_series import assign_in
+                assign_in(self,conn,run_id,series_id,0,run_id)
         return run_id
 
     def get_run(self, run_id):

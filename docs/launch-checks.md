@@ -136,3 +136,21 @@ and task progress carries over. Submit competing drafts in separate tabs; only
 one may replace the same base plan. Erase the original input and verify that later
 versions containing its source disappear too, including after a backup restore
 with a fresh erasure ledger. Apply migration `004_plan_updates.sql` before this check.
+
+## Recurring meetings and preparation
+
+Apply `005_series_agenda_erasure.sql` before this check. With two hosted accounts,
+verify that groups, membership, preparations, and agenda versions remain private.
+Create a group, attach a confirmed meeting, approve a follow-up, and confirm that
+open tasks appear once from the current plan. Move a follow-up to another series;
+the original and all its versions must move together. Check current deadline and
+progress changes, complete pagination, and the generated agenda beyond its first
+page. Save competing agenda edits and recover a lost response without a duplicate.
+
+Save an agenda, move its source meeting elsewhere, then erase that transcript.
+The copied agenda versions and related online browser caches must disappear.
+Version counters remain monotonic; old requests cannot restore erased text. Repeat
+this after an encrypted-backup restore with a fresh deletion ledger. Delete a
+series separately and verify that its conversations/plans and unrelated unfinished
+transcript text are kept. Planning an agenda must not schedule a calendar event,
+create tasks, or send messages.

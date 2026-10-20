@@ -116,7 +116,9 @@ try{
  await page.goForward();await titleIs(page,'Extract & review · BriefActions');
  for(const [name,route] of sections){
   await page.goto(localBase+route);await titleIs(page,`${name} · BriefActions`);
+  await page.waitForFunction(()=>document.querySelector('main[aria-busy]')?.getAttribute('aria-busy')==='false');
   await page.reload();await titleIs(page,`${name} · BriefActions`);
+  await page.waitForFunction(()=>document.querySelector('main[aria-busy]')?.getAttribute('aria-busy')==='false');
  }
  // Stable workflow navigation, account utilities, and optional research.
  await page.goto(localBase+'/meetings');await page.getByRole('button',{name:'Try an example',exact:true}).waitFor();

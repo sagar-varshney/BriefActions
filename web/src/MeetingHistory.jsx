@@ -1,7 +1,7 @@
 import React,{useEffect,useState} from 'react';
 import {api} from './api.js';
 const stamp=value=>new Date(value).toLocaleString(undefined,{dateStyle:'medium',timeStyle:'short'});
-export default function MeetingHistory({onOpen,busy,initialStatus=''}){
+export default function MeetingHistory({onOpen,onSeries,busy,initialStatus=''}){
   const [query,setQuery]=useState(''),[status,setStatus]=useState(initialStatus),[from,setFrom]=useState(''),[to,setTo]=useState(''),[page,setPage]=useState(0),[result,setResult]=useState(null),[loading,setLoading]=useState(true),[error,setError]=useState(''),[retry,setRetry]=useState(0);
   useEffect(()=>{
     let alive=true;setLoading(true);setError('');
@@ -11,7 +11,7 @@ export default function MeetingHistory({onOpen,busy,initialStatus=''}){
   const change=setter=>e=>{setter(e.target.value);setPage(0);};
   const filtered=!!(query || status || from || to);
   return <>
-    <div className="page-intro"><div><div className="eyebrow accent">EVERY DECISION, PRESERVED</div><h1 tabIndex={-1}>Your meeting history.</h1><p>Find saved meetings by name, transcript text, date, or review status.</p></div></div>
+    <div className="page-intro"><div><div className="eyebrow accent">EVERY DECISION, PRESERVED</div><h1 tabIndex={-1}>Your meeting history.</h1><p>Find saved meetings by name, transcript text, date, or review status.</p></div><button className="button secondary" type="button" disabled={busy} onClick={onSeries}>Meeting series</button></div>
     <form className="panel history-filters" role="search" aria-label="Search saved meetings" onSubmit={e=>e.preventDefault()}>
       <label className="field-label">Search meetings<input type="search" aria-label="Search meetings" placeholder="Meeting name or transcript text" maxLength={200} value={query} onChange={change(setQuery)}/></label>
       <label className="field-label">Review status<select aria-label="Review status" value={status} onChange={change(setStatus)}><option value="">All meetings</option><option value="review">Awaiting review</option><option value="confirmed">Confirmed</option></select></label>

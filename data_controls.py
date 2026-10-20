@@ -28,7 +28,7 @@ def account_status(history):
 
 def delete_input(history,run_id,kind):
     identifier(run_id)
-    if kind not in ('extraction','annotation_input'):raise DataError('Invalid input type.',400)
+    if kind not in ('extraction','annotation_input','meeting_series'):raise DataError('Invalid input type.',400)
     with history.connection() as conn:
         conn.execute('BEGIN IMMEDIATE')
         row=conn.execute('SELECT kind FROM events WHERE run_id=? ORDER BY event_id',(run_id,)).fetchone()
@@ -50,6 +50,9 @@ def delete_input(history,run_id,kind):
         if history.database_url:
             conn.execute('SELECT flow.erase_input(?)',(run_id,))
         else:
+            # Agenda text can retain tasks from meetings no longer in the group.
+            dependent_agendas=[eid for eid,p in conn.execute("SELECT event_id,payload FROM events WHERE kind='series_agenda'") if victims.intersection(json.loads(p).get('source_run_ids',[]))]
+            for eid in dependent_agendas:conn.execute('DELETE FROM events WHERE event_id=?',(eid,))
             snapshots=[json.loads(p)['snapshot'] for (p,) in conn.execute("SELECT payload FROM events WHERE run_id=? AND kind='annotation_split'",(run_id,))]
             for snapshot in snapshots:
                 dependent_events=[eid for eid,k,p in conn.execute("SELECT event_id,kind,payload FROM events WHERE kind IN ('annotation_split','reviewed_benchmark')") if json.loads(p).get('snapshot')==snapshot]

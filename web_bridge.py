@@ -50,8 +50,10 @@ def run_snapshot(run_id):
             replacement_available=bool(conn.execute("SELECT run_id FROM events WHERE run_id=? AND kind='final'",(replacement,)).fetchone())
     update_draft=next((e['payload'] for e in reversed(events) if e['kind']=='plan_update_draft'),None)
     from followup_drafts import revision
+    from meeting_series import membership
     followup_draft=next((e['payload'] for e in reversed(events) if e['kind']=='followup_draft'),None)
     return {'superseded_by':replacement,'superseded_available':replacement_available,'update_draft':update_draft,
+            'series_membership':membership(store(),run_id),
             'followup_draft':followup_draft,'followup_revision':revision(events),
             'id':run_id, 'created_at':events[0]['created_at'], **original,'proposals':proposals,
             'title':name['title'] if name else original.get('title',''),'title_version':name['version'] if name else 0,
@@ -69,6 +71,24 @@ def report_paths():
 
 def handle(request):
     op = request.get('operation')
+    if op=='series_list':
+        from meeting_series import listing
+        return listing(store(),**{k:request[k] for k in ('query','page','page_size') if k in request})
+    if op=='series_get':
+        from meeting_series import group_in
+        history=store()
+        with history.connection() as conn:return group_in(conn,bool(history.database_url),request.get('series_id'))
+    if op in ('series_create','series_name','series_preparation','series_agenda','series_agenda_version','series_assign'):
+        from meeting_series import create,rename,preparation,save_agenda,agenda_version,assign
+        if op=='series_create':return create(store(),request.get('name'),request.get('request_id'))
+        if op=='series_name':return rename(store(),request.get('series_id'),request.get('name'),request.get('version'),request.get('request_id'))
+        if op=='series_assign':
+            assign(store(),request.get('run_id'),request.get('series_id'),request.get('version'),request.get('request_id'))
+            return run_snapshot(request.get('run_id'))
+        if op=='series_agenda_version':return agenda_version(store(),request.get('series_id'),request.get('version'))
+        if op=='series_agenda':save_agenda(store(),request.get('series_id'),**{k:request.get(k) for k in ('subject','body','version','source_revision','request_id','today')})
+        keys=('today',) if op=='series_agenda' else ('today','view','page','page_size')
+        return preparation(store(),request.get('series_id'),**{k:request[k] for k in keys if k in request})
     if op=='weekly_review':
         from weekly_review import overview
         return overview(store(), **{key:request[key] for key in ('today','time_zone','view','page','page_size') if key in request})
@@ -193,8 +213,13 @@ def handle(request):
         request_id=request.get('request_id')
         from meeting_history import clean_title
         title=clean_title(request.get('title',''))
+        series_id=request.get('series_id')
+        if series_id=='':series_id=None
+        if series_id is not None:
+            from data_controls import identifier
+            identifier(series_id)
         # Empty names preserve fingerprints for interrupted requests from older clients.
-        fingerprint=hashlib.sha256(json.dumps([transcript,reference,clusters]+([title] if title else []),ensure_ascii=False).encode()).hexdigest()
+        fingerprint=hashlib.sha256(json.dumps([transcript,reference,clusters]+([title] if title else [])+([{'series_id':series_id}] if series_id else []),ensure_ascii=False).encode()).hexdigest()
         if request_id is not None and store().existing_analysis(request_id,fingerprint):return run_snapshot(request_id)
         from flow_engine import run_pipeline
         frame, summary, silhouette = run_pipeline(transcript, clusters, meeting_date)
@@ -205,7 +230,7 @@ def handle(request):
                     'clusters':clusters,'summary':summary,'silhouette':silhouette,'interface':'react-node-v1','request_fingerprint':fingerprint}
         if len(json.dumps({'transcript':transcript,'proposals':frame.to_dict('records'),'settings':settings}).encode())>3_000_000:
             raise ApiError('The analysis result is too large. Split the transcript into smaller meetings.',413)
-        run_id = store().create_run(transcript,reference,frame.to_dict('records'),settings,request_id=request_id,title=title)
+        run_id = store().create_run(transcript,reference,frame.to_dict('records'),settings,request_id=request_id,title=title,series_id=series_id)
         return run_snapshot(run_id)
     if op == 'runs':
         # One query, including old Streamlit runs, without loading every transcript.

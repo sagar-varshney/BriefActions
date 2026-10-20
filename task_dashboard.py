@@ -5,7 +5,7 @@ import re
 from data_controls import DataError
 
 
-def projection_sql(pg):
+def projection_sql(pg,include_superseded=False):
     field = lambda alias, key: f"{alias}.payload::jsonb->>'{key}'" if pg else f"json_extract({alias}.payload,'$.{key}')"
     task_field = lambda key: f"t.value->>'{key}'" if pg else f"json_extract(t.value,'$.{key}')"
     expand = "jsonb_array_elements(f.payload::jsonb->'tasks') WITH ORDINALITY AS t(value,ordinality)" if pg else "json_each(f.payload,'$.tasks') t"
@@ -24,7 +24,7 @@ def projection_sql(pg):
             {field('e','reference_date')} reference_date
           FROM events f JOIN events e ON e.run_id=f.run_id AND e.kind='extraction'
             CROSS JOIN {expand} WHERE f.kind='final'
-            AND NOT EXISTS(SELECT 1 FROM events replacement WHERE replacement.run_id=f.run_id AND replacement.kind='plan_superseded')"""
+            {'' if include_superseded else "AND NOT EXISTS(SELECT 1 FROM events replacement WHERE replacement.run_id=f.run_id AND replacement.kind='plan_superseded')"}"""
 
 
 def search(history, *, today=None, view='all', status='open', query='', owner='', page=0, page_size=12):

@@ -20,6 +20,7 @@ def check():
             conn.execute("SET LOCAL statement_timeout='2s'")
             for table in ('events','annotation_drafts','deleted_inputs','account_lifecycle'):
                 conn.execute(f'SELECT 1 FROM {table} LIMIT 1').fetchone()
+            if conn.execute('SELECT flow.series_agenda_erasure_version()').fetchone()[0]!=5:raise ValueError()
     else:
         path=Path(os.environ['FLOW_HISTORY_PATH']).resolve().as_uri()+'?mode=ro'
         with closing(sqlite3.connect(path,uri=True,timeout=2)) as conn:

@@ -299,3 +299,59 @@ encrypted backups, storage quotas, account separation, and erasure.
 real Postgres in CI. API and browser checks cover concurrency, source freshness,
 lost-response recovery, time-zone/DST boundaries, copied plan history, complete
 pagination, plain-text clipboard fallbacks, and both-theme responsive accessibility.
+
+## Meeting series and preparation
+
+Series live under `/history/series` and `/history/series/:id`; Meeting history keeps
+its existing navigation position. These routes retain their destination through
+sign-in and browser history. Saved meetings expose `series_membership` (root ID,
+optimistic version, and current series). A recursive, account-scoped lineage query
+inherits membership from the original extraction across reviewed follow-ups.
+`meeting_series_link` events are appended only to the root, never to task plans.
+Standalone analysis accepts optional `series_id`; extraction and its initial link
+commit atomically, and the analysis fingerprint includes the initial group choice.
+Matching retries cannot undo a later membership change. Existing ungrouped
+fingerprints are unchanged.
+
+`meeting_series.py` implements:
+
+| Method and path | Purpose |
+| --- | --- |
+| `GET /api/series` | Literal name search, complete counts, bounded pages (maximum 50 groups) |
+| `POST /api/series` | Create `{name, request_id}` with a stable ID and case-insensitive duplicate-name check |
+| `GET /api/series/:id` | Private current name/version metadata |
+| `POST /api/series/:id/name` | Versioned, retry-safe `{name, version, request_id}` rename |
+| `POST /api/runs/:id/series` | Versioned, retry-safe root membership `{series_id: id or null, version, request_id}` |
+| `GET /api/series/:id/preparation` | Requires device `today`; `view` is tasks/meetings/changes/agendas, with bounded pagination (maximum 12 items) |
+| `POST /api/series/:id/agenda` | Save `{subject, body, version, source_revision, today, request_id}` |
+| `GET /api/series/:id/agendas/:version` | Inspect one retained agenda version |
+| `POST /api/series/:id/delete` | `DELETE SERIES` erases group metadata/agendas and keeps conversations |
+
+Preparation reads one SQLite/Postgres statement with no transcript or evidence
+text in its result. Task metadata uses the shared effective-task projection;
+replaced plans and Done tasks do not add open work. All lightweight source rows
+are considered to create a complete agenda (maximum 100,000 characters); API
+items remain paginated. Oversized suggestions are explicitly unavailable, with a
+blank-editor option. Updates are confirmations, deadline changes, and non-inherited
+progress changes after the last available agenda's source high-water event ID.
+Agenda history lists metadata and loads a selected body's version separately.
+
+Source hashes include the device date, source-event IDs, current membership/name,
+and the account's erasure generation (deleted-input count). Agenda saves recheck
+that hash and an optimistic version under the account write lock. Saved text uses
+`series_agenda` events; non-content `series_agenda_saved` markers keep versions
+monotonic after body erasure. The browser caches unsaved text and exact pending
+requests per account/tab/series. Cached text retains source IDs for erasure.
+A group deletion preserves unrelated unsubmitted transcript text, clearing only
+its series choice; committed analysis retries keep their original fingerprint.
+
+Every saved agenda retains dependencies on current and historical source families
+in its series. This deliberately errs toward removing copied material when a
+source is erased after a membership move. Migration `005_series_agenda_erasure.sql`
+extends the owner-scoped purge function and supplies a readiness marker. Agenda
+saves and hosted storage readiness require it. SQLite applies equivalent purge
+behavior directly. Series deletion keeps only membership IDs in existing meeting
+history, not the deleted name or agenda text. Standard exports, encrypted backups,
+row security, and account storage limits cover the new events. The real-Postgres
+backup drill verifies both retained agendas and removal of agenda copies when
+applying a newer erasure ledger to an older encrypted backup.

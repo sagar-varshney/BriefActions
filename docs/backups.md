@@ -17,7 +17,8 @@ access requires the matching Auth users, not newly registered replacement accoun
 
 1. Apply all migrations in `deploy/migrations/` in filename order, including
    `003_backup_metadata.sql` (database identity) and `004_plan_updates.sql`
-   (erasure of dependent follow-up plans). The stable database ID prevents mixing
+   (erasure of dependent follow-up plans), plus `005_series_agenda_erasure.sql`
+   (erasure of agenda copies). The stable database ID prevents mixing
    backups and erasure ledgers from different projects.
 2. Install `requirements-backup.txt` in a private operator environment. Use Python
    3.10+ and a database administrator connection with `BYPASSRLS` or superuser

@@ -32,7 +32,7 @@ important meeting records. Provider limits and available plans can change.
 ## Set up Supabase
 
 1. Create a project. Keep the database password server-side.
-2. Run all `deploy/migrations/*.sql` files in filename order (currently `001_accounts.sql`, `002_data_controls.sql`, `003_backup_metadata.sql`, and `004_plan_updates.sql`), in the project's SQL editor as the
+2. Run all `deploy/migrations/*.sql` files in filename order (currently `001_accounts.sql`, `002_data_controls.sql`, `003_backup_metadata.sql`, `004_plan_updates.sql`, and `005_series_agenda_erasure.sql`), in the project's SQL editor as the
    database administrator. It creates a private `flow` schema and restricted
    `flow_app` role. Never expose that schema through the browser Data API.
 3. In Auth, enable the GitHub OAuth provider and configure a GitHub OAuth app.
@@ -96,6 +96,13 @@ source erasure so all descendant plan versions containing copied transcript text
 are removed too. SQLite installations use the same application behavior without
 a separate migration. Generate and test a new backup after a migration; older
 backups require their matching repository/migration version for recovery.
+
+Apply `005_series_agenda_erasure.sql` before using meeting-series agendas. It removes
+agenda versions that copied an erased source, including sources subsequently moved
+out of the group. Hosted readiness and agenda saves require the migration marker;
+an older schema cannot quietly save agendas without their erasure rule. This is
+an ordered, idempotent forward migration. Back up before upgrading and test a fresh
+backup and erasure-aware restore after applying it.
 
 ## Other Docker hosts
 

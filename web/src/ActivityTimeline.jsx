@@ -16,6 +16,7 @@ function humanize(events,proposals){
   else if(event.kind==='review'){heading='Submitted review decisions';for(const d of p.decisions){lines.push(`Task ${byId.get(d.proposal_id)?.number}: ${d.accept?'kept':'rejected'}.`);for(const [field,change] of Object.entries(d.corrections || {}))lines.push(`Task ${byId.get(d.proposal_id)?.number} ${field}: ${change.before} → ${change.after}`);}}
   else if(event.kind==='plan_update_draft'){heading='Saved change review';lines.push(`${p.decisions.filter(d=>d.apply).length} proposed changes selected.`);}
   else if(event.kind==='followup_draft'){heading='Saved follow-up message';lines.push(`Draft version ${p.version}: ${p.subject}`, 'The message is saved separately from the confirmed plan.');}
+  else if(event.kind==='meeting_series_link'){heading='Changed meeting series';lines.push(p.series_id?'Grouped this meeting and its follow-up versions in a recurring series.':'Removed this meeting and its follow-up versions from a series.');}
   else if(event.kind==='plan_update_review'){heading='Reviewed follow-up changes';lines.push(`${p.decisions.filter(d=>d.apply).length} changes approved. Previous plan preserved.`);}
   else if(event.kind==='plan_superseded'){heading='Replaced by a reviewed follow-up';lines.push('This version remains in history. All tasks uses its approved replacement.');}
   else if(event.kind==='final'){heading='Confirmed plan';lines.push(`${p.tasks.length} task${p.tasks.length===1?'':'s'} saved in the immutable confirmed plan.`);}

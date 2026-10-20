@@ -13,6 +13,9 @@ import DataControls from './DataControls.jsx';
 import TranscriptImport from './TranscriptImport.jsx';
 import PrivacyPage from './PrivacyPage.jsx';
 import MeetingHistory from './MeetingHistory.jsx';
+import MeetingSeries from './MeetingSeries.jsx';
+import SeriesMembership from './SeriesMembership.jsx';
+import {SeriesInput} from './SeriesPicker.jsx';
 import AllTasks,{initialTaskFilters} from './AllTasks.jsx';
 import Calendar from './Calendar.jsx';
 import MyDay from './MyDay.jsx';
@@ -78,11 +81,12 @@ function App({account,signOut,completeAccountDeletion,authError}) {
   const [helpTopic,setHelpTopic]=useState(null);
   const [taskFilters,setTaskFilters]=useState(initialTaskFilters),[taskTarget,setTaskTarget]=useState(()=>readRoute().taskId || null);
   const [page,setPageState] = useState(()=>readRoute().page);
-  useDocumentTitle(pages.find(section=>section.id===page)?.name || 'Extract & review');
+  const [historySeries,setHistorySeries]=useState(()=>({open:!!readRoute().seriesView,id:readRoute().seriesId||null}));
+  useDocumentTitle(page==='history'&&historySeries.open?(historySeries.id?'Prepare next meeting':'Meeting series'):pages.find(section=>section.id===page)?.name || 'Extract & review');
   const navigation=useRef(null),deferredNavigation=useRef(null),navigationEpoch=useRef(0),committedURL=useRef(routePath(readRoute()));
   const [sourceWidth,setSourceWidth]=useState(()=>{try{const width=Number(accountStorage.getItem('flow.workspaceWidth'));return Number.isInteger(width)&&width>=32&&width<=55?width:43;}catch{return 43;}});
   function resizeSource(width){setSourceWidth(width);try{accountStorage.setItem('flow.workspaceWidth',String(width));}catch{}}
-  function commitRoute(next,mode='push'){const url=routePath(next);if(mode!=='pop' && (location.pathname+location.search+location.hash!==url))history[mode==='replace'?'replaceState':'pushState']({},'',url);committedURL.current=url;setPageState(next.page);setTaskTarget(next.taskId || null);}
+  function commitRoute(next,mode='push'){const url=routePath(next);if(mode!=='pop' && (location.pathname+location.search+location.hash!==url))history[mode==='replace'?'replaceState':'pushState']({},'',url);committedURL.current=url;setPageState(next.page);setTaskTarget(next.taskId || null);setHistorySeries({open:!!next.seriesView||!!next.seriesId,id:next.seriesId||null});}
   function setPage(next){if(next==='history')setHistoryStatus('');return navigate({page:next,runId:next==='extract'?run?.id:null});}
   async function navigate(next,mode='push'){
     if(restoring && mode==='pop'){deferredNavigation.current=next;return;}
@@ -103,6 +107,7 @@ function App({account,signOut,completeAccountDeletion,authError}) {
   const [transcript,setTranscript] = useState('');
   const [meetingDate,setMeetingDate] = useState('');
   const [meetingTitle,setMeetingTitle]=useState(''),[inputSaveStatus,setInputSaveStatus]=useState('');
+  const [inputSeriesId,setInputSeriesId]=useState('');
   const [clusters,setClusters] = useState(3);
   const [run,setRun] = useState(null);
   const [editorOpen,setEditorOpen]=useState(false);
@@ -144,8 +149,8 @@ function App({account,signOut,completeAccountDeletion,authError}) {
   }
 
 
-  function showInput(value,restored=false){setTranscript(value.transcript || '');setMeetingDate(value.reference_date || '');setClusters(value.clusters || value.settings?.clusters || 3);setMeetingTitle(value.title || '');setInputSaveStatus(restored?'Restored transcript draft from this browser.':'');}
-  function inputValue(patch={}){return {transcript,reference_date:meetingDate,clusters,title:meetingTitle,...patch};}
+  function showInput(value,restored=false){setTranscript(value.transcript || '');setMeetingDate(value.reference_date || '');setClusters(value.clusters || value.settings?.clusters || 3);setMeetingTitle(value.title || '');setInputSeriesId(value.series_id??value.series_membership?.series?.id??'');setInputSaveStatus(restored?'Restored transcript draft from this browser.':'');}
+  function inputValue(patch={}){return {transcript,reference_date:meetingDate,clusters,title:meetingTitle,series_id:run?(run.series_membership?.series?.id||''):inputSeriesId,...patch};}
   function stashInput(value=inputValue(),context=run?.id || 'new'){
     try{saveInputDraft(draftClient,context,value);setInputSaveStatus('Transcript draft saved in this browser.');return true;}
     catch{setInputSaveStatus('Transcript draft could not be saved in this browser. Keep this page open or copy your text before leaving.');return false;}
@@ -157,6 +162,8 @@ function App({account,signOut,completeAccountDeletion,authError}) {
     clearTimeout(saveTimer.current);activeRun.current=null;setRun(null);setEditorOpen(false);setDrafts([]);accountStorage.removeItem('flow.activeRun');setPending(null);setAnalysisStatus('');restoreInput(null);return true;
   }
   function newMeeting(){if(resetMeeting())commitRoute({page:'extract',runId:null});}
+  function meetingInSeries(series){if(!resetMeeting())return;const cached=readInputDraft(draftClient,'new'),value={transcript:'',reference_date:'',clusters:3,...cached,title:cached?.title||series.name,series_id:series.id};showInput(value,!!cached);stashInput(value,'new');commitRoute({page:'extract',runId:null});setAnalysisStatus(`Next conversation: ${series.name}. Check any restored transcript draft before analyzing.`);afterRender(()=>document.getElementById('transcript')?.focus());}
+  const openSeries=id=>navigate({page:'history',seriesView:true,...(id?{seriesId:id}:{})});
   function discardInput(){try{removeInputDraft(draftClient,run?.id || 'new');showInput(run || {transcript:'',reference_date:'',clusters:3,title:''});}catch{setInputSaveStatus('Browser draft could not be discarded. Keep this page open.');}}
   async function saveName(){setError('');setBusy(true);try{const value=await api(`/runs/${run.id}/title`,{method:'POST',body:JSON.stringify({title:meetingTitle,version:run.title_version})});adopt(value);setMeetingTitle(value.title);stashInput(inputValue({title:value.title}));}catch(e){setError(e.message);}finally{setBusy(false);}}
 
@@ -219,7 +226,7 @@ function App({account,signOut,completeAccountDeletion,authError}) {
     event.preventDefault();
     const input=inputValue();
     const saved=loadPending();
-    const same=saved && saved.transcript===transcript && saved.reference_date===meetingDate && saved.clusters===clusters && (saved.title || '')===meetingTitle;
+    const same=saved && saved.transcript===transcript && saved.reference_date===meetingDate && saved.clusters===clusters && (saved.title || '')===meetingTitle && (saved.series_id||'')===input.series_id;
     await submitAnalysis(same?saved:{...input,request_id:crypto.randomUUID().replaceAll('-','')});
   }
   async function submitAnalysis(input){
@@ -306,9 +313,9 @@ function App({account,signOut,completeAccountDeletion,authError}) {
     <header className="workspace-header">
       <ProductBrand href="/today" onClick={e=>{e.preventDefault();setPage('today');}}/>
       <nav aria-label="Main navigation">{pages.filter(p=>!['benchmark','annotations','data'].includes(p.id)).map(p=><button key={p.id} disabled={busy || restoring || closing && p.id!=='data'} className={`nav-item ${page===p.id?'active':''}`} aria-current={page===p.id?'page':undefined} onClick={()=>setPage(p.id)}><Icon name={p.icon} size={17}/><span>{p.name}</span></button>)}<ResearchNavigation page={page} disabled={closing || busy || restoring} onNavigate={setPage}/></nav>
-      <div className="topbar-actions"><button type="button" className={`text-button account-entry ${page==='data'?'active':''}`} aria-current={page==='data'?'page':undefined} disabled={busy || restoring} onClick={()=>setPage('data')}>Data & account</button><button type="button" className="text-button help-entry" onClick={()=>setHelpTopic(page==='owners'?'owners':page==='today'?'today':page==='calendar'?'calendar':page==='annotations'?'annotations':page==='benchmark'?'benchmark':'meetings')}>Help</button><ThemeControl/>{account&&<><span className="account-name" title={account.email}>{account.email || 'Signed in'}</span><button className="text-button" onClick={signOut}>Sign out</button></>}</div>
+      <div className="topbar-actions"><button type="button" className={`text-button account-entry ${page==='data'?'active':''}`} aria-current={page==='data'?'page':undefined} disabled={busy || restoring} onClick={()=>setPage('data')}>Data & account</button><button type="button" className="text-button help-entry" onClick={()=>setHelpTopic(page==='history'&&historySeries.open?'series':page==='owners'?'owners':page==='today'?'today':page==='calendar'?'calendar':page==='annotations'?'annotations':page==='benchmark'?'benchmark':'meetings')}>Help</button><ThemeControl/>{account&&<><span className="account-name" title={account.email}>{account.email || 'Signed in'}</span><button className="text-button" onClick={signOut}>Sign out</button></>}</div>
     </header>
-    {helpTopic&&<HelpGuide initialTopic={helpTopic} onClose={()=>setHelpTopic(null)} onNavigate={setPage} navigationDisabled={busy || restoring || closing || !!pending}/>}
+    {helpTopic&&<HelpGuide initialTopic={helpTopic} onClose={()=>setHelpTopic(null)} onNavigate={target=>target==='series'?openSeries():setPage(target)} navigationDisabled={busy || restoring || closing || !!pending}/>}
     <main id="workspace-main" tabIndex={-1} aria-busy={restoring || busy}>
       <div className="topbar"><span>Workspace <span className="slash">/</span> {pages.find(p=>p.id===page).name}</span><span className="local-badge"><span/> {account?'Private account':'Local workspace'}</span></div>
       <div className={`content ${run && page==='extract'?'meeting-content':''}`}>
@@ -317,6 +324,7 @@ function App({account,signOut,completeAccountDeletion,authError}) {
         {page==='extract'&&<>
           {run?<div className="meeting-heading"><div className="meeting-title"><h1 tabIndex={-1}>{run.title || `Meeting ${run.reference_date}`}</h1><p>{run.reference_date} <span aria-hidden="true">·</span> {run.status==='confirmed'?'Your confirmed plan':'Review your suggested tasks'}</p></div><div className="meeting-heading-actions"><button type="button" className="button secondary" disabled={busy || restoring || !!pending} onClick={newMeeting}>New meeting</button><button type="button" className="text-button" aria-label="Edit meeting input" aria-expanded={editorVisible} aria-controls="meeting-editor" disabled={busy || restoring || !!pending} onClick={()=>editorVisible?setEditorOpen(false):openEditor()}>{editorVisible?'Close editor':'Edit meeting'}</button></div></div>:<div className="page-intro extraction-intro"><div><div className="eyebrow accent">START HERE · EXTRACT & REVIEW</div><h1 tabIndex={-1}>Make your next move <em>clear.</em></h1><p>Add a transcript, review the suggested actions, then confirm your plan.</p></div><div className="intro-note"><Icon name="check" size={17}/><span>Evidence attached.<br/><strong>You make the final call.</strong></span></div></div>}
           {run?.superseded_by&&<div className="notice" role="status">This is an earlier plan version. Its tasks and evidence are preserved; All tasks uses the newer version.{run.superseded_available?<button className="text-button" disabled={busy} onClick={()=>openRun(run.superseded_by)}>Open newer plan</button>:<p>The newer version has been deleted.</p>}</div>}
+          {run&&<SeriesMembership key={`series-${run.id}`} run={run} client={draftClient} disabled={busy||restoring||!!pending} onUpdate={setRun} onManage={()=>openSeries()} onPrepare={openSeries}/>}
           {(!run?.settings?.plan_update||run.status==='confirmed')&&<WorkspaceSummary run={run} drafts={drafts} selected={selected}/>}
           <div className="review-flow-bar"><div className="steps" role="group" aria-label="Meeting workflow"><span className={!run?'current':''}><b>1</b> Add transcript</span><span className={run?.status==='review'?'current':''}><b>2</b> Review proposals</span><span className={run?.status==='confirmed'?'current':''}><b>3</b> Confirm plan</span></div>{run&&<details className="layout-options"><summary>Layout options</summary><WorkspaceLayout width={sourceWidth} onChange={resizeSource}/></details>}</div>
           {!run&&(transcript || meetingTitle || meetingDate)&&<div className="meeting-actions"><button className="text-button" disabled={busy || restoring || !!pending} onClick={discardInput}>Discard transcript draft</button></div>}
@@ -328,6 +336,7 @@ function App({account,signOut,completeAccountDeletion,authError}) {
             {!run&&!pending&&!restoring&&config&&!transcript&&<section className="welcome-panel" aria-labelledby="welcome-title"><h2 id="welcome-title">Start with a conversation</h2><button className="text-button" type="button" onClick={()=>setHelpTopic('meetings')}>Start a quick walkthrough</button><p>Try a sample, paste a conversation, or import a transcript file.</p><div className="welcome-actions"><button type="button" className="button primary" onClick={()=>{changeInput({transcript:config.sample_transcript,reference_date:config.sample_reference_date,title:'Example meeting'});setAnalysisStatus('Example loaded. Analyze it to try reviewing a plan.');}}>Try an example</button><button type="button" className="button secondary" onClick={()=>document.getElementById('transcript').focus()}>Paste my transcript</button><button type="button" className="button secondary" onClick={()=>{const details=document.querySelector('.transcript-import');details.open=true;document.getElementById('transcript-file').focus();}}>Import a file</button></div><p className="form-hint">Saved when you analyze. <a href="/privacy">How your data is handled</a>.</p></section>}
             <div className="panel-heading"><div><h2>Meeting transcript</h2><p>Paste the conversation. Keep speaker names where available.</p></div><button type="button" className="text-button" disabled={!config || busy || restoring} onClick={()=>{changeInput({transcript:config.sample_transcript,reference_date:config.sample_reference_date,title:'Example meeting'});}}>Load example</button></div>
             <label className="field-label meeting-name">Meeting name (optional)<input id="meeting-name" aria-label="Meeting name" maxLength={120} value={meetingTitle} disabled={busy || restoring} placeholder="e.g. Product planning" onChange={e=>changeInput({title:e.target.value})}/></label>
+            {!run&&<SeriesInput value={inputSeriesId} onChange={value=>changeInput({series_id:value})} disabled={busy||restoring||!!pending} onManage={()=>openSeries()}/>}
             {run&&<button type="button" className="text-button" disabled={busy || restoring || !!pending || meetingTitle===run.title} onClick={saveName}>Save meeting name</button>}
             <TranscriptImport disabled={busy || restoring} onUse={value=>{changeInput({transcript:value,reference_date:'',title:''});setAnalysisStatus('Transcript imported. Choose the meeting date, then analyze.');document.getElementById('meeting-date').focus();}}/>
             <label className="sr-only" htmlFor="transcript">Meeting transcript</label><textarea id="transcript" className="transcript" disabled={busy || restoring} value={transcript} onChange={e=>changeInput({transcript:e.target.value})} maxLength={config?.max_transcript || 100000} required placeholder="Maya: I’ll send the report tomorrow…"/>
@@ -369,7 +378,7 @@ function App({account,signOut,completeAccountDeletion,authError}) {
         {page==='tasks'&&<AllTasks filters={taskFilters} onFilters={setTaskFilters} onOpen={item=>openRun(item.run_id,'push',item.proposal_id)} busy={busy || restoring || !!pending}/>}
         {page==='today'&&<MyDay busy={busy || restoring || !!pending} onStart={newMeeting} onOpen={item=>openRun(item.run_id,'push',item.proposal_id)} onTasks={view=>{setTaskFilters({...initialTaskFilters,view});setPage('tasks');}} onReviews={()=>{setHistoryStatus('review');navigate({page:'history'});}} onCalendar={()=>setPage('calendar')}/>}
         {page==='calendar'&&<Calendar filters={calendarFilters} onFilters={setCalendarFilters} onOpen={item=>openRun(item.run_id,'push',item.proposal_id)} busy={busy || restoring || !!pending}/>}
-        {page==='history'&&<MeetingHistory key={historyStatus} initialStatus={historyStatus} onOpen={openRun} busy={busy || restoring || !!pending}/> }
+        {page==='history'&&(historySeries.open?<MeetingSeries key={historySeries.id||'series-list'} seriesId={historySeries.id} client={draftClient} busy={busy||restoring||!!pending} onBack={()=>historySeries.id?openSeries():setPage('history')} onSelect={openSeries} onOpen={(id,task)=>openRun(id,'push',task)} onStart={meetingInSeries}/>:<MeetingHistory key={historyStatus} initialStatus={historyStatus} onOpen={openRun} onSeries={()=>openSeries()} busy={busy || restoring || !!pending}/>)}
         {page==='benchmark'&&<>
           <div className="page-intro"><div><div className="eyebrow accent">QUALITY BEFORE GUESSWORK</div><h1 tabIndex={-1}>Compare extraction methods.</h1><p>See how different methods turn conversations into tasks. You can use this app without setting up these optional checks.</p></div></div>
           <WorkflowGuide id="comparison-guide" title="Check a method in three steps" description="Test suggestions against expected answers, then inspect the differences." onHelp={()=>setHelpTopic('benchmark')} steps={[
