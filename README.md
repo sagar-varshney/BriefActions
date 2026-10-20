@@ -41,12 +41,13 @@ model experiments are separate, explicit developer tools.
 | Flexible review layouts | Choose compact rows, detailed cards, or one task at a time; adjust the transcript panel on desktop. |
 | Autosaved work | Recover unfinished inputs and reviews after a reload, with explicit recovery for interrupted analyses. |
 | All tasks | Search confirmed work by task, owner, or meeting; filter by progress, Today, Overdue, Upcoming, or Unassigned. |
+| By owner | See open work, overdue tasks, completed work, and missing owners grouped by the names in your plans. Open an exact task or the complete owner-filtered list. |
 | Calendar | Browse meeting dates and current task deadlines in a month view or mobile agenda; inspect the original plan and find undated work in Unscheduled. |
 | Traceable deadline corrections | Change a confirmed task’s date or mark it Unknown with a reason. Keep the original plan and date history while Calendar, My day, task filters, and exports use the current deadline. |
 | Task progress | Move work through To do, In progress, and Done without rewriting the confirmed plan or its evidence. |
 | Searchable meeting history | Name meetings, filter by date or review status, and inspect the activity behind a saved plan. |
 | Shareable plans | Copy a plan, download Markdown or CSV, or export the complete saved history. |
-| Guided onboarding | Start with Extract & review, then use My day, All tasks, Calendar, and Meeting history. Optional walkthroughs and a glossary explain each step; research tools stay separate. |
+| Guided onboarding | Start with Extract & review, then use My day, All tasks, By owner, Calendar, and Meeting history. Optional walkthroughs and a glossary explain each step; research tools stay separate. |
 
 **A public introduction, then your workspace.** The homepage includes an interactive
 sample and a mix of light and dark sections. A separate sign-in page leads to the

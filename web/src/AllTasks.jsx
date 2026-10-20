@@ -4,7 +4,7 @@ import {localToday,progressLabels} from './reviewTools.js';
 import CopyTask from './CopyTask.jsx';
 
 const views={all:'All tasks',today:'Today',overdue:'Overdue',upcoming:'Upcoming',unassigned:'Unassigned'};
-export const initialTaskFilters={query:'',status:'open',view:'all',page:0};
+export const initialTaskFilters={query:'',status:'open',view:'all',owner:'',page:0};
 
 export default function AllTasks({filters,onFilters,onOpen,busy}){
  const [result,setResult]=useState(null),[loading,setLoading]=useState(true),[error,setError]=useState(''),[retry,setRetry]=useState(0),[today,setToday]=useState(localToday),[loadedKey,setLoadedKey]=useState('');
@@ -21,6 +21,7 @@ export default function AllTasks({filters,onFilters,onOpen,busy}){
   <div className="page-intro"><div><div className="eyebrow accent">EVERY MEETING. ONE CLEAR NEXT STEP.</div><h1 tabIndex={-1}>All tasks</h1><p>Your confirmed tasks across meetings. Open a task to update its progress or check the original conversation.</p></div></div>
   <section className="panel task-dashboard-filters" aria-label="Find confirmed tasks">
    <div className="task-dashboard-search"><label className="field-label">Search tasks<input type="search" aria-label="Search tasks" placeholder="Task, owner, or meeting name" maxLength={200} value={filters.query} onChange={e=>change({query:e.target.value})}/></label><label className="field-label">Task status<select aria-label="Task status" value={filters.status} onChange={e=>change({status:e.target.value})}><option value="open">Open tasks</option><option value="">All statuses</option>{Object.entries(progressLabels).map(([value,label])=><option value={value} key={value}>{label}</option>)}</select></label><button className="button secondary" type="button" onClick={()=>{setToday(localToday());setRetry(n=>n+1);}}>Refresh tasks</button></div>
+   {filters.owner&&<div className="task-owner-filter"><p>Owner: <strong>{filters.owner==='Unknown'?'Unassigned (Unknown owner)':filters.owner}</strong> · Exact owner group</p><button className="text-button" type="button" onClick={()=>change({owner:''})}>Show all owners</button></div>}
    <div className="task-views" role="group" aria-label="Task views">{Object.entries(views).map(([value,label])=><button className="task-view" key={value} type="button" aria-pressed={filters.view===value} onClick={()=>change({view:value})}>{label}{!waiting&&!error&&result&&<span>{result.counts[value]}</span>}</button>)}</div>
    <p className="form-hint">Counts follow your search and status filter. Today is {today}, using your device’s date. Upcoming means the next 7 days; completed tasks are excluded from date views.</p>
   </section>

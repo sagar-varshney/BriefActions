@@ -217,8 +217,16 @@ export function createApp({historyPath, config=loadConfig(), maxWorkers=config.m
         for(const key of ['page','unscheduled_page','page_size'])if(key in input){if(!/^\d{1,6}$/.test(input[key]))throw new HttpError(400,'Invalid calendar page or page size.');input[key]=Number(input[key]);}
         return json(res,200,await call({...input,operation:'calendar_search'}));
       }
+      if(req.method==='GET' && pathname==='/api/owners'){
+        const keys=new Set(['today','query','view','page','page_size']);
+        for(const key of url.searchParams.keys())if(!keys.has(key) || url.searchParams.getAll(key).length!==1)throw new HttpError(400,'Invalid owner search parameter.');
+        const input=Object.fromEntries(url.searchParams);
+        if(!input.today)throw new HttpError(400,'A device date is required for owner workloads.');
+        for(const key of ['page','page_size'])if(key in input){if(!/^\d{1,6}$/.test(input[key]))throw new HttpError(400,'Invalid owner page or page size.');input[key]=Number(input[key]);}
+        return json(res,200,await call({...input,operation:'owner_search'}));
+      }
       if(req.method==='GET' && pathname==='/api/tasks'){
-        const keys=new Set(['today','view','status','query','page','page_size']);
+        const keys=new Set(['today','view','status','query','owner','page','page_size']);
         for(const key of url.searchParams.keys())if(!keys.has(key) || url.searchParams.getAll(key).length!==1)throw new HttpError(400,'Invalid task search parameter.');
         const input=Object.fromEntries(url.searchParams);
         if(!input.today)throw new HttpError(400,'A device date is required for task filters.');

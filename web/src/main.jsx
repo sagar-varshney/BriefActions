@@ -16,6 +16,7 @@ import MeetingHistory from './MeetingHistory.jsx';
 import AllTasks,{initialTaskFilters} from './AllTasks.jsx';
 import Calendar from './Calendar.jsx';
 import MyDay from './MyDay.jsx';
+import OwnerOverview,{initialOwnerFilters} from './OwnerOverview.jsx';
 import {initialCalendar} from './calendarDates.js';
 import PlanExport from './PlanExport.jsx';
 import PlanChangeReview,{FollowupForm} from './PlanUpdates.jsx';
@@ -48,6 +49,7 @@ function Icon({name, size = 20}) {
     history:<><path d="M3 11a9 9 0 1 1 2.5 7M3 4v7h7"/><path d="M12 7v5l3 2"/></>,
     chart:<><path d="M4 3v17h17M8 15v-4M13 15V7M18 15V4"/></>,
     calendar:<><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 11h18M8 15h2M14 15h2"/></>,
+    owners:<><circle cx="9" cy="8" r="3"/><path d="M3 21v-2a6 6 0 0 1 12 0v2M16 5a3 3 0 0 1 0 6M21 21v-2a6 6 0 0 0-3-5"/></>,
     day:<><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M5 19l1.5-1.5M17.5 6.5 19 5"/></>,
     arrow:<path d="M5 12h14m-5-5 5 5-5 5"/>,
     check:<path d="m5 12 4 4L19 6"/>,
@@ -66,10 +68,11 @@ function downloadJson(value, filename) {
   const link = document.createElement('a'); link.href=url; link.download=filename; link.click();
   setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
-const pages = [{id:'extract',name:'Extract & review',icon:'extract'},{id:'today',name:'My day',icon:'day'},{id:'tasks',name:'All tasks',icon:'check'},{id:'calendar',name:'Calendar',icon:'calendar'},{id:'history',name:'Meeting history',icon:'history'},{id:'benchmark',name:'Compare extraction methods',icon:'chart'},{id:'annotations',name:'Label & review examples',icon:'quote'},{id:'data',name:'Data & account',icon:'history'}];
+const pages = [{id:'extract',name:'Extract & review',icon:'extract'},{id:'today',name:'My day',icon:'day'},{id:'tasks',name:'All tasks',icon:'check'},{id:'owners',name:'By owner',icon:'owners'},{id:'calendar',name:'Calendar',icon:'calendar'},{id:'history',name:'Meeting history',icon:'history'},{id:'benchmark',name:'Compare extraction methods',icon:'chart'},{id:'annotations',name:'Label & review examples',icon:'quote'},{id:'data',name:'Data & account',icon:'history'}];
 
 function App({account,signOut,completeAccountDeletion,authError}) {
   const [historyStatus,setHistoryStatus]=useState('');
+  const [ownerFilters,setOwnerFilters]=useState(initialOwnerFilters);
   const [calendarFilters,setCalendarFilters]=useState(initialCalendar);
   const [helpTopic,setHelpTopic]=useState(null);
   const [taskFilters,setTaskFilters]=useState(initialTaskFilters),[taskTarget,setTaskTarget]=useState(()=>readRoute().taskId || null);
@@ -302,7 +305,7 @@ function App({account,signOut,completeAccountDeletion,authError}) {
     <header className="workspace-header">
       <ProductBrand href="/today" onClick={e=>{e.preventDefault();setPage('today');}}/>
       <nav aria-label="Main navigation">{pages.filter(p=>!['benchmark','annotations','data'].includes(p.id)).map(p=><button key={p.id} disabled={busy || restoring || closing && p.id!=='data'} className={`nav-item ${page===p.id?'active':''}`} aria-current={page===p.id?'page':undefined} onClick={()=>setPage(p.id)}><Icon name={p.icon} size={17}/><span>{p.name}</span></button>)}<ResearchNavigation page={page} disabled={closing || busy || restoring} onNavigate={setPage}/></nav>
-      <div className="topbar-actions"><button type="button" className={`text-button account-entry ${page==='data'?'active':''}`} aria-current={page==='data'?'page':undefined} disabled={busy || restoring} onClick={()=>setPage('data')}>Data & account</button><button type="button" className="text-button help-entry" onClick={()=>setHelpTopic(page==='today'?'today':page==='calendar'?'calendar':page==='annotations'?'annotations':page==='benchmark'?'benchmark':'meetings')}>Help</button><ThemeControl/>{account&&<><span className="account-name" title={account.email}>{account.email || 'Signed in'}</span><button className="text-button" onClick={signOut}>Sign out</button></>}</div>
+      <div className="topbar-actions"><button type="button" className={`text-button account-entry ${page==='data'?'active':''}`} aria-current={page==='data'?'page':undefined} disabled={busy || restoring} onClick={()=>setPage('data')}>Data & account</button><button type="button" className="text-button help-entry" onClick={()=>setHelpTopic(page==='owners'?'owners':page==='today'?'today':page==='calendar'?'calendar':page==='annotations'?'annotations':page==='benchmark'?'benchmark':'meetings')}>Help</button><ThemeControl/>{account&&<><span className="account-name" title={account.email}>{account.email || 'Signed in'}</span><button className="text-button" onClick={signOut}>Sign out</button></>}</div>
     </header>
     {helpTopic&&<HelpGuide initialTopic={helpTopic} onClose={()=>setHelpTopic(null)} onNavigate={setPage} navigationDisabled={busy || restoring || closing || !!pending}/>}
     <main id="workspace-main" tabIndex={-1} aria-busy={restoring || busy}>
@@ -360,6 +363,7 @@ function App({account,signOut,completeAccountDeletion,authError}) {
         </>}
         {page==='annotations'&&<AnnotationReviewer api={api} downloadJson={downloadJson} onHelp={()=>setHelpTopic('annotations')}/>}
         {page==='data'&&<DataControls completeAccountDeletion={completeAccountDeletion} onClosing={()=>{clearTimeout(saveTimer.current);activeRun.current=null;setClosing(true);setRun(null);setDrafts([]);setTranscript('');setMeetingTitle('');setInputSaveStatus('');setReport(null);setPending(null);setAnalysisStatus('');}}/>}
+        {page==='owners'&&<OwnerOverview filters={ownerFilters} onFilters={setOwnerFilters} onTasks={filters=>{setTaskFilters({...initialTaskFilters,...filters});setPage('tasks');}} onOpen={item=>openRun(item.run_id,'push',item.proposal_id)} onStart={newMeeting} busy={busy || restoring || !!pending}/>}
         {page==='tasks'&&<AllTasks filters={taskFilters} onFilters={setTaskFilters} onOpen={item=>openRun(item.run_id,'push',item.proposal_id)} busy={busy || restoring || !!pending}/>}
         {page==='today'&&<MyDay busy={busy || restoring || !!pending} onStart={newMeeting} onOpen={item=>openRun(item.run_id,'push',item.proposal_id)} onTasks={view=>{setTaskFilters({...initialTaskFilters,view});setPage('tasks');}} onReviews={()=>{setHistoryStatus('review');navigate({page:'history'});}} onCalendar={()=>setPage('calendar')}/>}
         {page==='calendar'&&<Calendar filters={calendarFilters} onFilters={setCalendarFilters} onOpen={item=>openRun(item.run_id,'push',item.proposal_id)} busy={busy || restoring || !!pending}/>}

@@ -107,7 +107,7 @@ try{
  for(const selector of ['.app-shell','.workspace-header','.daily-welcome'])assert.equal(await page.locator(selector).evaluate(el=>getComputedStyle(el).backgroundImage),'none');
  assert.ok(await page.getByRole('button',{name:'Start your first meeting',exact:true}).isVisible());await page.emulateMedia({forcedColors:'none'});
  // Section titles follow navigation, reloads and browser history without private content.
- const sections=[['My day','/today'],['All tasks','/tasks'],['Calendar','/calendar'],['Meeting history','/history'],['Compare extraction methods','/research/evaluation'],['Label & review examples','/research/annotations'],['Data & account','/account'],['Extract & review','/meetings']];
+ const sections=[['My day','/today'],['All tasks','/tasks'],['By owner','/owners'],['Calendar','/calendar'],['Meeting history','/history'],['Compare extraction methods','/research/evaluation'],['Label & review examples','/research/annotations'],['Data & account','/account'],['Extract & review','/meetings']];
  await titleIs(page,'My day · BriefActions');
  for(const [name,route] of sections){
   await navigate(page,name);await titleIs(page,`${name} · BriefActions`);assert.equal(new URL(page.url()).pathname,route);
@@ -121,7 +121,7 @@ try{
  // Stable workflow navigation, account utilities, and optional research.
  await page.goto(localBase+'/meetings');await page.getByRole('button',{name:'Try an example',exact:true}).waitFor();
  const nav=page.getByRole('navigation',{name:'Main navigation',exact:true});
- assert.deepEqual(await nav.locator(':scope > button').allTextContents(),['Extract & review','My day','All tasks','Calendar','Meeting history']);
+ assert.deepEqual(await nav.locator(':scope > button').allTextContents(),['Extract & review','My day','All tasks','By owner','Calendar','Meeting history']);
  assert.equal(await nav.getByRole('button',{name:'Data & account',exact:true}).count(),0);assert.ok(await page.locator('.topbar-actions').getByRole('button',{name:'Data & account',exact:true}).isVisible());assert.equal(await nav.getByRole('button',{name:'Research tools',exact:true}).getAttribute('aria-expanded'),'false');
  assert.ok(await page.getByRole('group',{name:'Meeting workflow',exact:true}).isVisible());await page.getByRole('button',{name:'Start a quick walkthrough',exact:true}).click();assert.equal(await page.getByLabel('Walkthrough',{exact:true}).inputValue(),'meetings');await page.getByRole('button',{name:'Close guide',exact:true}).click();
  await page.setViewportSize({width:1440,height:1000});await page.screenshot({path:path.join(shots,'workflow-start-desktop.png'),fullPage:true});await page.setViewportSize({width:320,height:1000});await page.screenshot({path:path.join(shots,'workflow-start-mobile.png'),fullPage:true});

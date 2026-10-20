@@ -10,7 +10,7 @@ or task link returns to that item after sign-in. Local development instead shows
 **System** from **Theme** on the sign-in page; the workspace remembers that choice.
 The public homepage always uses its own mix of light and dark sections.
 
-Navigation follows this order: **Extract & review → My day → All tasks → Calendar → Meeting history**.
+Navigation follows this order: **Extract & review → My day → All tasks → By owner → Calendar → Meeting history**.
 Start in **Extract & review**: add a transcript, check proposed actions, then confirm
 your plan. Its **Start here** label, three-step progress bar, sample, and optional
 walkthrough help you get started. Use **My day** to choose your next step once work
@@ -140,6 +140,31 @@ for changes from other tabs. **Open task & evidence** opens that exact task insi
 its meeting, where you can change progress or use **Locate passage**. Task links
 remain private to your account. Browser Back restores the dashboard filters during
 the same session; reloading the dashboard starts with the default filters.
+
+## See work by owner
+
+Open **By owner**, beside **All tasks**, to see confirmed tasks grouped by owner
+name. The initial view includes groups with open work. Choose **All owner groups**
+to include completed-only groups, or narrow the list to overdue or unassigned work.
+Search follows owner labels; it does not search transcript text.
+
+These are names from your plans, not team accounts or verified identities.
+Different spellings and capitalization stay separate; joint owner labels stay
+together. Missing owners appear in **Unassigned**. No task is assigned automatically.
+
+Each group shows open, overdue, due-today, in-progress, done, and no-deadline counts.
+Date counts exclude completed tasks and use your device’s date and current saved
+deadlines, including corrections. Summary counts follow both workload filters.
+Unassigned comes first; other groups sort by overdue and open counts, then name.
+
+**Start with** opens a priority task and its exact supporting evidence. **View open
+tasks**, **View overdue tasks**, and **View all tasks** open All tasks with an exact
+owner filter. That filter also respects progress and due-date views. Choose
+**Show all owners** to clear it. Owner and task filters survive section navigation
+and browser Back within the current workspace session; a reload starts default filters.
+Use **Refresh owner overview** to reload saved progress and dates. Returning to the
+screen or refocusing the browser also refreshes the overview. Viewing groups never
+changes owners, tasks, or dates.
 
 ## See meetings and deadlines on the calendar
 

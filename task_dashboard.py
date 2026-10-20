@@ -27,7 +27,7 @@ def projection_sql(pg):
             AND NOT EXISTS(SELECT 1 FROM events replacement WHERE replacement.run_id=f.run_id AND replacement.kind='plan_superseded')"""
 
 
-def search(history, *, today=None, view='all', status='open', query='', page=0, page_size=12):
+def search(history, *, today=None, view='all', status='open', query='', owner='', page=0, page_size=12):
     if not isinstance(today, str) or not re.fullmatch(r'\d{4}-\d{2}-\d{2}', today):
         raise DataError('Choose a valid device date for task filters.', 400)
     try:
@@ -42,6 +42,10 @@ def search(history, *, today=None, view='all', status='open', query='', page=0, 
         raise DataError('Invalid task view or progress filter.', 400)
     if not isinstance(query, str) or len(query) > 200:
         raise DataError('Task search must be at most 200 characters.', 400)
+    if not isinstance(owner,str) or len(owner)>10000:
+        raise DataError('Invalid task owner filter.',400)
+    owner=owner.strip(' ')
+    if owner.lower()=='unknown':owner='Unknown'
     if type(page) is not int or not 0 <= page <= 100_000 or type(page_size) is not int or not 1 <= page_size <= 50:
         raise DataError('Invalid task page or page size.', 400)
     pg = bool(history.database_url)
@@ -53,6 +57,7 @@ def search(history, *, today=None, view='all', status='open', query='', page=0, 
           {projection_sql(pg)}
         ), matches AS MATERIALIZED (
           SELECT * FROM tasks WHERE {statuses[status]} AND
+            (?='' OR (?='Unknown' AND {lower}(trim(owner)) IN ('','unknown')) OR trim(owner)=?) AND
             (?='' OR {contains}({lower}(task),{lower}(?))>0 OR
               {contains}({lower}(owner),{lower}(?))>0 OR {contains}({lower}(title),{lower}(?))>0)
         ), tagged AS MATERIALIZED (
@@ -78,9 +83,9 @@ def search(history, *, today=None, view='all', status='open', query='', page=0, 
           FROM bounds b CROSS JOIN counts c LEFT JOIN slice s ON TRUE
           ORDER BY CASE WHEN s.status='done' THEN 1 ELSE 0 END,
             CASE WHEN s.deadline='Unknown' THEN 1 ELSE 0 END,s.deadline,s.event_id DESC,s.task_index""",
-          (query.strip(),)*4 + (today,today,today,end,page,page_size,page_size,page,page_size,page_size)).fetchall()
+          (owner,owner,owner)+(query.strip(),)*4 + (today,today,today,end,page,page_size,page_size,page,page_size,page_size)).fetchall()
     total, current = rows[0][:2]
     return {'items': [dict(zip(('run_id','proposal_id','task','owner','deadline','status','title','reference_date'), row[7:]))
                       for row in rows if row[7] is not None],
             'counts': dict(zip(('all','today','overdue','upcoming','unassigned'), rows[0][2:7])),
-            'total': total, 'page': current, 'page_size': page_size, 'today': today}
+            'total': total, 'page': current, 'page_size': page_size, 'today': today, 'owner':owner}

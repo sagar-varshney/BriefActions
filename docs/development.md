@@ -92,7 +92,8 @@ and [web_bridge.py](../web_bridge.py).
 | `POST /api/runs` | Analyze `{transcript, reference_date, clusters, request_id, title}`; matching retries reuse the saved result |
 | `GET /api/runs`, `GET /api/runs/:id` | List and inspect saved runs |
 | `GET /api/runs/search` | Paginated meeting-name/transcript search, date range, and review status |
-| `GET /api/tasks` | Paginated confirmed-task search and date/progress views; requires the device's `today` date |
+| `GET /api/owners` | Account-scoped owner-label groups, summary counts, and one priority task per group. Requires device `today`; optional `query` (200 characters), `view` (open/all/overdue/unassigned), `page`, and `page_size` (1–50). |
+| `GET /api/tasks` | Paginated confirmed-task search and date/progress views; requires the device's `today` date; optional exact `owner` label (`Unknown` selects missing owners) |
 | `GET /api/today` | Private daily overview. Requires device date `today` (YYYY-MM-DD); optional preview `limit` (1–12, default 4). Complete counts and bounded previews for overdue, today, next-seven-day tasks and unfinished reviews, plus open/undated totals. |
 | `GET /api/calendar` | Account-scoped month counts, selected-day entries, and global undated tasks. Requires `month` (YYYY-MM); optional `day`, `kind` (all/meetings/tasks), `status` (open/empty/todo/in_progress/done), `page`, `unscheduled_page`, and `page_size` (1–50, default 12). |
 | `POST /api/runs/:id/updates` | Create/recover a follow-up comparison using `{transcript, reference_date, request_id}` |
@@ -234,6 +235,23 @@ versions atomically, so a stale comparison cannot overwrite a newer correction.
 Inherited corrected dates retain their reason until a reviewed follow-up changes
 that date. No schema migration or new service is required.
 
+
+## Owner workload projection
+
+`owner_overview.py` aggregates the shared current-task projection in one read-only
+SQLite/Postgres statement. Only confirmed, unsuperseded plans contribute. Deadline
+corrections and latest progress are included. The query clamps pagination and
+returns at most `page_size` groups and one priority open task per returned group;
+complete counts cover the matching groups, not just the page. Responses contain
+no transcript or evidence text. `/owners` is an ordinary authenticated workspace
+route and retains its destination through sign-in.
+
+Names group by their exact trimmed label; case variants are distinct except for
+the reserved Unknown label. Unknown/blank values form one Unassigned group. The
+`owner` task-search filter uses the same exact grouping and never changes auth
+scope. The filter is held in workspace state and is cleared by Show all owners;
+owner names are not added to browser-history URLs. No account mapping, owner
+merging, or automatic assignment is performed.
 
 ## Separate legacy backend
 

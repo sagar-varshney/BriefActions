@@ -1,4 +1,4 @@
-const paths={today:'/today',extract:'/meetings',tasks:'/tasks',calendar:'/calendar',history:'/history',benchmark:'/research/evaluation',annotations:'/research/annotations',data:'/account'};
+const paths={today:'/today',extract:'/meetings',tasks:'/tasks',owners:'/owners',calendar:'/calendar',history:'/history',benchmark:'/research/evaluation',annotations:'/research/annotations',data:'/account'};
 const validTask=value=>typeof value==='string' && /^[a-zA-Z0-9_-]{1,128}$/.test(value);
 export function readRoute(url=new URL(location.href)){
  const path=url.pathname.replace(/\/$/,'') || '/';
