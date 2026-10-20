@@ -129,16 +129,21 @@ Optional **Research tools** help you label examples and compare extraction metho
 - **Repeat model experiments:** use the CLI to compare installed Ollama models and
   prompt versions, retaining quality, latency, API fees, failures, and run fingerprints.
 
-The repository includes **84 synthetic annotated transcripts**: a 60-case starter
+The repository includes **112 synthetic annotated transcripts**: a 60-case starter
 set and 24 revision/cancellation cases, each split into development and reserved
-test examples. The annotations were AI-authored and have **not been independently
-human-reviewed**. No permitted real-meeting transcripts are included. These scores
+test examples, plus a 28-case development-only extraction audit. The annotations
+were AI-authored and have **not been independently human-reviewed**. No permitted
+real-meeting transcripts are included. These scores
 do not establish real-meeting accuracy. Task matching is lexical, and passage
 support is an annotated-span proxy rather than a semantic entailment check.
 
 See the [evaluation methodology](evaluation/README.md),
 [retained rule/model results](evaluation/results/COMPARISON.md), and
 [repeated model comparison](evaluation/results/repeated-revision-dev/COMPARISON.md).
+[The extraction audit](evaluation/audit-v1/README.md) records before/after results
+for smart-apostrophe commitments, intact source passages, negative wording, and
+calendar-boundary failures. These targeted development results are not a new
+held-out accuracy claim.
 Fresh independently reviewed data is needed before making broader accuracy claims.
 
 ## Deploying BriefActions

@@ -76,9 +76,15 @@ def schedule_items(items: list[ActionItem], reference_date: date | None = None) 
     owner_offsets: dict[str, int] = {}
     for item in sorted(items, key=lambda value: (priority_hour[value.priority], value.deadline)):
         offset = owner_offsets.get(item.owner, 0)
-        day = reference_date + timedelta(days=offset // 3)
-        while day.weekday() >= 5:
-            day += timedelta(days=1)
+        try:
+            day = reference_date + timedelta(days=offset // 3)
+            while day.weekday() >= 5:
+                day += timedelta(days=1)
+        except OverflowError:
+            # An optional scheduling suggestion must not discard extracted work.
+            item.suggested_slot = 'Unknown'
+            owner_offsets[item.owner] = offset + 1
+            continue
         hour = min(priority_hour[item.priority] + (offset % 3), 17)
         item.suggested_slot = datetime.combine(day, datetime.min.time()).replace(hour=hour).strftime(
             "%a, %d %b · %I:%M %p"

@@ -35,7 +35,9 @@ def passages(text: str):
     speaker = None
     for line in re.finditer(r"[^\r\n]+", text):
         speaker = None
-        for part in re.finditer(r"[^.!?]+(?:[.!?]+|$)", line.group()):
+        # Sentence punctuation must finish a token. Internal periods in versions,
+        # filenames, email addresses and URLs belong to the supporting passage.
+        for part in re.finditer(r".+?(?:[.!?]+(?=\s|$)|$)", line.group()):
             raw = part.group()
             trimmed = raw.strip().lstrip("-•* ")
             if not trimmed:
@@ -53,9 +55,24 @@ def passages(text: str):
 VERBS = r"(?:follow up|send|prepare|create|review|update|finali[sz]e|schedule|fix|test|draft|share|deploy|design|analy[sz]e|contact|confirm|complete|investigate|document|publish|coordinate|add|write|check|book|deliver|submit|reconcile|archive|replace|audit|migrate|run|resolve|collect|verify|reduce|implement|merge|remove|present|validate|export)"
 NAMES = r"(?:@[\w-]+|[A-Z][\w-]*(?: [A-Z][\w-]*)?)"
 COMMIT = r"(?:will|shall|must|should|needs? to|has to|have to|is going to|is assigned to)"
+NON_COMMITMENT = re.compile(r"\b(?:won['’]t|will not|don['’]t|do not|no longer|already|yesterday|cancelled|canceled|might|maybe|could potentially)\b", re.I)
+DISCUSSION = re.compile(r"^(?:if\b|should we\b|can we\b|we discussed\b|we reviewed\b|we used to\b)", re.I)
 MONTHS = {name.lower(): i for i, name in enumerate(("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"), 1)}
 MONTHS.update({k[:3]: v for k, v in list(MONTHS.items())})
 WEEKDAYS = {name.lower(): i for i, name in enumerate(("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"))}
+
+
+def non_commitment(body: str) -> bool:
+    action = re.search(rf"\b{VERBS}\b", body, re.I)
+    # Only inspect the lead-in to the action, not the thing being acted on.
+    return bool(NON_COMMITMENT.search(body[:action.start()] if action else body))
+
+
+def add_days(reference_date: date, days: int) -> date | None:
+    try:
+        return reference_date + timedelta(days=days)
+    except (OverflowError, ValueError):
+        return None
 
 
 def parse_deadline(body: str, reference_date: date) -> date | None:
@@ -74,19 +91,22 @@ def parse_deadline(body: str, reference_date: date) -> date | None:
     if re.match(r"today\b", value):
         return reference_date
     if re.match(r"tomorrow\b", value):
-        return reference_date + timedelta(days=1)
+        return add_days(reference_date, 1)
     days = re.match(r"in (\d+) days?\b", value)
     if days:
-        return reference_date + timedelta(days=int(days.group(1)))
+        try:
+            return add_days(reference_date, int(days.group(1)))
+        except ValueError:
+            return None
     weekday = re.match(r"(?:(this|next) )?(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)\b", value, re.I)
     if weekday:
         target = WEEKDAYS[weekday.group(2).lower()]
         offset = (target - reference_date.weekday()) % 7
         if weekday.group(1) == "next":
             offset = 7 - reference_date.weekday() + target
-        return reference_date + timedelta(days=offset)
+        return add_days(reference_date, offset)
     if value.startswith("end of week"):
-        return reference_date + timedelta(days=(4 - reference_date.weekday()) % 7)
+        return add_days(reference_date, (4 - reference_date.weekday()) % 7)
     named = re.match(r"([a-z]+) (\d{1,2})(?:st|nd|rd|th)?(?:,? (20\d{2}))?\b", value)
     if named and named.group(1) in MONTHS:
         try:
@@ -171,15 +191,20 @@ def extract_with_changes(text: str, reference_date: date | None = None):
                 previous=None
             continue
         previous=None
-        body = re.sub(r"\bI'll\b", "I will", body, flags=re.I)
-        # Completed, cancelled, negated and hypothetical work isn't a commitment.
-        if re.search(r"\b(?:won't|will not|don't|do not|no longer|already|yesterday|cancelled|canceled|might|maybe|could potentially)\b", body, re.I):
+        # Normalize commitment contractions for matching only; evidence always
+        # retains the original Unicode text and offsets.
+        pronouns = {'i':'I', 'we':'We', 'they':'They', 'you':'You', 'he':'He', 'she':'She'}
+        body = re.sub(rf"\b({NAMES}|I|We|They|You|He|She)['’]ll\b", lambda m: pronouns.get(m[1].lower(),m[1])+' will', body, flags=re.I)
+        # These words can also describe the *object* of a real commitment (for
+        # example, investigating why a worker won't start). Scope exclusions to
+        # the beginning; the commitment/request grammar rejects negated verbs.
+        if non_commitment(body):
             continue
-        if re.match(r"(?:if\b|should we\b|can we\b|we discussed\b|we reviewed\b|we used to\b)", body, re.I):
+        if DISCUSSION.match(body):
             continue
         owner = UNKNOWN
         task = None
-        explicit = re.match(rf"({NAMES}(?: and {NAMES})?|I|We|They|You|He|She|The team)\s+{COMMIT}\s+(?:urgently\s+)?({VERBS}\b.+)", body)
+        explicit = re.match(rf"({NAMES}(?: and {NAMES})?|I|We|They|You|He|She|The team)\s+(?i:{COMMIT})\s+(?i:urgently\s+)?((?i:{VERBS})\b.+)", body)
         if explicit:
             candidate, task = explicit.groups()
             owner = speaker if candidate == "I" and speaker else UNKNOWN if candidate.lower() in {"i", "we", "they", "you", "he", "she", "the team"} else candidate.lstrip("@")
@@ -192,6 +217,8 @@ def extract_with_changes(text: str, reference_date: date | None = None):
                 task = request.group(2)
             elif tagged:
                 task = tagged.group(1)
+                if non_commitment(task) or DISCUSSION.match(task):
+                    continue
             elif imperative:
                 task = imperative.group(1)
         if not task or len(task.split()) < 2:

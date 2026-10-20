@@ -154,3 +154,13 @@ this after an encrypted-backup restore with a fresh deletion ledger. Delete a
 series separately and verify that its conversations/plans and unrelated unfinished
 transcript text are kept. Planning an agenda must not schedule a calendar event,
 create tasks, or send messages.
+
+## Extraction and first-user review
+
+The [development audit](../evaluation/audit-v1/README.md) records selected fixes
+and remaining extraction limits. CI verifies all three development quality floors
+and the empty-result repair flow. Passing these synthetic checks does not replace
+independent annotations or real-user feedback. Follow the
+[first-user checklist](usability-check.md), including missed-action repair,
+follow-up drafts, weekly review, and agenda freshness, before making broader
+accuracy or usability claims. Record observations without private transcript data.

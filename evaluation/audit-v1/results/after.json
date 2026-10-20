@@ -1,0 +1,1015 @@
+{
+  "counts": {
+    "predicted": 23,
+    "gold": 23,
+    "matched": 23,
+    "owner_correct": 23,
+    "deadline_correct": 23,
+    "owner_known_correct": 21,
+    "owner_known_total": 21,
+    "deadline_known_correct": 18,
+    "deadline_known_total": 18,
+    "evidence_valid": 23,
+    "supported": 23,
+    "failures": 0
+  },
+  "metrics": {
+    "task_precision": 1.0,
+    "task_recall": 1.0,
+    "task_f1": 1.0,
+    "owner_accuracy_on_matched": 1.0,
+    "deadline_accuracy_on_matched": 1.0,
+    "known_owner_end_to_end": 1.0,
+    "known_deadline_end_to_end": 1.0,
+    "evidence_validity": 1.0,
+    "gold_support_proxy": 1.0,
+    "latency_p50_ms": 0.03662507515400648,
+    "latency_p95_ms": 1.2698330683633685,
+    "cost_usd": 0.0,
+    "failure_rate": 0.0
+  },
+  "details": [
+    {
+      "id": "audit-dev-smart-i",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "a1",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "audit-dev-smart-negative",
+      "matches": [],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "audit-dev-smart-two-turns",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "a1",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        },
+        {
+          "prediction": 1,
+          "gold_id": "a2",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "audit-dev-smart-plural",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "a1",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "audit-dev-ascii-named-contraction",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "a1",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "audit-dev-filename",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "a1",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "audit-dev-version",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "a1",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "audit-dev-email",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "a1",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "audit-dev-url",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "a1",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "audit-dev-sentence-boundary",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "a1",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        },
+        {
+          "prediction": 1,
+          "gold_id": "a2",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "audit-dev-punctuation-unicode",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "a1",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "audit-dev-negative-in-object",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "a1",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "audit-dev-completed-adjective",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "a1",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "audit-dev-yesterday-in-object",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "a1",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "audit-dev-cancelled-in-object",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "a1",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "audit-dev-negated-commitment",
+      "matches": [],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "audit-dev-hypothetical",
+      "matches": [],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "audit-dev-completed-status",
+      "matches": [],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "audit-dev-negated-request",
+      "matches": [],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "audit-dev-vague-deadline",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "a1",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "audit-dev-ambiguous-date",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "a1",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "audit-dev-upper-case-verb",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "a1",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "audit-dev-overflow-relative",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "a1",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "audit-dev-overflow-interval",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "a1",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "audit-dev-revision-smart",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "a1",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "audit-dev-cancellation-smart",
+      "matches": [],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "audit-dev-quoted-instruction",
+      "matches": [],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "audit-dev-duplicate-smart-ascii",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "a1",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    }
+  ],
+  "schema_version": 1,
+  "created_at": "2026-10-20T18:23:03.320008+00:00",
+  "evaluator_sha256": "b618d7dcab9afd791d816694e3cb456bbddd2051457a1b45c8f593ead7c34585",
+  "label": "audited-rules",
+  "extractor": "rules",
+  "dataset_sha256": "09198f99db3ecd9ac52e6055106b965f9b1059895912f410fdff07255aab5be3",
+  "dataset": "dev.jsonl",
+  "splits": [
+    "dev"
+  ],
+  "extractor_sha256": "6c0f488f97cfe42e5280ae4b16bba838aae0a8cb6ce3eae29e6e8fb3418b660b",
+  "prompt_version": null,
+  "prompt_sha256": null,
+  "pricing": {
+    "input_usd_per_million": null,
+    "output_usd_per_million": null
+  },
+  "runs": [
+    {
+      "items": [
+        {
+          "task": "send the launch brief",
+          "owner": "Maya",
+          "deadline": "2026-10-21",
+          "priority": "High",
+          "evidence": [
+            {
+              "text": "Maya: I\u2019ll send the launch brief tomorrow.",
+              "start": 0,
+              "end": 42
+            }
+          ],
+          "proposal_id": "7adef9170c28aeef",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        }
+      ],
+      "cost_usd": 0.0,
+      "latency_ms": 3.3413339406251907,
+      "id": "audit-dev-smart-i"
+    },
+    {
+      "items": [],
+      "cost_usd": 0.0,
+      "latency_ms": 0.02945901360362768,
+      "id": "audit-dev-smart-negative"
+    },
+    {
+      "items": [
+        {
+          "task": "review the budget",
+          "owner": "Ada",
+          "deadline": "2028-02-29",
+          "priority": "High",
+          "evidence": [
+            {
+              "text": "Ada: I\u2019ll review the budget tomorrow.",
+              "start": 0,
+              "end": 37
+            }
+          ],
+          "proposal_id": "0befe55a9d755588",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        },
+        {
+          "task": "send the notes",
+          "owner": "Ada",
+          "deadline": "2028-03-03",
+          "priority": "Medium",
+          "evidence": [
+            {
+              "text": "Ada: I\u2019ll send the notes by Friday.",
+              "start": 38,
+              "end": 73
+            }
+          ],
+          "proposal_id": "7a0a037a0649377f",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        }
+      ],
+      "cost_usd": 0.0,
+      "latency_ms": 0.26949995663017035,
+      "id": "audit-dev-smart-two-turns"
+    },
+    {
+      "items": [
+        {
+          "task": "prepare the annual report",
+          "owner": "Unknown",
+          "deadline": "2027-01-01",
+          "priority": "High",
+          "evidence": [
+            {
+              "text": "We\u2019ll prepare the annual report tomorrow.",
+              "start": 0,
+              "end": 41
+            }
+          ],
+          "proposal_id": "d630ee12462bd9c9",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        }
+      ],
+      "cost_usd": 0.0,
+      "latency_ms": 0.041499966755509377,
+      "id": "audit-dev-smart-plural"
+    },
+    {
+      "items": [
+        {
+          "task": "check the release checklist",
+          "owner": "Sam",
+          "deadline": "2026-10-23",
+          "priority": "Medium",
+          "evidence": [
+            {
+              "text": "Sam'll check the release checklist by Friday.",
+              "start": 0,
+              "end": 45
+            }
+          ],
+          "proposal_id": "8eca9ecd2d462f4d",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        }
+      ],
+      "cost_usd": 0.0,
+      "latency_ms": 0.04629092290997505,
+      "id": "audit-dev-ascii-named-contraction"
+    },
+    {
+      "items": [
+        {
+          "task": "review release-notes.md",
+          "owner": "Jon",
+          "deadline": "2026-10-23",
+          "priority": "Medium",
+          "evidence": [
+            {
+              "text": "Jon will review release-notes.md by Friday.",
+              "start": 0,
+              "end": 43
+            }
+          ],
+          "proposal_id": "2d9618584e1af725",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        }
+      ],
+      "cost_usd": 0.0,
+      "latency_ms": 0.03650004509836435,
+      "id": "audit-dev-filename"
+    },
+    {
+      "items": [
+        {
+          "task": "test version 2.4.1",
+          "owner": "Maya",
+          "deadline": "2026-10-21",
+          "priority": "High",
+          "evidence": [
+            {
+              "text": "Maya: I will test version 2.4.1 tomorrow.",
+              "start": 0,
+              "end": 41
+            }
+          ],
+          "proposal_id": "90b3eb4c131193fc",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        }
+      ],
+      "cost_usd": 0.0,
+      "latency_ms": 0.03191700670868158,
+      "id": "audit-dev-version"
+    },
+    {
+      "items": [
+        {
+          "task": "send the invoice to accounts@example.org",
+          "owner": "Ada",
+          "deadline": "2026-10-21",
+          "priority": "High",
+          "evidence": [
+            {
+              "text": "Ada will send the invoice to accounts@example.org tomorrow.",
+              "start": 0,
+              "end": 59
+            }
+          ],
+          "proposal_id": "2f40b2e9f430fda9",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        }
+      ],
+      "cost_usd": 0.0,
+      "latency_ms": 0.03787502646446228,
+      "id": "audit-dev-email"
+    },
+    {
+      "items": [
+        {
+          "task": "check https://example.org/status",
+          "owner": "Sam",
+          "deadline": "2026-10-23",
+          "priority": "Medium",
+          "evidence": [
+            {
+              "text": "Sam will check https://example.org/status by Friday.",
+              "start": 0,
+              "end": 52
+            }
+          ],
+          "proposal_id": "ef5fef00024b5cbe",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        }
+      ],
+      "cost_usd": 0.0,
+      "latency_ms": 0.035917037166655064,
+      "id": "audit-dev-url"
+    },
+    {
+      "items": [
+        {
+          "task": "review the brief",
+          "owner": "Maya",
+          "deadline": "Unknown",
+          "priority": "Low",
+          "evidence": [
+            {
+              "text": "Maya: I will review the brief.",
+              "start": 0,
+              "end": 30
+            }
+          ],
+          "proposal_id": "151de6b1b0818f8e",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        },
+        {
+          "task": "send the notes",
+          "owner": "Maya",
+          "deadline": "2026-10-21",
+          "priority": "High",
+          "evidence": [
+            {
+              "text": "I will send the notes tomorrow.",
+              "start": 31,
+              "end": 62
+            }
+          ],
+          "proposal_id": "ef273ff61e24b7e4",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        }
+      ],
+      "cost_usd": 0.0,
+      "latency_ms": 0.05879090167582035,
+      "id": "audit-dev-sentence-boundary"
+    },
+    {
+      "items": [
+        {
+          "task": "test v2.1 \ud83d\udcca",
+          "owner": "Maya",
+          "deadline": "2028-02-29",
+          "priority": "High",
+          "evidence": [
+            {
+              "text": "Maya: I\u2019ll test v2.1 \ud83d\udcca tomorrow.",
+              "start": 4,
+              "end": 36
+            }
+          ],
+          "proposal_id": "a130f81954a1f170",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        }
+      ],
+      "cost_usd": 0.0,
+      "latency_ms": 0.04233303479850292,
+      "id": "audit-dev-punctuation-unicode"
+    },
+    {
+      "items": [
+        {
+          "task": "investigate why the worker won't start",
+          "owner": "Ada",
+          "deadline": "2026-10-21",
+          "priority": "High",
+          "evidence": [
+            {
+              "text": "Ada will investigate why the worker won't start tomorrow.",
+              "start": 0,
+              "end": 57
+            }
+          ],
+          "proposal_id": "44f68e40af66de9f",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        }
+      ],
+      "cost_usd": 0.0,
+      "latency_ms": 0.03741704858839512,
+      "id": "audit-dev-negative-in-object"
+    },
+    {
+      "items": [
+        {
+          "task": "review the already approved budget",
+          "owner": "Jon",
+          "deadline": "2026-10-23",
+          "priority": "Medium",
+          "evidence": [
+            {
+              "text": "Jon will review the already approved budget by Friday.",
+              "start": 0,
+              "end": 54
+            }
+          ],
+          "proposal_id": "352c1c06344ee65d",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        }
+      ],
+      "cost_usd": 0.0,
+      "latency_ms": 0.03662507515400648,
+      "id": "audit-dev-completed-adjective"
+    },
+    {
+      "items": [
+        {
+          "task": "investigate yesterday\u2019s outage",
+          "owner": "Maya",
+          "deadline": "2026-10-21",
+          "priority": "High",
+          "evidence": [
+            {
+              "text": "Maya will investigate yesterday\u2019s outage tomorrow.",
+              "start": 0,
+              "end": 50
+            }
+          ],
+          "proposal_id": "0235d4bec1b47928",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        }
+      ],
+      "cost_usd": 0.0,
+      "latency_ms": 0.0415000831708312,
+      "id": "audit-dev-yesterday-in-object"
+    },
+    {
+      "items": [
+        {
+          "task": "document the cancelled rollout",
+          "owner": "Sam",
+          "deadline": "2026-10-23",
+          "priority": "Medium",
+          "evidence": [
+            {
+              "text": "Sam will document the cancelled rollout by Friday.",
+              "start": 0,
+              "end": 50
+            }
+          ],
+          "proposal_id": "911a0622f6fedaa1",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        }
+      ],
+      "cost_usd": 0.0,
+      "latency_ms": 0.03462505992501974,
+      "id": "audit-dev-cancelled-in-object"
+    },
+    {
+      "items": [],
+      "cost_usd": 0.0,
+      "latency_ms": 0.012165983207523823,
+      "id": "audit-dev-negated-commitment"
+    },
+    {
+      "items": [],
+      "cost_usd": 0.0,
+      "latency_ms": 0.014374963939189911,
+      "id": "audit-dev-hypothetical"
+    },
+    {
+      "items": [],
+      "cost_usd": 0.0,
+      "latency_ms": 0.012999982573091984,
+      "id": "audit-dev-completed-status"
+    },
+    {
+      "items": [],
+      "cost_usd": 0.0,
+      "latency_ms": 0.011958065442740917,
+      "id": "audit-dev-negated-request"
+    },
+    {
+      "items": [
+        {
+          "task": "review the release plan next week",
+          "owner": "Unknown",
+          "deadline": "Unknown",
+          "priority": "Low",
+          "evidence": [
+            {
+              "text": "Please review the release plan next week.",
+              "start": 0,
+              "end": 41
+            }
+          ],
+          "proposal_id": "b55479314e6500e9",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        }
+      ],
+      "cost_usd": 0.0,
+      "latency_ms": 1.2698330683633685,
+      "id": "audit-dev-vague-deadline"
+    },
+    {
+      "items": [
+        {
+          "task": "review the budget by 03/04/2027",
+          "owner": "Ada",
+          "deadline": "Unknown",
+          "priority": "Low",
+          "evidence": [
+            {
+              "text": "Ada will review the budget by 03/04/2027.",
+              "start": 0,
+              "end": 41
+            }
+          ],
+          "proposal_id": "66093b24727d7d9e",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        }
+      ],
+      "cost_usd": 0.0,
+      "latency_ms": 0.03587489482015371,
+      "id": "audit-dev-ambiguous-date"
+    },
+    {
+      "items": [
+        {
+          "task": "REVIEW the release notes",
+          "owner": "Maya",
+          "deadline": "2026-10-23",
+          "priority": "Medium",
+          "evidence": [
+            {
+              "text": "Maya will REVIEW the release notes by Friday.",
+              "start": 0,
+              "end": 45
+            }
+          ],
+          "proposal_id": "f86eca91ff086b17",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        }
+      ],
+      "cost_usd": 0.0,
+      "latency_ms": 0.03516697324812412,
+      "id": "audit-dev-upper-case-verb"
+    },
+    {
+      "items": [
+        {
+          "task": "send the report",
+          "owner": "Maya",
+          "deadline": "Unknown",
+          "priority": "Low",
+          "evidence": [
+            {
+              "text": "Maya will send the report tomorrow.",
+              "start": 0,
+              "end": 35
+            }
+          ],
+          "proposal_id": "87d3a73363174c34",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        }
+      ],
+      "cost_usd": 0.0,
+      "latency_ms": 0.030166935175657272,
+      "id": "audit-dev-overflow-relative"
+    },
+    {
+      "items": [
+        {
+          "task": "review the plan",
+          "owner": "Jon",
+          "deadline": "Unknown",
+          "priority": "Low",
+          "evidence": [
+            {
+              "text": "Jon will review the plan in 999999999999999999999 days.",
+              "start": 0,
+              "end": 55
+            }
+          ],
+          "proposal_id": "cc4372f33d48c506",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        }
+      ],
+      "cost_usd": 0.0,
+      "latency_ms": 0.03366696182638407,
+      "id": "audit-dev-overflow-interval"
+    },
+    {
+      "items": [
+        {
+          "task": "send the report",
+          "owner": "Ada",
+          "deadline": "2026-10-26",
+          "priority": "Medium",
+          "evidence": [
+            {
+              "text": "Ada: I\u2019ll send the report by Friday.",
+              "start": 0,
+              "end": 36
+            },
+            {
+              "text": "Ada: Actually, make that Monday.",
+              "start": 37,
+              "end": 69
+            }
+          ],
+          "proposal_id": "f0b6ad8f3caf1148",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        }
+      ],
+      "cost_usd": 0.0,
+      "latency_ms": 0.10045897215604782,
+      "id": "audit-dev-revision-smart"
+    },
+    {
+      "items": [],
+      "cost_usd": 0.0,
+      "latency_ms": 0.03966689109802246,
+      "id": "audit-dev-cancellation-smart"
+    },
+    {
+      "items": [],
+      "cost_usd": 0.0,
+      "latency_ms": 0.016832957044243813,
+      "id": "audit-dev-quoted-instruction"
+    },
+    {
+      "items": [
+        {
+          "task": "send the report",
+          "owner": "Ada",
+          "deadline": "2026-10-21",
+          "priority": "High",
+          "evidence": [
+            {
+              "text": "Ada: I\u2019ll send the report tomorrow.",
+              "start": 0,
+              "end": 35
+            },
+            {
+              "text": "Ada: I'll send the report tomorrow.",
+              "start": 36,
+              "end": 71
+            }
+          ],
+          "proposal_id": "8a700045eb979073",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        }
+      ],
+      "cost_usd": 0.0,
+      "latency_ms": 0.06062502507120371,
+      "id": "audit-dev-duplicate-smart-ascii"
+    }
+  ]
+}

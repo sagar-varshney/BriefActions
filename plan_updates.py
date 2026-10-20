@@ -144,9 +144,11 @@ def create(history, base_run_id, transcript, reference_date, request_id):
         title = ((name or 'Meeting ' + original['reference_date'])[:90] + ' · Update ' + reference_date)[:120]
         update = {'base_run_id': base_run_id, 'followup_start': len(prefix), 'rows': rows, 'warnings': warnings,
                   'base_deadline_versions': {key:value['version'] for key,value in deadlines(events).items()}}
+        components = {name: hashlib.sha256(Path(__file__).with_name(name).read_bytes()).hexdigest() for name in ('plan_updates.py','extraction.py')}
+        fingerprint_rules = hashlib.sha256(json.dumps(components,sort_keys=True).encode()).hexdigest()
         payload = {'title': title, 'transcript': combined, 'reference_date': reference_date,
                    'proposals': [r['after'] or r['before'] for r in rows],
-                   'settings': {'extractor': 'plan-update-rules-v1', 'extractor_sha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest(), 'clusters': original.get('settings', {}).get('clusters', 3),
+                   'settings': {'extractor': 'plan-update-rules-v2', 'extractor_sha256': fingerprint_rules, 'extractor_components': components, 'clusters': original.get('settings', {}).get('clusters', 3),
                                 'request_fingerprint': fingerprint, 'plan_update': update}}
         if len(json.dumps(payload).encode()) > 3_000_000:
             raise DataError('The comparison is too large. Start a smaller separate meeting.', 413)

@@ -355,3 +355,20 @@ history, not the deleted name or agenda text. Standard exports, encrypted backup
 row security, and account storage limits cover the new events. The real-Postgres
 backup drill verifies both retained agendas and removal of agenda copies when
 applying a newer erasure ledger to an older encrypted backup.
+
+## Extraction and review audit
+
+`evaluation/audit-v1/` contains a frozen 28-case synthetic development set and
+retained before/after rule reports. The generator specifies labels directly and
+never calls extraction. CI checks its quality floor alongside starter and
+revision development floors; none of these jobs score reserved test data or call
+models. See the [audit report](../evaluation/audit-v1/README.md) for fingerprints,
+commands, observed results, and remaining limits. A targeted perfect development
+score is not a general accuracy estimate.
+
+New plan comparisons record a combined `extractor_sha256` and
+`extractor_components` for both `plan_updates.py` and `extraction.py`. Existing
+saved comparisons and request retries retain their original settings. The review
+browser audit covers new wording, keyboard repair of an empty extraction,
+evidence offsets, Unknown metadata, and explicit confirmation on narrow screens
+and in both themes. It runs last in `pnpm test:browser`.

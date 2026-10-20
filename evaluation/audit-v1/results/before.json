@@ -1,0 +1,656 @@
+{
+  "counts": {
+    "predicted": 9,
+    "gold": 23,
+    "matched": 9,
+    "owner_correct": 9,
+    "deadline_correct": 5,
+    "owner_known_correct": 8,
+    "owner_known_total": 21,
+    "deadline_known_correct": 2,
+    "deadline_known_total": 18,
+    "evidence_valid": 9,
+    "supported": 5,
+    "failures": 2
+  },
+  "metrics": {
+    "task_precision": 1.0,
+    "task_recall": 0.391304347826087,
+    "task_f1": 0.5625,
+    "owner_accuracy_on_matched": 1.0,
+    "deadline_accuracy_on_matched": 0.5555555555555556,
+    "known_owner_end_to_end": 0.38095238095238093,
+    "known_deadline_end_to_end": 0.1111111111111111,
+    "evidence_validity": 1.0,
+    "gold_support_proxy": 0.5555555555555556,
+    "latency_p50_ms": 0.02295803278684616,
+    "latency_p95_ms": 1.0864590294659138,
+    "cost_usd": null,
+    "failure_rate": 0.07142857142857142
+  },
+  "details": [
+    {
+      "id": "audit-dev-smart-i",
+      "matches": [],
+      "false_positives": [],
+      "missed_gold": [
+        "a1"
+      ]
+    },
+    {
+      "id": "audit-dev-smart-negative",
+      "matches": [],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "audit-dev-smart-two-turns",
+      "matches": [],
+      "false_positives": [],
+      "missed_gold": [
+        "a1",
+        "a2"
+      ]
+    },
+    {
+      "id": "audit-dev-smart-plural",
+      "matches": [],
+      "false_positives": [],
+      "missed_gold": [
+        "a1"
+      ]
+    },
+    {
+      "id": "audit-dev-ascii-named-contraction",
+      "matches": [],
+      "false_positives": [],
+      "missed_gold": [
+        "a1"
+      ]
+    },
+    {
+      "id": "audit-dev-filename",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "a1",
+          "owner_correct": true,
+          "deadline_correct": false,
+          "gold_support_proxy": false
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "audit-dev-version",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "a1",
+          "owner_correct": true,
+          "deadline_correct": false,
+          "gold_support_proxy": false
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "audit-dev-email",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "a1",
+          "owner_correct": true,
+          "deadline_correct": false,
+          "gold_support_proxy": false
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "audit-dev-url",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "a1",
+          "owner_correct": true,
+          "deadline_correct": false,
+          "gold_support_proxy": false
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "audit-dev-sentence-boundary",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "a1",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        },
+        {
+          "prediction": 1,
+          "gold_id": "a2",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "audit-dev-punctuation-unicode",
+      "matches": [],
+      "false_positives": [],
+      "missed_gold": [
+        "a1"
+      ]
+    },
+    {
+      "id": "audit-dev-negative-in-object",
+      "matches": [],
+      "false_positives": [],
+      "missed_gold": [
+        "a1"
+      ]
+    },
+    {
+      "id": "audit-dev-completed-adjective",
+      "matches": [],
+      "false_positives": [],
+      "missed_gold": [
+        "a1"
+      ]
+    },
+    {
+      "id": "audit-dev-yesterday-in-object",
+      "matches": [],
+      "false_positives": [],
+      "missed_gold": [
+        "a1"
+      ]
+    },
+    {
+      "id": "audit-dev-cancelled-in-object",
+      "matches": [],
+      "false_positives": [],
+      "missed_gold": [
+        "a1"
+      ]
+    },
+    {
+      "id": "audit-dev-negated-commitment",
+      "matches": [],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "audit-dev-hypothetical",
+      "matches": [],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "audit-dev-completed-status",
+      "matches": [],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "audit-dev-negated-request",
+      "matches": [],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "audit-dev-vague-deadline",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "a1",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "audit-dev-ambiguous-date",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "a1",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "audit-dev-upper-case-verb",
+      "matches": [],
+      "false_positives": [],
+      "missed_gold": [
+        "a1"
+      ]
+    },
+    {
+      "id": "audit-dev-overflow-relative",
+      "matches": [],
+      "false_positives": [],
+      "missed_gold": [
+        "a1"
+      ]
+    },
+    {
+      "id": "audit-dev-overflow-interval",
+      "matches": [],
+      "false_positives": [],
+      "missed_gold": [
+        "a1"
+      ]
+    },
+    {
+      "id": "audit-dev-revision-smart",
+      "matches": [],
+      "false_positives": [],
+      "missed_gold": [
+        "a1"
+      ]
+    },
+    {
+      "id": "audit-dev-cancellation-smart",
+      "matches": [],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "audit-dev-quoted-instruction",
+      "matches": [],
+      "false_positives": [],
+      "missed_gold": []
+    },
+    {
+      "id": "audit-dev-duplicate-smart-ascii",
+      "matches": [
+        {
+          "prediction": 0,
+          "gold_id": "a1",
+          "owner_correct": true,
+          "deadline_correct": true,
+          "gold_support_proxy": true
+        }
+      ],
+      "false_positives": [],
+      "missed_gold": []
+    }
+  ],
+  "schema_version": 1,
+  "created_at": "2026-10-20T18:14:27.477946+00:00",
+  "evaluator_sha256": "b618d7dcab9afd791d816694e3cb456bbddd2051457a1b45c8f593ead7c34585",
+  "label": "pre-audit-rules",
+  "extractor": "rules",
+  "dataset_sha256": "09198f99db3ecd9ac52e6055106b965f9b1059895912f410fdff07255aab5be3",
+  "dataset": "dev.jsonl",
+  "splits": [
+    "dev"
+  ],
+  "extractor_sha256": "d8f08f65bbb3c825a58498209819ac8f2c844bd2e66e8907d9d9e6f8768e7bd8",
+  "prompt_version": null,
+  "prompt_sha256": null,
+  "pricing": {
+    "input_usd_per_million": null,
+    "output_usd_per_million": null
+  },
+  "runs": [
+    {
+      "items": [],
+      "cost_usd": 0.0,
+      "latency_ms": 2.7248329715803266,
+      "id": "audit-dev-smart-i"
+    },
+    {
+      "items": [],
+      "cost_usd": 0.0,
+      "latency_ms": 0.02629193477332592,
+      "id": "audit-dev-smart-negative"
+    },
+    {
+      "items": [],
+      "cost_usd": 0.0,
+      "latency_ms": 0.02295803278684616,
+      "id": "audit-dev-smart-two-turns"
+    },
+    {
+      "items": [],
+      "cost_usd": 0.0,
+      "latency_ms": 0.012459000572562218,
+      "id": "audit-dev-smart-plural"
+    },
+    {
+      "items": [],
+      "cost_usd": 0.0,
+      "latency_ms": 0.013458076864480972,
+      "id": "audit-dev-ascii-named-contraction"
+    },
+    {
+      "items": [
+        {
+          "task": "review release-notes",
+          "owner": "Jon",
+          "deadline": "Unknown",
+          "priority": "Low",
+          "evidence": [
+            {
+              "text": "Jon will review release-notes.",
+              "start": 0,
+              "end": 30
+            }
+          ],
+          "proposal_id": "13b2c26ad0eb4040",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        }
+      ],
+      "cost_usd": 0.0,
+      "latency_ms": 1.0864590294659138,
+      "id": "audit-dev-filename"
+    },
+    {
+      "items": [
+        {
+          "task": "test version 2",
+          "owner": "Maya",
+          "deadline": "Unknown",
+          "priority": "Low",
+          "evidence": [
+            {
+              "text": "Maya: I will test version 2.",
+              "start": 0,
+              "end": 28
+            }
+          ],
+          "proposal_id": "1d71889f2c9b21ec",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        }
+      ],
+      "cost_usd": 0.0,
+      "latency_ms": 0.044291955418884754,
+      "id": "audit-dev-version"
+    },
+    {
+      "items": [
+        {
+          "task": "send the invoice to accounts@example",
+          "owner": "Ada",
+          "deadline": "Unknown",
+          "priority": "Low",
+          "evidence": [
+            {
+              "text": "Ada will send the invoice to accounts@example.",
+              "start": 0,
+              "end": 46
+            }
+          ],
+          "proposal_id": "dc1a9e60a94bfb60",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        }
+      ],
+      "cost_usd": 0.0,
+      "latency_ms": 0.03812497016042471,
+      "id": "audit-dev-email"
+    },
+    {
+      "items": [
+        {
+          "task": "check https://example",
+          "owner": "Sam",
+          "deadline": "Unknown",
+          "priority": "Low",
+          "evidence": [
+            {
+              "text": "Sam will check https://example.",
+              "start": 0,
+              "end": 31
+            }
+          ],
+          "proposal_id": "1499cd081241ee93",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        }
+      ],
+      "cost_usd": 0.0,
+      "latency_ms": 0.029999995604157448,
+      "id": "audit-dev-url"
+    },
+    {
+      "items": [
+        {
+          "task": "review the brief",
+          "owner": "Maya",
+          "deadline": "Unknown",
+          "priority": "Low",
+          "evidence": [
+            {
+              "text": "Maya: I will review the brief.",
+              "start": 0,
+              "end": 30
+            }
+          ],
+          "proposal_id": "151de6b1b0818f8e",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        },
+        {
+          "task": "send the notes",
+          "owner": "Maya",
+          "deadline": "2026-10-21",
+          "priority": "High",
+          "evidence": [
+            {
+              "text": "I will send the notes tomorrow.",
+              "start": 31,
+              "end": 62
+            }
+          ],
+          "proposal_id": "ef273ff61e24b7e4",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        }
+      ],
+      "cost_usd": 0.0,
+      "latency_ms": 0.1420410117134452,
+      "id": "audit-dev-sentence-boundary"
+    },
+    {
+      "items": [],
+      "cost_usd": 0.0,
+      "latency_ms": 0.023250002413988113,
+      "id": "audit-dev-punctuation-unicode"
+    },
+    {
+      "items": [],
+      "cost_usd": 0.0,
+      "latency_ms": 0.00795791856944561,
+      "id": "audit-dev-negative-in-object"
+    },
+    {
+      "items": [],
+      "cost_usd": 0.0,
+      "latency_ms": 0.006415997631847858,
+      "id": "audit-dev-completed-adjective"
+    },
+    {
+      "items": [],
+      "cost_usd": 0.0,
+      "latency_ms": 0.0073339324444532394,
+      "id": "audit-dev-yesterday-in-object"
+    },
+    {
+      "items": [],
+      "cost_usd": 0.0,
+      "latency_ms": 0.0061659375205636024,
+      "id": "audit-dev-cancelled-in-object"
+    },
+    {
+      "items": [],
+      "cost_usd": 0.0,
+      "latency_ms": 0.005541951395571232,
+      "id": "audit-dev-negated-commitment"
+    },
+    {
+      "items": [],
+      "cost_usd": 0.0,
+      "latency_ms": 0.006875023245811462,
+      "id": "audit-dev-hypothetical"
+    },
+    {
+      "items": [],
+      "cost_usd": 0.0,
+      "latency_ms": 0.004999921657145023,
+      "id": "audit-dev-completed-status"
+    },
+    {
+      "items": [],
+      "cost_usd": 0.0,
+      "latency_ms": 0.005415990017354488,
+      "id": "audit-dev-negated-request"
+    },
+    {
+      "items": [
+        {
+          "task": "review the release plan next week",
+          "owner": "Unknown",
+          "deadline": "Unknown",
+          "priority": "Low",
+          "evidence": [
+            {
+              "text": "Please review the release plan next week.",
+              "start": 0,
+              "end": 41
+            }
+          ],
+          "proposal_id": "b55479314e6500e9",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        }
+      ],
+      "cost_usd": 0.0,
+      "latency_ms": 0.03754207864403725,
+      "id": "audit-dev-vague-deadline"
+    },
+    {
+      "items": [
+        {
+          "task": "review the budget by 03/04/2027",
+          "owner": "Ada",
+          "deadline": "Unknown",
+          "priority": "Low",
+          "evidence": [
+            {
+              "text": "Ada will review the budget by 03/04/2027.",
+              "start": 0,
+              "end": 41
+            }
+          ],
+          "proposal_id": "66093b24727d7d9e",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        }
+      ],
+      "cost_usd": 0.0,
+      "latency_ms": 0.02887495793402195,
+      "id": "audit-dev-ambiguous-date"
+    },
+    {
+      "items": [],
+      "cost_usd": 0.0,
+      "latency_ms": 0.011916039511561394,
+      "id": "audit-dev-upper-case-verb"
+    },
+    {
+      "items": [],
+      "error": "OverflowError: extraction failed",
+      "latency_ms": 0.01679197885096073,
+      "id": "audit-dev-overflow-relative"
+    },
+    {
+      "items": [],
+      "error": "OverflowError: extraction failed",
+      "latency_ms": 0.05012506153434515,
+      "id": "audit-dev-overflow-interval"
+    },
+    {
+      "items": [],
+      "cost_usd": 0.0,
+      "latency_ms": 0.06479199510067701,
+      "id": "audit-dev-revision-smart"
+    },
+    {
+      "items": [],
+      "cost_usd": 0.0,
+      "latency_ms": 0.01950003206729889,
+      "id": "audit-dev-cancellation-smart"
+    },
+    {
+      "items": [],
+      "cost_usd": 0.0,
+      "latency_ms": 0.0160830095410347,
+      "id": "audit-dev-quoted-instruction"
+    },
+    {
+      "items": [
+        {
+          "task": "send the report",
+          "owner": "Ada",
+          "deadline": "2026-10-21",
+          "priority": "High",
+          "evidence": [
+            {
+              "text": "Ada: I'll send the report tomorrow.",
+              "start": 36,
+              "end": 71
+            }
+          ],
+          "proposal_id": "8a700045eb979073",
+          "category": "",
+          "confidence": 0.0,
+          "cluster": 0,
+          "suggested_slot": ""
+        }
+      ],
+      "cost_usd": 0.0,
+      "latency_ms": 0.039792037568986416,
+      "id": "audit-dev-duplicate-smart-ascii"
+    }
+  ]
+}

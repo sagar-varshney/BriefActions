@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "purpose": "Targeted development audit; all cases are available for tuning, no held-out split",
+  "provenance": "Invented transcripts and directly specified labels authored by an AI assistant; not independently human-reviewed; no real meetings",
+  "annotation_method": "Task, owner, date and evidence passages specified before running predictions; offsets calculated from original text only",
+  "splits": {
+    "dev": {
+      "transcripts": 28,
+      "gold_items": 23,
+      "sha256": "09198f99db3ecd9ac52e6055106b965f9b1059895912f410fdff07255aab5be3"
+    }
+  }
+}

@@ -76,6 +76,9 @@ is preserved, so check any restored draft before analyzing it.
 3. Choose **Analyze transcript**. This saves the input and suggested tasks.
 4. Open **Edit & evidence** on a task. Correct the task, owner, or deadline.
    **Unknown** means no value was identified. Check the source before filling it in.
+   **What should I check?** explains the task, person, date, and missed-work checks.
+   Attention flags identify missing/conflicting details; every suggestion still
+   needs review, including those without flags.
 5. Use **Locate passage** to inspect the original words. On a narrow screen the
    source opens automatically. **Back to task** returns to the originating control.
 6. Select tasks to keep, then confirm. Unselected suggestions are rejected.
@@ -86,6 +89,12 @@ is preserved, so check any restored draft before analyzing it.
 
 **Edit meeting** opens the input editor. Closing it preserves unfinished edits.
 Input changes do not replace existing evidence or automatically run another analysis.
+
+If no suggestions appear, check the saved conversation for missed work. **Add a
+missed action** moves to a form where you can highlight the supporting words and
+write the task, person, and date. Missing details can stay Unknown. The added
+proposal starts unselected; check it above before confirming. An empty extraction
+result is not proof that the conversation contained no actions.
 
 ## Correct a confirmed task’s deadline
 

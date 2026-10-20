@@ -15,8 +15,8 @@ export default function MissedActionForm({run,busy,onAdd}) {
     await onAdd({item:{task:entry.task,owner:entry.owner,deadline:entry.deadline,evidence:support},request_id:entry.request_id});
     accountStorage.removeItem(key);const value=fresh();current.current=value;setEntry(value);setNotice('User-added proposal saved. Select it above to keep it in the plan.');
   }catch(e){setError(e.message);}finally{setSaving(false);}}
-  return <form className="panel annotation-panel missed-action-panel" onSubmit={submit} aria-label="Add a missed action">
-    <h2>Add a missed action</h2><p>Highlight the saved conversation and describe a committed action the extractor missed. It becomes an unchecked proposal for your review.</p>
+  return <form id="missed-action-form" className="panel annotation-panel missed-action-panel" onSubmit={submit} aria-label="Add a missed action">
+    <h2 tabIndex={-1}>Add a missed action</h2><p>Highlight the words in the saved conversation that support the task, then describe the agreed work. It becomes an unchecked proposal; select it above to include it in your plan.</p>
     {error&&<div className="notice error" role="alert">{error}</div>}
     <label className="field-label">Saved transcript for missed action<textarea aria-label="Saved transcript for missed action" readOnly value={run.transcript} className="transcript" disabled={busy||saving} onSelect={selected}/></label>
     {entry.selection&&<blockquote>{entry.selection.text}</blockquote>}
