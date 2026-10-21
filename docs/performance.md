@@ -98,8 +98,10 @@ Concurrency tests gate analysis and verify that reads/saves complete independent
 both queues are bounded, and failed work releases its slot. Browser tests cover
 navigation during extraction, completion without redirect and truthful save
 feedback. The 512 MiB / 0.1 CPU CI drill keeps one analysis and one interactive
-worker resident, checks light reads/saves during a five-analysis burst, and records
-peak memory and observed latency. Its seeded meeting warms the ML worker before
+worker resident, checks light reads/saves alongside a five-analysis burst, and records
+peak memory, observed latency and whether the requests overlap the burst. A faster
+completed burst does not fail CI; gated tests establish lane independence. The
+seeded meeting warms the ML worker before
 the burst; it is not a cold-start benchmark or a hosted latency promise.
 
 These changes use the existing free services. They cannot remove the free host's
