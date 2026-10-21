@@ -4,7 +4,9 @@ export function loadConfig(env=process.env) {
   const authMode=env.FLOW_AUTH_MODE || (production?'supabase':'local');
   if(!['local','supabase'].includes(authMode))throw new Error('FLOW_AUTH_MODE must be local or supabase.');
   const host=env.HOST || (production?'0.0.0.0':'127.0.0.1');
-  const publicOrigin=env.PUBLIC_ORIGIN || '';
+  // Render supplies the assigned HTTPS URL after service creation. Explicit
+  // PUBLIC_ORIGIN still wins for custom domains; request headers never set it.
+  const publicOrigin=env.PUBLIC_ORIGIN || (env.RENDER==='true'?env.RENDER_EXTERNAL_URL:'') || '';
   const supabaseUrl=env.SUPABASE_URL || '',supabaseKey=env.SUPABASE_PUBLISHABLE_KEY || '';
   const supabaseSecret=env.SUPABASE_SECRET_KEY || '';
   if(production && !supabaseSecret)throw new Error('Set server-only SUPABASE_SECRET_KEY for account deletion.');

@@ -3,10 +3,11 @@ services:
     name: briefactions
     runtime: docker
     plan: free
+    branch: main
+    region: singapore
+    autoDeployTrigger: checksPass
     healthCheckPath: /api/live
     envVars:
-      - key: PUBLIC_ORIGIN
-        sync: false
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_PUBLISHABLE_KEY

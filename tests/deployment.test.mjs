@@ -17,6 +17,13 @@ test('Public configuration fails closed without auth, persistent storage, or HTT
   assert.throws(()=>loadConfig({...valid,SUPABASE_PUBLISHABLE_KEY:privileged}));
   assert.throws(()=>loadConfig({HOST:'0.0.0.0',FLOW_AUTH_MODE:'local'}));
 });
+test('Render assigned origin is trusted only as platform configuration; a custom domain takes precedence',()=>{
+ const env={NODE_ENV:'production',RENDER:'true',RENDER_EXTERNAL_URL:'https://briefactions.onrender.com',SUPABASE_URL:'https://project.supabase.co',SUPABASE_PUBLISHABLE_KEY:'sb_publishable_test',SUPABASE_SECRET_KEY:'sb_secret_test',FLOW_DATABASE_URL:'postgresql://localhost/flow'};
+ assert.equal(loadConfig(env).publicOrigin,'https://briefactions.onrender.com');
+ assert.equal(loadConfig({...env,PUBLIC_ORIGIN:'https://briefactions.example'}).publicOrigin,'https://briefactions.example');
+ for(const change of [{RENDER:'false'},{RENDER_EXTERNAL_URL:'http://localhost:3001'},{RENDER_EXTERNAL_URL:'https://briefactions.onrender.com/path'},{RENDER_EXTERNAL_URL:'https://user:secret@briefactions.onrender.com'}])assert.throws(()=>loadConfig({...env,...change}));
+ assert.equal(loadConfig({RENDER_EXTERNAL_URL:'https://ignored.example'}).publicOrigin,'');
+});
 test('Rate limiter bounds account usage and tracking memory',()=>{
   const allow=rateLimiter({limit:2,capacity:2});assert.ok(allow('a'));assert.ok(allow('a'));assert.equal(allow('a'),false);assert.ok(allow('b'));assert.equal(allow('c'),false);
 });

@@ -160,6 +160,10 @@ authentication, persistent database configuration, and an HTTPS public origin.
 Follow the [deployment guide](docs/deployment.md), configure
 [backups](docs/backups.md), then complete the [launch checklist](docs/launch-checks.md).
 Local history is not automatically uploaded when you deploy.
+Starting without provider accounts? Use the [first deployment walkthrough](docs/first-deploy.md).
+The Render template waits for passing CI checks and uses its assigned HTTPS URL
+automatically. `node scripts/check_deployment.mjs live https://YOUR-APP-HOST`
+checks deployed entry pages, health and private-route gates without creating data.
 
 ## Development and checks
 

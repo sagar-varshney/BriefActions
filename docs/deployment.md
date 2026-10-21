@@ -6,26 +6,29 @@ Supabase handles sign-in. The separate legacy FastAPI/RAG app is not deployed.
 
 ## Recommended free starting point
 
+For a new account, follow the short [first deployment walkthrough](first-deploy.md).
+
 Use **Render's free Docker web service + Supabase's free Auth/Postgres project**.
 Docker packages the application; a hosting service runs that package.
 
-Provider limits checked on 2026-10-12:
+Provider limits checked on 2026-10-21:
 
 | Option | Fit for this application | Free limits that matter |
 | --- | --- | --- |
 | Render + Supabase | Runs the current Node/Python application with external persistent storage | Render sleeps after 15 idle minutes and has 750 free instance hours per workspace/month. Supabase includes a 500 MB database and 50,000 monthly active auth users; inactive free projects can pause after a week. |
 | Railway | Can run the Docker application and managed storage | $5 trial credit for up to 30 days, then $1/month free credit. This is a usage budget, not unlimited hosting. |
-| Vercel | Suitable for a separately hosted React frontend | The current long-running Node server launching Python workers would need a function architecture rewrite. Hosting only the frontend still needs a backend. |
+| Vercel | Now also offers an OCI Container Runtime in beta on all plans | Potential alternative, but this application has not been verified against its function lifecycle, autoscaling, usage limits, or Hobby terms. Render remains the tested path; Vercel is no longer limited to the frontend-only option. |
 | Cloudflare | Suitable for static assets and a redesigned Workers backend | Full Node/Python containers require a paid Workers plan. The free Workers runtime is not a drop-in host for this server. |
 
 Sources: [Render](https://render.com/docs/free),
 [Supabase](https://supabase.com/pricing),
 [Railway](https://docs.railway.com/pricing/free-trial),
-[Vercel runtimes](https://vercel.com/docs/functions/runtimes),
+[Vercel Container Runtime](https://vercel.com/docs/functions/runtimes/container),
 [Cloudflare Containers](https://developers.cloudflare.com/containers/pricing/).
 
-Free plans are useful for a low-traffic launch, but include cold starts, quotas,
-and no uptime guarantee. Supabase Free does not include automatic backups;
+Free plans are useful for an initial public pilot, but include cold starts,
+quotas, and no uptime guarantee. Render explicitly advises against its free plan
+for production applications. Supabase Free does not include automatic backups;
 configure the [encrypted backup workflow and recovery drill](backups.md) before retaining
 important meeting records. Provider limits and available plans can change.
 
@@ -65,9 +68,14 @@ See [GitHub OAuth setup](https://supabase.com/docs/guides/auth/social-login/auth
 
 1. Connect this GitHub repository and select the Docker runtime/free plan, or
    use the included `render.yaml` Blueprint.
+   The Blueprint uses Singapore, branch `main`, and `autoDeployTrigger: checksPass`.
+   Future automatic application deploys wait for branch CI checks to pass. The
+   initial deploy and Blueprint configuration changes still need direct review.
 2. Configure the environment values listed in `.env.example` in Render's
-   dashboard. `PUBLIC_ORIGIN` must equal the app's HTTPS origin, without a
-   trailing slash. The image already sets production mode and binds `0.0.0.0`.
+   dashboard. Leave `PUBLIC_ORIGIN` unset to use Render's assigned
+   `RENDER_EXTERNAL_URL`; for a custom domain set `PUBLIC_ORIGIN` to that exact
+   HTTPS origin without a trailing slash. The image already sets production mode
+   and binds `0.0.0.0`. Request headers never select the configured origin.
 3. Keep `FLOW_DATABASE_URL` in the server environment only. Do not use `VITE_`
    prefixes for secrets. React obtains only public auth configuration at runtime,
    so changing hosts does not require embedding a localhost API URL in a build.
@@ -81,6 +89,26 @@ See [GitHub OAuth setup](https://supabase.com/docs/guides/auth/social-login/auth
    Back/Forward between history and review. A different account must not load that
    meeting or update its progress. Ensure the host serves the app shell for section
    paths; the included Node server and Vite development server already do so.
+
+With Node 24+, run `node scripts/check_deployment.mjs live https://YOUR-APP-HOST`
+after the service is ready. It checks entry pages, sign-in/callback paths,
+workspace deep links, process/storage health, public auth configuration, security
+headers, private API gates, and rejected unauthenticated/cross-origin writes.
+It sends no credentials, creates no accounts or tasks, does not follow redirects,
+and never prints response bodies. This is a smoke check, not proof of OAuth,
+two-account isolation, persistence or backup recovery.
+Requests have a 90-second timeout and the complete run has a three-minute budget;
+skipped or incomplete checks fail rather than appearing successful.
+
+For a local structural check of a private production environment file, use
+`node --env-file=.env.production scripts/check_deployment.mjs config` from the
+repository root. It reports setting names without printing values and exits
+nonzero on missing/template settings. It does not verify credentials or run SQL.
+Keep `.env.production` ignored; do not send it in chat or commit it.
+
+Render's [default environment variables](https://render.com/docs/environment-variables)
+and [Blueprint reference](https://render.com/docs/blueprint-spec#autodeploytrigger)
+document the assigned URL and CI-gated deploy settings.
 
 The production server refuses to run without authentication, persistent database
 configuration, and an HTTPS app origin. Do not force `FLOW_AUTH_MODE=local` on
