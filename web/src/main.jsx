@@ -66,7 +66,17 @@ function Json({value}) { return <pre className="json" tabIndex={0}>{JSON.stringi
 function Evidence({passages = [],onInspect,label}) {
   return <div className="evidence"><div className="eyebrow"><Icon name="quote" size={15}/> Supporting transcript</div>{passages.map((e,i)=><div key={i}><blockquote>{e.text}</blockquote><div className="evidence-footer"><span className="span-note">Characters {e.start}–{e.end} in the saved input</span>{onInspect&&<button type="button" className="text-button evidence-jump" aria-label={`Locate passage ${i+1} for ${label}`} onClick={event=>onInspect(e,event.currentTarget)}>Locate passage <Icon name="arrow" size={14}/></button>}</div></div>)}</div>;
 }
-function Download({href, children}) { const [error,setError]=useState('');return <span><button type="button" className="button secondary" onClick={()=>downloadFile(href).catch(e=>setError(e.message))}><Icon name="download" size={16}/>{children}</button>{error&&<small role="alert">{error}</small>}</span>; }
+function Download({href,children}) {
+  const pending=useRef(false),[busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState('');
+  async function download(){
+    if(pending.current)return;
+    pending.current=true;setBusy(true);setError('');setNotice('Preparing download…');
+    try{await downloadFile(href);setNotice('File prepared. Check your browser’s downloads.');}
+    catch(e){setNotice('');setError(e.message);}
+    finally{pending.current=false;setBusy(false);}
+  }
+  return <span className="download-control"><button type="button" className="button secondary" aria-label={children} aria-busy={busy} disabled={busy} onClick={download}><Icon name="download" size={16}/>{busy?'Preparing…':children}</button><small role="status">{notice}</small>{error&&<small className="download-error" role="alert">{error} Try the download again.</small>}</span>;
+}
 function downloadJson(value, filename) {
   const url = URL.createObjectURL(new Blob([JSON.stringify(value,null,2)],{type:'application/json'}));
   const link = document.createElement('a'); link.href=url; link.download=filename; link.click();
@@ -357,7 +367,7 @@ function App({account,signOut,completeAccountDeletion,authError}) {
 
           {run&&<section className="extraction-result" aria-label="Extraction result">
             {run.status==='confirmed'?<>
-              <div className="section-heading"><div><h2 id="confirmed-plan-title" tabIndex={-1}>Your confirmed plan</h2><p>{run.final_tasks.length} task{run.final_tasks.length===1?'':'s'} confirmed. Next: update their progress below.</p></div><Download href={`/api/runs/${run.id}/tasks.csv`}>Export CSV</Download></div>
+              <div className="section-heading"><div><h2 id="confirmed-plan-title" tabIndex={-1}>Your confirmed plan</h2><p>{run.final_tasks.length} task{run.final_tasks.length===1?'':'s'} confirmed. Next: update their progress below.</p></div><Download key={run.id} href={`/api/runs/${run.id}/tasks.csv`}>Export CSV</Download></div>
               {run.final_tasks.length===0&&<div className="notice">You confirmed a plan with no tasks. All proposals were rejected.</div>}
               {!run.superseded_by&&<FollowupForm key={`followup-${run.id}`} run={run} client={draftClient} busy={busy} onStart={startPlanUpdate}/>}
               <PlanExport key={`export-${run.id}`} run={run}/>
@@ -373,17 +383,17 @@ function App({account,signOut,completeAccountDeletion,authError}) {
             {run.summary&&<div className="summary"><div className="eyebrow accent">MEETING SUMMARY</div><p>{run.summary}</p></div>}
             <p>Meeting date: {run.reference_date}</p><details className="disclosure"><summary>Technical details</summary><p>Meeting ID: <code>{run.id}</code></p><pre className="saved-transcript">{run.transcript}</pre><p>Extractor: {run.settings?.extractor || 'rules'} · Maximum groups: {run.settings?.clusters || 3}</p><small>Extractor fingerprint: {run.settings?.extractor_sha256 || 'Unavailable for this meeting'}</small></details>
             </details>
-            <ActivityTimeline key={`activity-${run.id}`} run={run} download={<Download href={`/api/runs/${run.id}/history.json`}>History JSON</Download>}/>
+            <ActivityTimeline key={`activity-${run.id}`} run={run} download={<Download key={run.id} href={`/api/runs/${run.id}/history.json`}>History JSON</Download>}/>
           </section>}
           </div></div>
         </>}
         {page==='annotations'&&<AnnotationReviewer api={api} downloadJson={downloadJson} onHelp={()=>setHelpTopic('annotations')}/>}
         {page==='data'&&<DataControls completeAccountDeletion={completeAccountDeletion} onClosing={()=>{clearTimeout(saveTimer.current);activeRun.current=null;setClosing(true);setRun(null);setDrafts([]);setTranscript('');setMeetingTitle('');setInputSaveStatus('');setReport(null);setPending(null);setAnalysisStatus('');}}/>}
         {page==='owners'&&<OwnerOverview filters={ownerFilters} onFilters={setOwnerFilters} onTasks={filters=>{setTaskFilters({...initialTaskFilters,...filters});setPage('tasks');}} onOpen={item=>openRun(item.run_id,'push',item.proposal_id)} onStart={newMeeting} busy={busy || restoring || !!pending}/>}
-        {page==='tasks'&&<AllTasks filters={taskFilters} onFilters={setTaskFilters} onOpen={item=>openRun(item.run_id,'push',item.proposal_id)} busy={busy || restoring || !!pending}/>}
+        {page==='tasks'&&<AllTasks filters={taskFilters} onFilters={setTaskFilters} onStart={newMeeting} onOpen={item=>openRun(item.run_id,'push',item.proposal_id)} busy={busy || restoring || !!pending}/>}
         {page==='today'&&<MyDay refreshToken={analysisRevision} busy={busy || restoring || !!pending} onStart={newMeeting} onOpen={item=>openRun(item.run_id,'push',item.proposal_id)} onTasks={view=>{setTaskFilters({...initialTaskFilters,view});setPage('tasks');}} onReviews={()=>{setHistoryStatus('review');navigate({page:'history'});}} onCalendar={()=>setPage('calendar')}/>}
         {page==='calendar'&&<Calendar refreshToken={analysisRevision} filters={calendarFilters} onFilters={setCalendarFilters} onOpen={item=>openRun(item.run_id,'push',item.proposal_id)} busy={busy || restoring || !!pending}/>}
-        {page==='history'&&(historySeries.open?<MeetingSeries key={historySeries.id||'series-list'} seriesId={historySeries.id} client={draftClient} busy={busy||restoring||!!pending} onBack={()=>historySeries.id?openSeries():setPage('history')} onSelect={openSeries} onOpen={(id,task)=>openRun(id,'push',task)} onStart={meetingInSeries}/>:<MeetingHistory refreshToken={analysisRevision} key={historyStatus} initialStatus={historyStatus} onOpen={openRun} onSeries={()=>openSeries()} busy={busy || restoring || !!pending}/>)}
+        {page==='history'&&(historySeries.open?<MeetingSeries key={historySeries.id||'series-list'} seriesId={historySeries.id} client={draftClient} busy={busy||restoring||!!pending} onBack={()=>historySeries.id?openSeries():setPage('history')} onSelect={openSeries} onOpen={(id,task)=>openRun(id,'push',task)} onStart={meetingInSeries}/>:<MeetingHistory refreshToken={analysisRevision} key={historyStatus} initialStatus={historyStatus} onOpen={openRun} onStart={newMeeting} onSeries={()=>openSeries()} busy={busy || restoring || !!pending}/>)}
         {page==='benchmark'&&<>
           <div className="page-intro"><div><div className="eyebrow accent">QUALITY BEFORE GUESSWORK</div><h1 tabIndex={-1}>Compare extraction methods.</h1><p>See how different methods turn conversations into tasks. You can use this app without setting up these optional checks.</p></div></div>
           <WorkflowGuide id="comparison-guide" title="Check a method in three steps" description="Test suggestions against expected answers, then inspect the differences." onHelp={()=>setHelpTopic('benchmark')} steps={[

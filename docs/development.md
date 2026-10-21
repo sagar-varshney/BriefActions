@@ -376,4 +376,10 @@ New plan comparisons record a combined `extractor_sha256` and
 saved comparisons and request retries retain their original settings. The review
 browser audit covers new wording, keyboard repair of an empty extraction,
 evidence offsets, Unknown metadata, and explicit confirmation on narrow screens
-and in both themes. It runs last in `pnpm test:browser`.
+and in both themes.
+
+`tests/workspace-finish.browser.mjs` checks empty-state shortcuts without losing
+unfinished transcript drafts, clearing searches, keyboard dismissal of Research
+tools, and CSV/JSON export feedback. A delayed export and a failed first attempt
+verify that repeated clicks do not duplicate downloads and that manual retry
+recovers. The suite also checks mobile/desktop accessibility in both themes.
