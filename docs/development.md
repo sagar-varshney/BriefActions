@@ -53,7 +53,7 @@ reviewed task fields and evidence, rather than stale derived suggestions.
 | `PYTHON_BIN` | Explicit Python executable; otherwise `.venv/bin/python3`, then `python3` |
 | `PORT` | API/built-app port, default `3001`; the development frontend uses `5173` |
 | `FLOW_HISTORY_PATH` | Override the local SQLite path, default `data/history.sqlite3` |
-| `FLOW_MAX_WORKERS` | Bound worker concurrency; defaults to two locally and one in production |
+| `FLOW_MAX_WORKERS` | Analysis lane concurrency: two locally, one in production; a separate lightweight lane adds one worker |
 | `FLOW_CHROMIUM_PATH` | Reuse a browser executable for browser checks |
 | `FLOW_SCREENSHOTS` | Directory for synthetic browser QA screenshots |
 

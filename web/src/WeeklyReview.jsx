@@ -6,9 +6,9 @@ import {weeklySummary} from './followupMessage.js';
 
 const views=[['completed','Completed recently'],['overdue','Overdue now'],['upcoming','Due soon'],['reviews','Unfinished reviews']];
 const device=()=>({today:localToday(),time_zone:Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'});
-export default function WeeklyReview({busy,onOpen,onCalendar}){
+export default function WeeklyReview({busy,onOpen,onCalendar,refreshToken=0}){
  const [open,setOpen]=useState(false),[clock,setClock]=useState(device),[view,setView]=useState('completed'),[page,setPage]=useState(0),[retry,setRetry]=useState(0),[result,setResult]=useState(null),[loaded,setLoaded]=useState(''),[error,setError]=useState(''),[notice,setNotice]=useState(''),[manual,setManual]=useState(false),copyRef=useRef(null);
- const key=JSON.stringify([clock,view,page,retry]),waiting=loaded!==key;
+ const key=JSON.stringify([clock,view,page,retry,refreshToken]),waiting=loaded!==key;
  useEffect(()=>{const check=()=>{const next=device();setClock(before=>before.today===next.today&&before.time_zone===next.time_zone?before:next);},focus=()=>{check();setRetry(n=>n+1);},timer=setInterval(check,60_000);window.addEventListener('focus',focus);return()=>{clearInterval(timer);window.removeEventListener('focus',focus);};},[]);
  useEffect(()=>{if(!open)return;let alive=true;setError('');setNotice('');setManual(false);api('/weekly-review?'+new URLSearchParams({...clock,view,page,page_size:8})).then(value=>{if(alive)setResult(value);}).catch(e=>{if(alive)setError(e.message);}).finally(()=>{if(alive)setLoaded(key);});return()=>{alive=false;};},[open,key]);
  useEffect(()=>{if(manual){copyRef.current?.focus();copyRef.current?.select();}},[manual]);

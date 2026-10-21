@@ -17,12 +17,12 @@ function Entry({item,busy,onOpen}){
   <div className="calendar-entry-actions"><button className="button secondary" type="button" disabled={busy} onClick={()=>onOpen(item)}>{meeting?'Open meeting & transcript':'Open task & evidence'}</button>{!meeting&&<CopyTask task={{...item,task:item.label}}/>}</div>
  </article>;
 }
-export default function Calendar({filters,onFilters,onOpen,busy}){
+export default function Calendar({filters,onFilters,onOpen,busy,refreshToken=0}){
  const [result,setResult]=useState(null),[loading,setLoading]=useState(true),[error,setError]=useState(''),[retry,setRetry]=useState(0),[loadedKey,setLoadedKey]=useState(''),[today,setToday]=useState(localToday),[narrow,setNarrow]=useState(()=>matchMedia('(max-width:760px)').matches);
  const detail=useRef(null),focusAfterLoad=useRef(null),month=filters.day.slice(0,7),{dates,offset}=monthDates(month),agenda=narrow||filters.view==='agenda';
  const params={month,day:filters.day,kind:filters.kind,status:filters.status,page:filters.page,unscheduled_page:filters.unscheduled_page},key=JSON.stringify(params),waiting=loading||loadedKey!==key;
  useEffect(()=>{const media=matchMedia('(max-width:760px)'),resize=()=>setNarrow(media.matches);media.addEventListener('change',resize);const refresh=()=>setToday(localToday()),timer=setInterval(refresh,60000);window.addEventListener('focus',refresh);return()=>{media.removeEventListener('change',resize);clearInterval(timer);window.removeEventListener('focus',refresh);};},[]);
- useEffect(()=>{let alive=true;setLoading(true);setError('');const timer=setTimeout(()=>{api('/calendar?'+new URLSearchParams(params)).then(data=>{if(alive)setResult(data);}).catch(e=>{if(alive)setError(e.message);}).finally(()=>{if(alive){setLoading(false);setLoadedKey(key);}});},150);return()=>{alive=false;clearTimeout(timer);};},[key,retry]);
+ useEffect(()=>{let alive=true;setLoading(true);setError('');const timer=setTimeout(()=>{api('/calendar?'+new URLSearchParams(params)).then(data=>{if(alive)setResult(data);}).catch(e=>{if(alive)setError(e.message);}).finally(()=>{if(alive){setLoading(false);setLoadedKey(key);}});},150);return()=>{alive=false;clearTimeout(timer);};},[key,retry,refreshToken]);
  useEffect(()=>{if(!waiting&&focusAfterLoad.current){const heading=document.getElementById(focusAfterLoad.current);focusAfterLoad.current=null;heading?.focus({preventScroll:true});heading?.scrollIntoView({block:'start',behavior:'instant'});}},[waiting]);
  function pageTo(patch,id){focusAfterLoad.current=id;onFilters({...filters,...patch});}
  function change(patch){focusAfterLoad.current=null;onFilters({...filters,page:0,unscheduled_page:0,...patch});}

@@ -35,6 +35,10 @@ export function createEnginePool({python,size=1,databaseUrl,historyPath,error,br
    const current=worker.pending;
    if(!current||result?.id!==current.id||worker.buffer||typeof result.ok!=='boolean'){invalid();return;}
    worker.pending=null;clearTimeout(current.timer);
+   if(result.timings && current.onMetrics){
+    const metrics=Object.fromEntries(['storage_scope','analysis_compute'].filter(key=>Number.isFinite(result.timings[key])&&result.timings[key]>=0).map(key=>[key,result.timings[key]]));
+    try{current.onMetrics(metrics);}catch{/* Diagnostics cannot change a saved result. */}
+   }
    if(result.ok){current.resolve(result.data);return;}
    const status=Number.isInteger(result.status)&&result.status>=400&&result.status<=599?result.status:500;
    const code=['runtime.dependencies','storage.failed'].includes(result.code)?result.code:'worker.failed';
@@ -42,7 +46,7 @@ export function createEnginePool({python,size=1,databaseUrl,historyPath,error,br
   });
   return worker;
  }
- function execute(request,{accountId,historyPath:requestHistoryPath,timeout=60_000}={}){
+ function execute(request,{accountId,historyPath:requestHistoryPath,timeout=60_000,onMetrics}={}){
   if(stopped)return Promise.reject(unavailable());
   let worker=[...workers].find(w=>!w.closing&&!w.pending);
   if(!worker){
@@ -51,7 +55,7 @@ export function createEnginePool({python,size=1,databaseUrl,historyPath,error,br
   }
   return new Promise((resolve,reject)=>{
    const id=++sequence;
-   worker.pending={id,resolve,reject,timer:setTimeout(()=>worker.fail(error(504,'The analysis took too long. Try a shorter transcript.','worker.timeout')),timeout)};
+   worker.pending={id,resolve,reject,onMetrics,timer:setTimeout(()=>worker.fail(error(504,'The analysis took too long. Try a shorter transcript.','worker.timeout')),timeout)};
    try{worker.child.stdin.write(JSON.stringify({id,request,account_id:accountId||null,history_path:requestHistoryPath||historyPath})+'\n');}
    catch{worker.fail(unavailable());}
   });

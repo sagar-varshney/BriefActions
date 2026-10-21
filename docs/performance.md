@@ -1,4 +1,4 @@
-# Worker and connection reuse
+# Responsive work and connection reuse
 
 The API previously started a Python interpreter for every operation, re-imported
 the ML stack on each analysis, and opened a new PostgreSQL connection for every
@@ -57,6 +57,50 @@ the same physical connection, stale-session reconnect, failed transactions,
 explicit retries, protocol errors, output limits and shutdown. The production
 container drill still runs under 512 MiB and 0.1 CPU.
 
-Navigation and saves still share the bounded work queue with analysis. Separating
-short operations from analysis, reducing repeated snapshot queries, and further
-loading-state changes are subsequent stages; they are not claimed by this change.
+## Interactive work during analysis
+
+Meeting reads, review saves, task updates and calendar/task/history views use a
+reserved lightweight worker. Analysis, research operations and workspace exports
+retain their own bounded lane. `FLOW_MAX_WORKERS` limits the analysis lane (one in
+production); the interactive lane adds one serial Python process. Each lane has
+at most ten waiting requests and a 15-second wait. Unknown operations default to
+the analysis lane. This reserves capacity, not CPU or a guaranteed latency: both
+lanes still share the free host and database, and writes may wait on account locks.
+
+During a transcript extraction you can browse the main task, calendar and history
+views. Opening another meeting and destructive account controls remain gated until
+the extraction finishes. A completion notice opens the saved result; completion
+does not redirect someone who has navigated away. Task saves immediately show a
+pending message and acknowledge success only after storage confirms it. Existing
+browser recovery and same-request retries remain available after a failure.
+
+Loading a meeting now gets its events, series membership and replacement status
+in one storage context, avoiding repeated connection/owner setup. These are still
+separate SQL statements using the database's existing isolation level, not a new
+cross-query snapshot guarantee. The browser shares simultaneous identical default
+JSON GETs only. It copies results for each caller, discards completed requests,
+invalidates sharing before and after writes, and rejects old-account responses.
+Explicit request options and writes are never combined.
+
+## Locating remaining delays
+
+Production metrics retain histograms by fixed route and phase: `auth`,
+`queue.analysis`, `queue.interactive`, `worker.analysis`, `worker.interactive`,
+`storage_scope`, and `analysis_compute`. No transcript, owner, query, token or
+account ID is included. Storage timings include connection setup, transaction
+lifetime, commit/rollback and Python work inside a storage context; nested contexts
+are counted once. Extraction compute covers the pipeline/imports and conversation
+change extraction for a new analysis. It is absent on an idempotent replay and
+does not measure research/model jobs. Worker time includes storage and compute,
+so these overlapping histograms must not be added together.
+
+Concurrency tests gate analysis and verify that reads/saves complete independently,
+both queues are bounded, and failed work releases its slot. Browser tests cover
+navigation during extraction, completion without redirect and truthful save
+feedback. The 512 MiB / 0.1 CPU CI drill keeps one analysis and one interactive
+worker resident, checks light reads/saves during a five-analysis burst, and records
+peak memory and observed latency. Its seeded meeting warms the ML worker before
+the burst; it is not a cold-start benchmark or a hosted latency promise.
+
+These changes use the existing free services. They cannot remove the free host's
+idle sleep/cold start or external authentication/network latency.

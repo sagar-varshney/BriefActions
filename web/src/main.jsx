@@ -73,6 +73,7 @@ function downloadJson(value, filename) {
   setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 const pages = [{id:'extract',name:'Extract & review',icon:'extract'},{id:'today',name:'My day',icon:'day'},{id:'tasks',name:'All tasks',icon:'check'},{id:'owners',name:'Tasks by owner',icon:'owners'},{id:'calendar',name:'Calendar',icon:'calendar'},{id:'history',name:'Meeting history',icon:'history'},{id:'benchmark',name:'Compare extraction methods',icon:'chart'},{id:'annotations',name:'Label & review examples',icon:'quote'},{id:'data',name:'Data & account',icon:'history'}];
+const analysisBrowsePages=new Set(['extract','today','tasks','owners','calendar','history']);
 
 function App({account,signOut,completeAccountDeletion,authError}) {
   const [historyStatus,setHistoryStatus]=useState('');
@@ -90,11 +91,12 @@ function App({account,signOut,completeAccountDeletion,authError}) {
   function setPage(next){if(next==='history')setHistoryStatus('');return navigate({page:next,runId:next==='extract'?run?.id:null});}
   async function navigate(next,mode='push'){
     if(restoring && mode==='pop'){deferredNavigation.current=next;return;}
-    if(closing && next.page!=='data' || busy || restoring){if(mode==='pop')history.replaceState({},'',committedURL.current);return;}
+    const browsing=analysisBusy.current && analysisBrowsePages.has(next.page) && !next.seriesView && !next.seriesId && !next.taskId && (!next.runId || next.runId===run?.id);
+    if(closing && next.page!=='data' || busy && !browsing || restoring){if(mode==='pop')history.replaceState({},'',committedURL.current);return;}
     if(next.invalid){setError('This page does not exist. Choose a section from the navigation.');if(mode==='pop')history.replaceState({},'',committedURL.current);return;}
     if(next.page==='extract' && next.runId && next.runId!==run?.id)return openRun(next.runId,mode,next.taskId);
     if(next.page==='extract' && !next.runId && run){if(!resetMeeting()){if(mode==='pop')history.replaceState({},'',committedURL.current);return;}}
-    navigationEpoch.current++;setError('');commitRoute(next,mode);if(!next.taskId)afterRender(()=>document.querySelector('main h1')?.focus({preventScroll:true}));
+    navigationEpoch.current++;setError('');commitRoute(next,mode);if(!next.taskId)afterNavigation(()=>document.querySelector('main h1')?.focus({preventScroll:true}));
   }
   navigation.current=navigate;
   useEffect(()=>{const pop=()=>{if(authScreen()==='workspace')navigation.current?.(readRoute(),'pop');};window.addEventListener('popstate',pop);return()=>window.removeEventListener('popstate',pop);},[]);
@@ -103,6 +105,7 @@ function App({account,signOut,completeAccountDeletion,authError}) {
   useEffect(()=>{if(!restoring && deferredNavigation.current){const next=deferredNavigation.current;deferredNavigation.current=null;history.replaceState({},'',routePath(next));void navigation.current?.(next,'pop');}},[restoring]);
   const [pending,setPending]=useState(loadPending),[analysisStatus,setAnalysisStatus]=useState('');
   const analysisBusy=useRef(false);
+  const [analysisResultId,setAnalysisResultId]=useState(null),[analysisRevision,setAnalysisRevision]=useState(0);
   const [config,setConfig] = useState(null);
   const [transcript,setTranscript] = useState('');
   const [meetingDate,setMeetingDate] = useState('');
@@ -118,6 +121,7 @@ function App({account,signOut,completeAccountDeletion,authError}) {
   const [drafts,setDrafts] = useState([]);
   const [busy,setBusy] = useState(false);
   const afterRender=useAfterRender(!busy && !restoring);
+  const afterNavigation=useAfterRender(!restoring);
   const [error,setError] = useState('');
   const [bench,setBench] = useState(null);
   const [report,setReport] = useState(null);
@@ -159,7 +163,7 @@ function App({account,signOut,completeAccountDeletion,authError}) {
   function restoreInput(snapshot){const cached=readInputDraft(draftClient,snapshot?.id || 'new');showInput(cached || snapshot || {transcript:'',reference_date:'',clusters:3,title:''},!!cached);}
   function resetMeeting(){
     if(busy || restoring || pending || !stashInput())return false;
-    clearTimeout(saveTimer.current);activeRun.current=null;setRun(null);setEditorOpen(false);setDrafts([]);accountStorage.removeItem('flow.activeRun');setPending(null);setAnalysisStatus('');restoreInput(null);return true;
+    clearTimeout(saveTimer.current);activeRun.current=null;setRun(null);setEditorOpen(false);setDrafts([]);accountStorage.removeItem('flow.activeRun');setPending(null);setAnalysisResultId(null);setAnalysisStatus('');restoreInput(null);return true;
   }
   function newMeeting(){if(resetMeeting())commitRoute({page:'extract',runId:null});}
   function meetingInSeries(series){if(!resetMeeting())return;const cached=readInputDraft(draftClient,'new'),value={transcript:'',reference_date:'',clusters:3,...cached,title:cached?.title||series.name,series_id:series.id};showInput(value,!!cached);stashInput(value,'new');commitRoute({page:'extract',runId:null});setAnalysisStatus(`Next conversation: ${series.name}. Check any restored transcript draft before analyzing.`);afterRender(()=>document.getElementById('transcript')?.focus());}
@@ -234,9 +238,9 @@ function App({account,signOut,completeAccountDeletion,authError}) {
     const sourceContext=input.source_context || run?.id || 'new';
     input={...input,source_context:sourceContext};
     try{accountStorage.setItem('flow.pendingAnalysis',JSON.stringify(input));}catch{setError('Browser storage is unavailable. Enable storage before starting a recoverable analysis.');return;}
-    analysisBusy.current=true;setPending(input);setError('');setBusy(true);setAnalysisStatus('Analyzing your saved request…');
+    analysisBusy.current=true;setAnalysisResultId(null);setPending(input);setError('');setBusy(true);setAnalysisStatus('Analyzing your saved request…');
     showInput(input);
-    const finish=value=>{removeInputDraft(draftClient,sourceContext);adopt(value);showInput(value);accountStorage.removeItem('flow.pendingAnalysis');setPending(null);setAnalysisStatus('Analysis saved. Review the proposals below.');commitRoute({page:'extract',runId:value.id});afterRender(()=>{const heading=document.getElementById('task-review-title') || document.getElementById('confirmed-plan-title');heading?.focus({preventScroll:true});heading?.scrollIntoView({block:'start',behavior:'instant'});});};
+    const finish=value=>{removeInputDraft(draftClient,sourceContext);adopt(value);showInput(value);accountStorage.removeItem('flow.pendingAnalysis');setPending(null);setAnalysisResultId(value.id);setAnalysisRevision(n=>n+1);setAnalysisStatus('Analysis saved. Review the proposals below.');if(readRoute().page==='extract'){commitRoute({page:'extract',runId:value.id});afterRender(()=>{const heading=document.getElementById('task-review-title') || document.getElementById('confirmed-plan-title');heading?.focus({preventScroll:true});heading?.scrollIntoView({block:'start',behavior:'instant'});});}};
     try{finish(await api('/runs',{method:'POST',body:JSON.stringify(input)}));}
     catch(e){
       if(e.retryable){
@@ -312,14 +316,15 @@ function App({account,signOut,completeAccountDeletion,authError}) {
     <a className="skip-link" href="#workspace-main">Skip to workspace</a>
     <header className="workspace-header">
       <ProductBrand href="/today" onClick={e=>{e.preventDefault();setPage('today');}}/>
-      <nav aria-label="Main navigation">{pages.filter(p=>!['benchmark','annotations','data'].includes(p.id)).map(p=><button key={p.id} disabled={busy || restoring || closing && p.id!=='data'} className={`nav-item ${page===p.id?'active':''}`} aria-current={page===p.id?'page':undefined} onClick={()=>setPage(p.id)}><Icon name={p.icon} size={17}/><span>{p.name}</span></button>)}<ResearchNavigation page={page} disabled={closing || busy || restoring} onNavigate={setPage}/></nav>
+      <nav aria-label="Main navigation">{pages.filter(p=>!['benchmark','annotations','data'].includes(p.id)).map(p=><button key={p.id} disabled={busy && !analysisBusy.current || restoring || closing && p.id!=='data'} className={`nav-item ${page===p.id?'active':''}`} aria-current={page===p.id?'page':undefined} onClick={()=>setPage(p.id)}><Icon name={p.icon} size={17}/><span>{p.name}</span></button>)}<ResearchNavigation page={page} disabled={closing || busy || restoring} onNavigate={setPage}/></nav>
       <div className="topbar-actions"><button type="button" className={`text-button account-entry ${page==='data'?'active':''}`} aria-current={page==='data'?'page':undefined} disabled={busy || restoring} onClick={()=>setPage('data')}>Data & account</button><button type="button" className="text-button help-entry" onClick={()=>setHelpTopic(page==='history'&&historySeries.open?'series':page==='owners'?'owners':page==='today'?'today':page==='calendar'?'calendar':page==='annotations'?'annotations':page==='benchmark'?'benchmark':'meetings')}>Help</button><ThemeControl/>{account&&<><span className="account-name" title={account.email}>{account.email || 'Signed in'}</span><button className="text-button" onClick={signOut}>Sign out</button></>}</div>
     </header>
     {helpTopic&&<HelpGuide initialTopic={helpTopic} onClose={()=>setHelpTopic(null)} onNavigate={target=>target==='series'?openSeries():setPage(target)} navigationDisabled={busy || restoring || closing || !!pending}/>}
-    <main id="workspace-main" tabIndex={-1} aria-busy={restoring || busy}>
+    <main id="workspace-main" tabIndex={-1} aria-busy={restoring || busy && page==='extract'}>
       <div className="topbar"><span>Workspace <span className="slash">/</span> {pages.find(p=>p.id===page).name}</span><span className="local-badge"><span/> {account?'Private account':'Local workspace'}</span></div>
       <div className={`content ${run && page==='extract'?'meeting-content':''}`}>
-        {page==='today'&&pending&&<div className="notice" role="status">An interrupted analysis is saved in this browser. Recover it before starting another meeting.<button className="text-button" type="button" disabled={busy||restoring} onClick={()=>setPage('extract')}>Recover saved analysis</button></div>}
+      {page!=='extract'&&(analysisBusy.current || pending && page!=='today' || analysisResultId===run?.id)&&<div className="notice" role="status">{analysisBusy.current?'Your transcript is being analyzed. You can browse your tasks and calendar.':pending?(analysisStatus || 'An unfinished analysis is saved in this browser.'):'Your analysis is ready to review.'}<button type="button" className="text-button" onClick={()=>setPage('extract')}>{analysisBusy.current || pending?'Return to analysis':'Open analysis result'}</button></div>}
+        {page==='today'&&pending&&!analysisBusy.current&&<div className="notice" role="status">An interrupted analysis is saved in this browser. Recover it before starting another meeting.<button className="text-button" type="button" disabled={busy||restoring} onClick={()=>setPage('extract')}>Recover saved analysis</button></div>}
         {authError&&<div className="notice error" role="alert">{authError}</div>}{error&&<div className="notice error" role="alert">{error}{!config&&<button className="text-button" onClick={()=>location.reload()}>Retry workspace loading</button>}<button aria-label="Dismiss error" onClick={()=>setError('')}>×</button></div>}
         {page==='extract'&&<>
           {run?<div className="meeting-heading"><div className="meeting-title"><h1 tabIndex={-1}>{run.title || `Meeting ${run.reference_date}`}</h1><p>{run.reference_date} <span aria-hidden="true">·</span> {run.status==='confirmed'?'Your confirmed plan':'Review your suggested tasks'}</p></div><div className="meeting-heading-actions"><button type="button" className="button secondary" disabled={busy || restoring || !!pending} onClick={newMeeting}>New meeting</button><button type="button" className="text-button" aria-label="Edit meeting input" aria-expanded={editorVisible} aria-controls="meeting-editor" disabled={busy || restoring || !!pending} onClick={()=>editorVisible?setEditorOpen(false):openEditor()}>{editorVisible?'Close editor':'Edit meeting'}</button></div></div>:<div className="page-intro extraction-intro"><div><div className="eyebrow accent">START HERE · EXTRACT & REVIEW</div><h1 tabIndex={-1}>Make your next move <em>clear.</em></h1><p>Add a transcript, review the suggested actions, then confirm your plan.</p></div><div className="intro-note"><Icon name="check" size={17}/><span>Evidence attached.<br/><strong>You make the final call.</strong></span></div></div>}
@@ -376,9 +381,9 @@ function App({account,signOut,completeAccountDeletion,authError}) {
         {page==='data'&&<DataControls completeAccountDeletion={completeAccountDeletion} onClosing={()=>{clearTimeout(saveTimer.current);activeRun.current=null;setClosing(true);setRun(null);setDrafts([]);setTranscript('');setMeetingTitle('');setInputSaveStatus('');setReport(null);setPending(null);setAnalysisStatus('');}}/>}
         {page==='owners'&&<OwnerOverview filters={ownerFilters} onFilters={setOwnerFilters} onTasks={filters=>{setTaskFilters({...initialTaskFilters,...filters});setPage('tasks');}} onOpen={item=>openRun(item.run_id,'push',item.proposal_id)} onStart={newMeeting} busy={busy || restoring || !!pending}/>}
         {page==='tasks'&&<AllTasks filters={taskFilters} onFilters={setTaskFilters} onOpen={item=>openRun(item.run_id,'push',item.proposal_id)} busy={busy || restoring || !!pending}/>}
-        {page==='today'&&<MyDay busy={busy || restoring || !!pending} onStart={newMeeting} onOpen={item=>openRun(item.run_id,'push',item.proposal_id)} onTasks={view=>{setTaskFilters({...initialTaskFilters,view});setPage('tasks');}} onReviews={()=>{setHistoryStatus('review');navigate({page:'history'});}} onCalendar={()=>setPage('calendar')}/>}
-        {page==='calendar'&&<Calendar filters={calendarFilters} onFilters={setCalendarFilters} onOpen={item=>openRun(item.run_id,'push',item.proposal_id)} busy={busy || restoring || !!pending}/>}
-        {page==='history'&&(historySeries.open?<MeetingSeries key={historySeries.id||'series-list'} seriesId={historySeries.id} client={draftClient} busy={busy||restoring||!!pending} onBack={()=>historySeries.id?openSeries():setPage('history')} onSelect={openSeries} onOpen={(id,task)=>openRun(id,'push',task)} onStart={meetingInSeries}/>:<MeetingHistory key={historyStatus} initialStatus={historyStatus} onOpen={openRun} onSeries={()=>openSeries()} busy={busy || restoring || !!pending}/>)}
+        {page==='today'&&<MyDay refreshToken={analysisRevision} busy={busy || restoring || !!pending} onStart={newMeeting} onOpen={item=>openRun(item.run_id,'push',item.proposal_id)} onTasks={view=>{setTaskFilters({...initialTaskFilters,view});setPage('tasks');}} onReviews={()=>{setHistoryStatus('review');navigate({page:'history'});}} onCalendar={()=>setPage('calendar')}/>}
+        {page==='calendar'&&<Calendar refreshToken={analysisRevision} filters={calendarFilters} onFilters={setCalendarFilters} onOpen={item=>openRun(item.run_id,'push',item.proposal_id)} busy={busy || restoring || !!pending}/>}
+        {page==='history'&&(historySeries.open?<MeetingSeries key={historySeries.id||'series-list'} seriesId={historySeries.id} client={draftClient} busy={busy||restoring||!!pending} onBack={()=>historySeries.id?openSeries():setPage('history')} onSelect={openSeries} onOpen={(id,task)=>openRun(id,'push',task)} onStart={meetingInSeries}/>:<MeetingHistory refreshToken={analysisRevision} key={historyStatus} initialStatus={historyStatus} onOpen={openRun} onSeries={()=>openSeries()} busy={busy || restoring || !!pending}/>)}
         {page==='benchmark'&&<>
           <div className="page-intro"><div><div className="eyebrow accent">QUALITY BEFORE GUESSWORK</div><h1 tabIndex={-1}>Compare extraction methods.</h1><p>See how different methods turn conversations into tasks. You can use this app without setting up these optional checks.</p></div></div>
           <WorkflowGuide id="comparison-guide" title="Check a method in three steps" description="Test suggestions against expected answers, then inspect the differences." onHelp={()=>setHelpTopic('benchmark')} steps={[

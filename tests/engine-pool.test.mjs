@@ -20,7 +20,7 @@ for line in sys.stdin:
  if op=='invalid':print('private fixture detail',flush=True);continue
  if op=='oversize':print('x'*8000001,flush=True);continue
  result={'ok':False,'status':r['status'],'error':'private fixture detail'} if op=='fail' else {'ok':True,'data':{'pid':os.getpid(),'counter':counter,'owner':e.get('account_id')}}
- print(json.dumps({'id':e['id'],**result}),flush=True)
+ print(json.dumps({'id':e['id'],**result,'timings':r.get('timings')}),flush=True)
 `;
 async function withPool(action){
  const folder=await mkdtemp(path.join(tmpdir(),'flow-warm-worker-')),bridge=path.join(folder,'fixture.py');await writeFile(bridge,fixture);
@@ -58,7 +58,15 @@ test('Stopping a worker pool rejects in-flight work and prevents new processes',
  await pool.stop();await rejection;assert.equal(pool.stats().processes,0);
  await assert.rejects(pool.execute({operation:'pid'}),e=>e.status===503);
 }));
-test('One reused application worker isolates alternating accounts through analysis, errors, drafts and confirmation',async()=>{
+test('Worker diagnostics allow only numeric timing names and cannot change a completed result',()=>withPool(async pool=>{
+ const samples=[];
+ await pool.execute({operation:'pid',timings:{storage_scope:4,analysis_compute:8,'private query':12}},{onMetrics:value=>samples.push(value)});
+ assert.deepEqual(samples,[{storage_scope:4,analysis_compute:8}]);
+ await pool.execute({operation:'pid',timings:{storage_scope:-1,analysis_compute:'private'}},{onMetrics:value=>samples.push(value)});
+ assert.deepEqual(samples.at(-1),{});
+ const result=await pool.execute({operation:'pid',timings:{storage_scope:2}},{onMetrics:()=>{throw new Error('diagnostic failure');}});assert.ok(result.pid);
+}));
+test('Reused application lanes isolate alternating accounts through analysis, errors, drafts and confirmation',async()=>{
  const folder=await mkdtemp(path.join(tmpdir(),'flow-warm-accounts-')),alice=randomUUID(),bob=randomUUID();
  const config={...loadConfig(),authMode:'supabase',supabaseUrl:'https://fixture.supabase.co',supabaseKey:'sb_publishable_fixture',publicOrigin:'https://flow.example',databaseUrl:process.env.FLOW_TEST_DATABASE_URL};
  const server=createApp({config,maxWorkers:1,historyPath:path.join(folder,'history.sqlite3'),verifyAccount:async token=>({alice,bob})[token]});

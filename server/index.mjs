@@ -9,6 +9,7 @@ import {accountVerifier,accountDeleter,rateLimiter,credentialKey,UUID} from './a
 import {createTelemetry,requestId} from './telemetry.mjs';
 import {createStorageProbe} from './readiness.mjs';
 import {createEnginePool} from './engine-pool.mjs';
+import {createWorkQueue,operationLane} from './work-queue.mjs';
 
 const ROOT = fileURLToPath(new URL('../', import.meta.url));
 const DIST = path.join(ROOT, 'dist');
@@ -86,33 +87,24 @@ export function createApp({historyPath, config=loadConfig(), maxWorkers=config.m
   historyPath ||= config.historyPath;
   if(!Number.isInteger(maxWorkers)||maxWorkers<1||maxWorkers>4)throw new Error('Invalid worker limit.');
   if(!Number.isInteger(maxAuthChecks)||maxAuthChecks<1||maxAuthChecks>32)throw new Error('Invalid authentication concurrency limit.');
-  const enginePool=execute?null:createEnginePool({python:pythonBinary,size:maxWorkers,databaseUrl:config.databaseUrl,historyPath,error:(status,message,code)=>new HttpError(status,message,code)});
-  execute ||= enginePool.execute;
+  const pools=execute?{}:Object.fromEntries([['analysis',maxWorkers],['interactive',1]].map(([lane,size])=>[lane,createEnginePool({python:pythonBinary,size,databaseUrl:config.databaseUrl,historyPath,error:(status,message,code)=>new HttpError(status,message,code)})]));
+  const stopPools=()=>Promise.all(Object.values(pools).map(pool=>pool.stop()));
+  const queues=Object.fromEntries([['analysis',maxWorkers],['interactive',1]].map(([lane,limit])=>[lane,createWorkQueue({limit,timeout:queueTimeout,error:()=>new HttpError(503,'The engine is busy. Please try again shortly.','engine.busy',2)})]));
   let authChecks=0;
-  const runtime=()=>({active_workers:workers,queued_requests:waiting.length,auth_checks:authChecks,worker_limit:maxWorkers});
-  let workers = 0;
-  const waiting=[];
-  const acquire=()=>{
-    if(workers<maxWorkers){workers++;return Promise.resolve();}
-    if(waiting.length>=10)throw new HttpError(503,'The engine is busy. Please try again shortly.','engine.busy',2);
-    return new Promise((resolve,reject)=>{
-      const wake=()=>{clearTimeout(timer);workers++;resolve();};
-      const timer=setTimeout(()=>{const i=waiting.indexOf(wake);if(i>=0)waiting.splice(i,1);reject(new HttpError(503,'The engine is busy. Please try again shortly.','engine.busy',2));},queueTimeout);
-      waiting.push(wake);
-    });
-  };
+  const runtime=()=>{const a=queues.analysis.stats(),i=queues.interactive.stats();return {active_workers:a.active+i.active,queued_requests:a.queued+i.queued,auth_checks:authChecks,worker_limit:maxWorkers+1,analysis_active:a.active,interactive_active:i.active,analysis_queued:a.queued,interactive_queued:i.queued};};
   const allow=rateLimiter(),allowAnalysis=rateLimiter({limit:10}),allowAuth=rateLimiter({limit:120});
   let healthPromise=null,healthUntil=0,deepChecked=false;
   const storageProbe=createStorageProbe({python:pythonBinary,historyPath,databaseUrl:config.databaseUrl});
   const workerOptions=accountId=>({historyPath:accountId && !config.databaseUrl ? path.join(historyPath+'.accounts',accountId+'.sqlite3') : historyPath,databaseUrl:config.databaseUrl,accountId});
-  const runWorker = async (request,accountId) => {
-    await acquire();
-    try { return await execute(request, workerOptions(accountId)); } finally { workers--;waiting.shift()?.(); }
+  const runWorker = (request,accountId,route) => {
+    const lane=operationLane(request.operation);
+    return queues[lane].run(()=> (execute || pools[lane].execute)(request,{...workerOptions(accountId),onMetrics:metrics=>{
+      for(const [phase,duration] of Object.entries(metrics))telemetry.phase?.(route,phase,duration);
+    }}),(phase,duration)=>telemetry.phase?.(route,`${phase}.${lane}`,duration));
   };
-  async function exportWorkspace(res,accountId){
-    await acquire();
+  async function exportWorkspace(res,accountId,route){
     const options=workerOptions(accountId);
-    try{
+    return queues.analysis.run(async()=>{
       await new Promise((resolve,reject)=>{
         const worker=spawn(pythonBinary(),['-B',path.join(ROOT,'export_bridge.py')],{cwd:ROOT,env:{...process.env,FLOW_HISTORY_PATH:options.historyPath,FLOW_DATABASE_URL:options.databaseUrl || '',FLOW_ACCOUNT_ID:accountId || '',PYTHONIOENCODING:'utf-8'},stdio:['ignore','pipe','ignore']});
         let size=0,finished=false;
@@ -129,7 +121,7 @@ export function createApp({historyPath, config=loadConfig(), maxWorkers=config.m
         worker.on('error',()=>complete(new HttpError(503,'Workspace export is temporarily unavailable.','export.failed')));
         worker.on('close',code=>complete(code===0?null:new HttpError(503,'Workspace export did not finish. Retry the download.','export.failed')));
       });
-    }finally{workers--;waiting.shift()?.();}
+    },(phase,duration)=>telemetry.phase?.(route,`${phase}.analysis`,duration));
   }
   // Closing sockets does not finish async handlers: disconnected clients can leave
   // accepted writes running. Drain them before shutdown or test storage cleanup.
@@ -182,16 +174,16 @@ export function createApp({historyPath, config=loadConfig(), maxWorkers=config.m
         // Neither socket addresses nor caller-supplied proxy headers select limits.
         if(!allowAuth(credentialKey(token)))throw new HttpError(429,'Too many sign-in checks. Try again in a minute.','auth.throttled',60);
         if(authChecks>=maxAuthChecks)throw new HttpError(503,'Sign-in verification is busy. Please try again shortly.','auth.busy',2);
-        authChecks++;
-        try{accountId=await verifyAccount(token);}catch{throw new HttpError(503,'Authentication is temporarily unavailable.','auth.unavailable',2);}finally{authChecks--;}
+        authChecks++;const authStarted=performance.now();
+        try{accountId=await verifyAccount(token);}catch{throw new HttpError(503,'Authentication is temporarily unavailable.','auth.unavailable',2);}finally{authChecks--;telemetry.phase?.(req.url,'auth',performance.now()-authStarted);}
         if(!UUID.test(accountId || ''))throw new HttpError(401,'Your session has expired. Sign in again.','auth.invalid');
         if(!allow(accountId))throw new HttpError(429,'Too many requests. Try again in a minute.','account.throttled',60);
         if(req.method==='POST' && (pathname==='/api/runs' || /^\/api\/runs\/[a-f0-9]{32}\/updates$/.test(pathname)) && !allowAnalysis(accountId))throw new HttpError(429,'Analysis limit reached. Try again in a minute.','analysis.throttled',60);
       }
-      const call=request=>runWorker(request,accountId);
+      const call=request=>runWorker(request,accountId,req.url);
       let match;
       if(req.method==='GET' && pathname==='/api/account')return json(res,200,{...await call({operation:'account_status'}),can_delete_account:!!accountId && !!deleteAccount});
-      if(req.method==='GET' && pathname==='/api/account/export')return await exportWorkspace(res,accountId);
+      if(req.method==='GET' && pathname==='/api/account/export')return await exportWorkspace(res,accountId,req.url);
       if(req.method==='POST' && pathname==='/api/account/delete'){
         const input=await body(req);
         if(input.confirmation!=='DELETE MY ACCOUNT')throw new HttpError(400,'Type DELETE MY ACCOUNT to confirm.');
@@ -364,13 +356,13 @@ export function createApp({historyPath, config=loadConfig(), maxWorkers=config.m
     clearInterval(metrics);storageProbe.stop();void telemetry.sample(runtime());
     // Also reap workers for callers using raw server.close(). Disconnected
     // accepted writes must finish before any worker is stopped.
-    void Promise.allSettled([...requests]).then(()=>enginePool?.stop());
+    void Promise.allSettled([...requests]).then(stopPools);
   });
   let shutdown;
   server.shutdown=()=>shutdown ||= (async()=>{
     await new Promise((resolve,reject)=>server.close(error=>error?reject(error):resolve()));
     await Promise.allSettled([...requests]);
-    await Promise.all([storageProbe.stop(),enginePool?.stop()]);
+    await Promise.all([storageProbe.stop(),stopPools()]);
   })();
   return server;
 }
@@ -379,7 +371,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   const config=loadConfig(),{port,host}=config;
   const server = createApp({config});
   server.on('error', error => { console.error(JSON.stringify({event:'server_start_failed',code:['EADDRINUSE','EACCES'].includes(error.code)?error.code:'START_FAILED'})); process.exitCode = 1; });
-  server.listen(port, host, () => console.log(JSON.stringify({event:'server_started',mode:config.production?'production':'local',port,worker_limit:config.maxWorkers})));
+  server.listen(port, host, () => console.log(JSON.stringify({event:'server_started',mode:config.production?'production':'local',port,worker_limit:config.maxWorkers+1,analysis_limit:config.maxWorkers,interactive_limit:1})));
   for (const signal of ['SIGINT','SIGTERM']) process.on(signal, () => void server.shutdown().then(()=>process.exit(0)));
   }catch{console.error(JSON.stringify({event:'server_config_failed',code:'CONFIG_INVALID'}));process.exitCode=1;}
 }

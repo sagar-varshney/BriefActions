@@ -13,6 +13,7 @@ import sqlite3
 from uuid import uuid4
 
 from extraction import UNKNOWN, normalize_task
+from performance_metrics import timed
 
 
 def proposals_from_events(events):
@@ -42,6 +43,12 @@ class HistoryStore:
 
     @contextmanager
     def connection(self,allow_closing=False):
+        with timed('storage_scope'):
+            with self._connection(allow_closing) as conn:
+                yield conn
+
+    @contextmanager
+    def _connection(self,allow_closing=False):
         if self.database_url:
             from storage import postgres_connection
             with postgres_connection(self.database_url, self.owner,allow_closing) as conn:
@@ -100,9 +107,11 @@ class HistoryStore:
                 assign_in(self,conn,run_id,series_id,0,run_id)
         return run_id
 
-    def get_run(self, run_id):
-        with self.connection() as conn:
-            rows = conn.execute('SELECT event_id,kind,created_at,payload FROM events WHERE run_id=? ORDER BY event_id',(run_id,)).fetchall()
+    def get_run(self, run_id, conn=None):
+        if conn is None:
+            with self.connection() as connection:
+                return self.get_run(run_id, connection)
+        rows = conn.execute('SELECT event_id,kind,created_at,payload FROM events WHERE run_id=? ORDER BY event_id',(run_id,)).fetchall()
         if not rows:
             raise KeyError(run_id)
         return [{'event_id':eid,'kind':kind,'created_at':created,'payload':json.loads(payload)} for eid,kind,created,payload in rows]

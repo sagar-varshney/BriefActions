@@ -1,7 +1,8 @@
 # Hosting checks and private operational logs
 
-The production default is **one Python analysis/export worker**, a queue of ten,
-and a 15-second queue wait. Local development keeps two workers. This bounds
+The production default is **one Python analysis worker and one lightweight worker**.
+Each lane has a queue of ten and a 15-second queue wait. Exports share the analysis
+lane; local development keeps two analysis workers plus one lightweight worker. This bounds
 concurrent Python/ML memory on a small host; `FLOW_MAX_WORKERS=1..4` is available
 for larger hosts after measuring their resource budget. Worker runtime remains
 bounded at 60 seconds, and the client preserves request IDs for explicit retries.
@@ -75,11 +76,13 @@ permanent audit log. User review history remains in account storage separately.
 
 Once per minute, `runtime_metrics` records cumulative HTTP status/route counts,
 a fixed latency histogram and a separate histogram per fixed route name,
-active/queued workers, the worker limit, auth concurrency,
+active/queued workers (also separated by lane), the total worker limit, auth concurrency,
 and Node RSS. Linux cgroup v2 deployments also report current **whole-container**
 memory and its limit, including Python processes. Node RSS alone excludes Python.
 The final histogram bucket counts requests above 90 seconds. Metric snapshots are
-not per-request traces or extraction-quality measurements.
+not per-request traces or extraction-quality measurements. Fixed-route phase
+histograms separate authentication, each lane's queue and worker time, storage
+scope and extraction compute. These phases overlap; see [timing definitions](performance.md).
 
 Use the hosting dashboard's logs to search a supplied reference and inspect its
 category/status. Restrict access and choose host log retention appropriately.
@@ -104,12 +107,14 @@ that test container; TLS verification remains enabled. Temporary credentials/key
 files are private and removed, and only reports/sanitized logs become artifacts.
 
 The container has **512 MiB memory, no additional swap, and 0.1 CPU**, with one
-worker. Five synthetic analyses arrive together, including an approximately 18k
+analysis worker and one lightweight worker. A seed warms the ML worker, then five
+synthetic analyses arrive together, including an approximately 18k
 character transcript. Queue rejections are explicitly retried. The checks cover:
 
 - Startup readiness, authenticated analysis and rejection of unauthenticated access.
 - Exact supporting passages, owner/date output, account isolation, and idempotent retries.
 - Successful liveness/readiness responses while analysis is busy.
+- Meeting reads, draft saves and calendar reads during the analysis burst.
 - Whole-container peak memory, no OOM kill, and latency observations.
 - Absence of fixture transcripts, tokens, and database credentials in container logs.
 

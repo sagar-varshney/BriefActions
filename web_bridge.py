@@ -9,6 +9,7 @@ from pathlib import Path
 import re
 import sys
 from contextvars import ContextVar
+from performance_metrics import collect, timed
 
 from history import HistoryStore, proposals_from_events
 from data_controls import DataError
@@ -39,9 +40,16 @@ def store():
 def run_snapshot(run_id):
     if not isinstance(run_id, str) or not re.fullmatch(r'[a-f0-9]{32}', run_id):
         raise ApiError('Invalid run ID.')
-    events = store().get_run(run_id)
-    if events[0]['kind'] != 'extraction':
-        raise KeyError(run_id)
+    history = store()
+    from meeting_series import membership
+    # One storage checkout/owner setup for events, membership and replacement.
+    with history.connection() as conn:
+        events = history.get_run(run_id, conn)
+        if events[0]['kind'] != 'extraction':
+            raise KeyError(run_id)
+        series_membership = membership(history, run_id, conn)
+        replacement = next((e['payload']['run_id'] for e in events if e['kind']=='plan_superseded'),None)
+        replacement_available = bool(replacement and conn.execute("SELECT run_id FROM events WHERE run_id=? AND kind='final'",(replacement,)).fetchone())
     original = events[0]['payload']
     proposals=proposals_from_events(events)
     draft=next((e['payload'] for e in reversed(events) if e['kind']=='draft'),None)
@@ -50,17 +58,11 @@ def run_snapshot(run_id):
         draft={**draft,'decisions':[decisions.get(p['proposal_id'],{k:p[k] for k in ('proposal_id','task','owner','deadline')}|{'accept':False}) for p in proposals]}
     final = next((e['payload']['tasks'] for e in events if e['kind'] == 'final'), None)
     name=next((e['payload'] for e in reversed(events) if e['kind']=='meeting_title'),None)
-    replacement=next((e['payload']['run_id'] for e in events if e['kind']=='plan_superseded'),None)
-    replacement_available=False
-    if replacement:
-        with store().connection() as conn:
-            replacement_available=bool(conn.execute("SELECT run_id FROM events WHERE run_id=? AND kind='final'",(replacement,)).fetchone())
     update_draft=next((e['payload'] for e in reversed(events) if e['kind']=='plan_update_draft'),None)
     from followup_drafts import revision
-    from meeting_series import membership
     followup_draft=next((e['payload'] for e in reversed(events) if e['kind']=='followup_draft'),None)
     return {'superseded_by':replacement,'superseded_available':replacement_available,'update_draft':update_draft,
-            'series_membership':membership(store(),run_id),
+            'series_membership':series_membership,
             'followup_draft':followup_draft,'followup_revision':revision(events),
             'id':run_id, 'created_at':events[0]['created_at'], **original,'proposals':proposals,
             'title':name['title'] if name else original.get('title',''),'title_version':name['version'] if name else 0,
@@ -228,11 +230,13 @@ def handle(request):
         # Empty names preserve fingerprints for interrupted requests from older clients.
         fingerprint=hashlib.sha256(json.dumps([transcript,reference,clusters]+([title] if title else [])+([{'series_id':series_id}] if series_id else []),ensure_ascii=False).encode()).hexdigest()
         if request_id is not None and store().existing_analysis(request_id,fingerprint):return run_snapshot(request_id)
-        from flow_engine import run_pipeline
-        frame, summary, silhouette = run_pipeline(transcript, clusters, meeting_date)
+        with timed('analysis_compute'):
+            from flow_engine import run_pipeline
+            frame, summary, silhouette = run_pipeline(transcript, clusters, meeting_date)
         if len(frame)>200:raise ApiError('This transcript produced too many proposals. Split it into smaller meetings.',413)
-        from extraction import extract_with_changes
-        _, conversation_changes = extract_with_changes(transcript,meeting_date)
+        with timed('analysis_compute'):
+            from extraction import extract_with_changes
+            _, conversation_changes = extract_with_changes(transcript,meeting_date)
         settings = {'conversation_changes':conversation_changes,'extractor':'rules-v3','extractor_sha256':hashlib.sha256((ROOT/'extraction.py').read_bytes()).hexdigest(),
                     'clusters':clusters,'summary':summary,'silhouette':silhouette,'interface':'react-node-v1','request_fingerprint':fingerprint}
         if len(json.dumps({'transcript':transcript,'proposals':frame.to_dict('records'),'settings':settings}).encode())>3_000_000:
@@ -357,13 +361,17 @@ def serve():
                 if not isinstance(history_path, str):
                     raise ApiError('Invalid worker request.')
                 token = _request_store.set({'path':history_path,'owner':envelope.get('account_id'),'store':None})
-                result = response(envelope.get('request'))
+                with collect() as timings:
+                    result = response(envelope.get('request'))
+                result['timings'] = timings
             except Exception:
                 result = {'ok':False,'status':400,'error':'Invalid worker request.'}
             finally:
                 if token is not None:
                     _request_store.reset(token)
             print(json.dumps({'id':request_id, **result},allow_nan=False),flush=True)
+            # Idle workers retain imports and idle sockets, not their last input.
+            line = envelope = result = token = None
 
 
 def main():

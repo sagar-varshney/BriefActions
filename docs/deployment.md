@@ -163,7 +163,8 @@ private evaluation data, tests, and the legacy RAG backend.
   browser; server-saved drafts and history are available across devices. Use
   your own browser profile for private material on shared computers.
 - Analysis is limited to 10 requests/account/minute, general APIs to 90,
-  worker concurrency to one in production (two locally), and requests to 1 MB. Postgres limits history
+  analysis concurrency to one in production (two locally), plus one reserved
+  lightweight worker for reads/saves, and requests to 1 MB. Postgres limits history
   payloads to 25 MB/account and annotation drafts to 5 MB/account. These limits
   bound growth per account, not the total number of public signups. Monitor
   provider storage quotas; enable auth CAPTCHA/rate limits in Supabase for a

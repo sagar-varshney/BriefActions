@@ -2,6 +2,7 @@ import {randomUUID} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 
 const BOUNDS=[50,100,250,500,1000,2500,5000,10000,30000,60000,90000];
+const PHASES=new Set(['auth','queue.analysis','queue.interactive','worker.analysis','worker.interactive','storage_scope','analysis_compute']);
 const ROUTES=new Map([
   ['/api/series','series.list'],
   ['/api/weekly-review','weekly.review'],
@@ -32,7 +33,12 @@ export async function memorySnapshot(){
 }
 export function createTelemetry({enabled=false,write=value=>console.log(JSON.stringify(value)),now=()=>Date.now()}={}){
   let requests=0,failures=0,suppressed=0,detailCount=0,windowStart=now();
-  const statuses={},routes={},histogram=Array(BOUNDS.length+1).fill(0),routeHistograms={};
+  const statuses={},routes={},histogram=Array(BOUNDS.length+1).fill(0),routeHistograms={},phaseHistograms={};
+  function phase(route,name,duration){
+    if(!PHASES.has(name)||!Number.isFinite(duration)||duration<0)return;
+    const groups=phaseHistograms[routeName(route)] ||= {},counts=groups[name] ||= Array(BOUNDS.length+1).fill(0);
+    const index=BOUNDS.findIndex(bound=>duration<=bound);counts[index<0?BOUNDS.length:index]++;
+  }
   const emit=value=>{if(enabled){try{write(value);}catch{/* Logging must not fail a request. */}}};
   function observe({id,route,method,status,duration,code,aborted=false}){
     // Every field is generated or reduced to a fixed vocabulary. No raw URLs,
@@ -51,9 +57,9 @@ export function createTelemetry({enabled=false,write=value=>console.log(JSON.str
     emit({event:'request_failure',time:new Date(now()).toISOString(),request_id:/^[a-f0-9-]{36}$/.test(id)?id:requestId(),route:safeRoute,method:safeMethod,status:safeStatus,duration_ms:Math.round(ms),code:CODES.has(code)?code:'request.failed'});
   }
   function snapshot(runtime={}){
-    return {event:'runtime_metrics',time:new Date(now()).toISOString(),requests,failures,suppressed_failure_logs:suppressed,statuses:{...statuses},routes:{...routes},duration_histogram:{upper_bounds_ms:BOUNDS,counts:[...histogram]},route_duration_histograms:Object.fromEntries(Object.entries(routeHistograms).map(([route,counts])=>[route,[...counts]])),...Object.fromEntries(['active_workers','queued_requests','auth_checks','worker_limit'].filter(key=>Number.isInteger(runtime[key])).map(key=>[key,runtime[key]]))};
+    return {event:'runtime_metrics',time:new Date(now()).toISOString(),requests,failures,suppressed_failure_logs:suppressed,statuses:{...statuses},routes:{...routes},duration_histogram:{upper_bounds_ms:BOUNDS,counts:[...histogram]},route_duration_histograms:Object.fromEntries(Object.entries(routeHistograms).map(([route,counts])=>[route,[...counts]])),phase_duration_histograms:structuredClone(phaseHistograms),...Object.fromEntries(['active_workers','queued_requests','auth_checks','worker_limit','analysis_active','interactive_active','analysis_queued','interactive_queued'].filter(key=>Number.isInteger(runtime[key])).map(key=>[key,runtime[key]]))};
   }
   let sampling=false;
   async function sample(runtime){if(sampling || !enabled)return;sampling=true;try{emit({...snapshot(runtime),...await memorySnapshot()});}finally{sampling=false;}}
-  return {observe,snapshot,sample};
+  return {observe,phase,snapshot,sample};
 }

@@ -25,7 +25,7 @@ async function command(executable,argv,{ignore=false,captureStderr=false}={}){
 async function unusedPort(){const server=tcpServer();await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const port=server.address().port;await new Promise(resolve=>server.close(resolve));return port;}
 const folder=await mkdtemp(path.join(tmpdir(),'flow-hosting-drill-')),name='flow-hosting-'+randomUUID().slice(0,8);
 const users=Array.from({length:2},()=>({id:randomUUID(),token:'fixture-'+randomBytes(24).toString('hex')}));
-let provider,monitoring=false,liveMonitor,readyMonitor;const report={profile:{memory_bytes:512*1024**2,cpu:0.1,workers:1},completed:0,retries:0,initial_burst_statuses:{},health:{liveness:[],readiness:[]}};
+let provider,monitoring=false,liveMonitor,readyMonitor;const report={profile:{memory_bytes:512*1024**2,cpu:0.1,analysis_workers:1,interactive_workers:1},completed:0,retries:0,initial_burst_statuses:{},health:{liveness:[],readiness:[]},interactive:[]};
 let failure;
 try{
   const cert=path.join(folder,'ca.pem'),key=path.join(folder,'key.pem');
@@ -71,20 +71,36 @@ try{
     assert.ok(run.proposals.some(p=>p.owner==='Maya'&&p.deadline==='2026-10-13'));
     for(const proposal of run.proposals)for(const passage of proposal.evidence)assert.equal(Array.from(run.transcript).slice(passage.start,passage.end).join(''),passage.text);
   }
-  const timings=[];
-  const results=await Promise.all(items.map(async item=>{
+  // An independent saved meeting exercises actual light-worker reads and writes
+  // during the burst. The seed also warms the analysis worker's ML imports.
+  const seed={user:users[0],input:{...items[0].input,request_id:randomUUID().replaceAll('-','')}};
+  const seeded=await post(seed);assert.equal(seeded.status,201);const saved=await seeded.json();grounded(saved,seed);
+  const timings=[];let outstanding=items.length;
+  const burst=items.map(async item=>{
     const start=performance.now(),response=await post(item);report.initial_burst_statuses[response.status]=(report.initial_burst_statuses[response.status]||0)+1;
     assert.ok([201,503].includes(response.status),`Unexpected burst response: ${response.status}`);
     if(response.status===201){grounded(await response.json(),item);report.completed++;timings.push(performance.now()-start);return null;}
     assert.equal(response.headers.get('retry-after'),'2');const data=await response.json();assert.equal(data.request_id,response.headers.get('x-request-id'));return item;
-  }));
+  }).map(promise=>promise.finally(()=>{outstanding--;}));
+  const headers={Authorization:`Bearer ${users[0].token}`,'Content-Type':'application/json',Origin:'https://flow.example'};
+  for(const [label,route,options] of [
+    ['meeting.read',`/api/runs/${saved.id}`,{headers}],
+    ['draft.save',`/api/runs/${saved.id}/draft`,{method:'POST',headers,body:JSON.stringify({decisions:saved.proposals.map(p=>({...p,accept:true})),version:0})}],
+    ['calendar.read','/api/calendar?month=2026-10',{headers}],
+  ]){
+    const began=performance.now(),response=await fetch(base+route,{...options,signal:AbortSignal.timeout(15_000)});assert.equal(response.status,200);await response.json();
+    report.interactive.push({operation:label,duration_ms:Math.round(performance.now()-began),analyses_outstanding:outstanding});
+  }
+  const results=await Promise.all(burst);
+  assert.ok(report.interactive.some(sample=>sample.analyses_outstanding>0),'An interactive operation must finish before the analysis burst drains');
+  const draft=await(await fetch(base+`/api/runs/${saved.id}`,{headers})).json();assert.equal(draft.draft.version,1);
   for(const item of results.filter(Boolean)){
     const start=performance.now(),response=await post(item);assert.equal(response.status,201);grounded(await response.json(),item);report.completed++;report.retries++;timings.push(performance.now()-start);
   }
   // A repeated request must reuse the completed run, even after the initial burst.
   const repeat=await post(items[0]);assert.equal(repeat.status,201);grounded(await repeat.json(),items[0]);
   for(const [index,user] of users.entries()){
-    const list=await (await fetch(base+'/api/runs',{headers:{Authorization:`Bearer ${user.token}`}})).json();assert.equal(list.length,items.filter(item=>item.user===user).length);
+    const list=await (await fetch(base+'/api/runs',{headers:{Authorization:`Bearer ${user.token}`}})).json();assert.equal(list.length,items.filter(item=>item.user===user).length+(user===seed.user?1:0));
     const foreign=items.find(item=>item.user!==user);assert.equal((await fetch(base+`/api/runs/${foreign.input.request_id}`,{headers:{Authorization:`Bearer ${user.token}`}})).status,404);
   }
   monitoring=false;await Promise.all([liveMonitor,readyMonitor]);
