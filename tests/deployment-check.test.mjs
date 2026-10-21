@@ -53,7 +53,10 @@ test('Deployment probe verifies actual server gates and detects the wrong config
  for(const mismatch of [false,true]){
   const config=loadConfig({...env,PUBLIC_ORIGIN:mismatch?'https://another-domain.example':''}),server=createApp({config,checkHealth:async()=>{}});
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
-  try{const local=`http://127.0.0.1:${server.address().port}`,report=await checkLive(env.RENDER_EXTERNAL_URL,{fetchImpl:(url,options)=>fetch(local+new URL(url).pathname,options)});assert.equal(report.ok,!mismatch);if(mismatch)assert.equal(report.checks.find(c=>c.name==='configured app origin').ok,false);}
+  // API tests run before the React build in CI. Supply static shell fixtures;
+  // every API probe still reaches the actual server, including origin guards.
+  // The browser/container jobs verify real built pages separately.
+  try{const local=`http://127.0.0.1:${server.address().port}`,report=await checkLive(env.RENDER_EXTERNAL_URL,{fetchImpl:(url,options)=>new URL(url).pathname.startsWith('/api/')?fetch(local+new URL(url).pathname,options):fixture(url,options)});assert.equal(report.ok,!mismatch,JSON.stringify(report.checks.filter(c=>!c.ok)));if(mismatch)assert.equal(report.checks.find(c=>c.name==='configured app origin').ok,false);}
   finally{server.closeAllConnections();await server.shutdown();}
  }
 });
