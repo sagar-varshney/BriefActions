@@ -8,6 +8,7 @@ import {loadConfig} from './config.mjs';
 import {accountVerifier,accountDeleter,rateLimiter,credentialKey,UUID} from './auth.mjs';
 import {createTelemetry,requestId} from './telemetry.mjs';
 import {createStorageProbe} from './readiness.mjs';
+import {createEnginePool} from './engine-pool.mjs';
 
 const ROOT = fileURLToPath(new URL('../', import.meta.url));
 const DIST = path.join(ROOT, 'dist');
@@ -81,10 +82,12 @@ async function body(req) {
   } catch { throw new HttpError(400, 'Request must be a JSON object.'); }
 }
 const TYPES = {'.html':'text/html', '.js':'text/javascript', '.css':'text/css', '.svg':'image/svg+xml', '.png':'image/png', '.ico':'image/x-icon'};
-export function createApp({historyPath, config=loadConfig(), maxWorkers=config.maxWorkers ?? 2, verifyAccount=accountVerifier(config), deleteAccount=accountDeleter(config), execute=engine, checkHealth=null, telemetry=createTelemetry({enabled:config.telemetry}), queueTimeout=15_000, healthTtl=10_000, healthNow=()=>Date.now(), maxAuthChecks=8} = {}) {
+export function createApp({historyPath, config=loadConfig(), maxWorkers=config.maxWorkers ?? 2, verifyAccount=accountVerifier(config), deleteAccount=accountDeleter(config), execute=null, checkHealth=null, telemetry=createTelemetry({enabled:config.telemetry}), queueTimeout=15_000, healthTtl=10_000, healthNow=()=>Date.now(), maxAuthChecks=8} = {}) {
   historyPath ||= config.historyPath;
   if(!Number.isInteger(maxWorkers)||maxWorkers<1||maxWorkers>4)throw new Error('Invalid worker limit.');
   if(!Number.isInteger(maxAuthChecks)||maxAuthChecks<1||maxAuthChecks>32)throw new Error('Invalid authentication concurrency limit.');
+  const enginePool=execute?null:createEnginePool({python:pythonBinary,size:maxWorkers,databaseUrl:config.databaseUrl,historyPath,error:(status,message,code)=>new HttpError(status,message,code)});
+  execute ||= enginePool.execute;
   let authChecks=0;
   const runtime=()=>({active_workers:workers,queued_requests:waiting.length,auth_checks:authChecks,worker_limit:maxWorkers});
   let workers = 0;
@@ -357,12 +360,17 @@ export function createApp({historyPath, config=loadConfig(), maxWorkers=config.m
     }
   }
   const metrics=setInterval(()=>{void telemetry.sample(runtime());},60_000);metrics.unref();
-  server.once('close',()=>{clearInterval(metrics);storageProbe.stop();void telemetry.sample(runtime());});
+  server.once('close',()=>{
+    clearInterval(metrics);storageProbe.stop();void telemetry.sample(runtime());
+    // Also reap workers for callers using raw server.close(). Disconnected
+    // accepted writes must finish before any worker is stopped.
+    void Promise.allSettled([...requests]).then(()=>enginePool?.stop());
+  });
   let shutdown;
   server.shutdown=()=>shutdown ||= (async()=>{
     await new Promise((resolve,reject)=>server.close(error=>error?reject(error):resolve()));
     await Promise.allSettled([...requests]);
-    await storageProbe.stop();
+    await Promise.all([storageProbe.stop(),enginePool?.stop()]);
   })();
   return server;
 }

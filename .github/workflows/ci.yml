@@ -103,6 +103,9 @@ jobs:
       - name: Build React application
         run: pnpm build 2>&1 | tee artifacts/build.log
 
+      - name: Record synthetic worker performance comparison
+        run: node scripts/benchmark_workers.mjs artifacts/worker-performance.json
+
       - name: Install Chromium and Linux dependencies
         run: pnpm exec playwright install --with-deps chromium
 

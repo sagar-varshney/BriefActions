@@ -50,7 +50,8 @@ important meeting records. Provider limits and available plans can change.
    supported; never use a service-role or secret key in that setting.
 5. Copy the **session pooler** Postgres connection URI from Connect. Add
    `sslmode=require` and URL-encode special characters in the password. The app
-   uses short-lived connections with prepared statements disabled.
+   reuses a bounded set of idle worker connections with prepared statements
+   disabled. Every use starts a fresh transaction and verified account scope.
 6. Optional email links: configure custom SMTP, email templates, and redirect
    allowlists first, then set `FLOW_EMAIL_SIGNIN=true`. Supabase's built-in mail
    service is restricted and is not appropriate for public email delivery.

@@ -92,6 +92,9 @@ Local history uses the ignored `data/history.sqlite3` database. The server prefe
 interpreter. For a built local preview, run `pnpm build`, then `pnpm start`, and
 open **http://127.0.0.1:3001**.
 
+The API reuses bounded Python workers and idle database connections to reduce
+repeat startup overhead. See [performance measurements and limits](docs/performance.md).
+
 The included `.env.example` is a **hosted production template**. Local development
 does not require copying it. See the [developer guide](docs/development.md) for
 runtime settings, architecture, API routes, and verification commands.

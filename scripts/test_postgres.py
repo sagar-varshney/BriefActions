@@ -79,3 +79,46 @@ try:one.create_run('Must not return.','2026-09-15',[])
 except DataError:pass
 else:raise AssertionError('Closed account accepted a write')
 print('Postgres: erasure functions preserve cross-account isolation and closed-account writes are blocked.')
+
+# Warm workers reuse the same physical connection across different account
+# transactions. Exercise the production cache with real RLS, not mocked claims.
+from storage import reusable_connections
+c,d=str(uuid4()),str(uuid4())
+first=HistoryStore('/unused',database_url=url,owner=c)
+second=HistoryStore('/unused',database_url=url,owner=d)
+with reusable_connections():
+    saved=first.create_run('Warm-worker isolation fixture.','2026-10-21',[])
+    with first.connection() as conn:
+        pid=conn.execute('SELECT pg_backend_pid()').fetchone()[0]
+        assert conn.execute('SELECT current_user').fetchone()[0]=='flow_app'
+    with second.connection() as conn:
+        assert conn.execute('SELECT pg_backend_pid()').fetchone()[0]==pid
+        assert not conn.execute('SELECT 1 FROM events WHERE run_id=?',(saved,)).fetchone()
+        assert conn.execute("SELECT current_setting('flow.owner')").fetchone()[0]==d
+    with first.connection() as outer:
+        with second.connection() as inner:
+            assert inner.execute('SELECT pg_backend_pid()').fetchone()[0]!=pid
+            assert not inner.execute('SELECT 1 FROM events WHERE run_id=?',(saved,)).fetchone()
+        assert outer.execute("SELECT current_setting('flow.owner')").fetchone()[0]==c
+    try:HistoryStore('/unused',database_url=url,owner=None).list_runs()
+    except ValueError:pass
+    else:raise AssertionError('A warm connection accepted a missing account')
+    try:
+        with second.connection() as conn:
+            conn.execute('SELECT 1/0')
+    except psycopg.errors.DivisionByZero:pass
+    else:raise AssertionError('Expected failed transaction')
+    with first.connection() as conn:
+        next_pid=conn.execute('SELECT pg_backend_pid()').fetchone()[0]
+        assert next_pid!=pid, 'Failed connections must be discarded'
+        assert conn.execute('SELECT run_id FROM events WHERE run_id=?',(saved,)).fetchone()
+    # A pooler may close an idle session. Reconnect before any application write;
+    # no failed/ambiguous application operation is replayed.
+    with psycopg.connect(url,autocommit=True) as admin:
+        admin.execute('SELECT pg_terminate_backend(%s)',(next_pid,))
+    with second.connection() as conn:
+        assert conn.execute('SELECT pg_backend_pid()').fetchone()[0]!=next_pid
+        assert not conn.execute('SELECT 1 FROM events WHERE run_id=?',(saved,)).fetchone()
+    assert first.get_run(saved)
+assert first.get_run(saved), 'Writes must be committed before entering the idle cache'
+print('Postgres: warm connection reuse, transaction-local account/role reset, failed-transaction discard, stale-session reconnect, and committed persistence passed.')

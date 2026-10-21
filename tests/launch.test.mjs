@@ -81,6 +81,8 @@ test('Telemetry details are capped while counters and latency histograms remain 
   for(let i=0;i<205;i++)telemetry.observe({id:randomUUID(),route:'/api/runs/'+('a'.repeat(32))+'/history.json?private=text',method:'GET',status:503,duration:125,code:'secret'});
   assert.equal(events.length,200);assert.ok(events.every(e=>e.route==='runs.item.history.json'&&e.code==='request.failed'));
   assert.equal(telemetry.snapshot().requests,205);assert.equal(telemetry.snapshot().suppressed_failure_logs,5);assert.equal(telemetry.snapshot().duration_histogram.counts.reduce((a,b)=>a+b),205);
+  assert.equal(telemetry.snapshot().route_duration_histograms['runs.item.history.json'].reduce((a,b)=>a+b),205);
+  assert.ok(!JSON.stringify(telemetry.snapshot()).includes('private=text'));
   time=60_001;telemetry.observe({id:randomUUID(),route:'/api/unknown',method:'PRIVATE',status:500,duration:1});assert.equal(events.length,201);assert.equal(events.at(-1).method,'OTHER');
   assert.equal(routeName('/file-with-private-name.pdf'),'web');
 });

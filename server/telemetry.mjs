@@ -32,7 +32,7 @@ export async function memorySnapshot(){
 }
 export function createTelemetry({enabled=false,write=value=>console.log(JSON.stringify(value)),now=()=>Date.now()}={}){
   let requests=0,failures=0,suppressed=0,detailCount=0,windowStart=now();
-  const statuses={},routes={},histogram=Array(BOUNDS.length+1).fill(0);
+  const statuses={},routes={},histogram=Array(BOUNDS.length+1).fill(0),routeHistograms={};
   const emit=value=>{if(enabled){try{write(value);}catch{/* Logging must not fail a request. */}}};
   function observe({id,route,method,status,duration,code,aborted=false}){
     // Every field is generated or reduced to a fixed vocabulary. No raw URLs,
@@ -42,6 +42,8 @@ export function createTelemetry({enabled=false,write=value=>console.log(JSON.str
     const ms=Math.max(0,Number.isFinite(duration)?duration:0);
     requests++;statuses[safeStatus]=(statuses[safeStatus] || 0)+1;routes[safeRoute]=(routes[safeRoute] || 0)+1;
     const bucket=BOUNDS.findIndex(bound=>ms<=bound);histogram[bucket<0?BOUNDS.length:bucket]++;
+    const routeBuckets=routeHistograms[safeRoute] ||= Array(BOUNDS.length+1).fill(0);
+    routeBuckets[bucket<0?BOUNDS.length:bucket]++;
     if(safeStatus<400 && !aborted)return;
     failures++;
     if(now()-windowStart>=60_000){windowStart=now();detailCount=0;}
@@ -49,7 +51,7 @@ export function createTelemetry({enabled=false,write=value=>console.log(JSON.str
     emit({event:'request_failure',time:new Date(now()).toISOString(),request_id:/^[a-f0-9-]{36}$/.test(id)?id:requestId(),route:safeRoute,method:safeMethod,status:safeStatus,duration_ms:Math.round(ms),code:CODES.has(code)?code:'request.failed'});
   }
   function snapshot(runtime={}){
-    return {event:'runtime_metrics',time:new Date(now()).toISOString(),requests,failures,suppressed_failure_logs:suppressed,statuses:{...statuses},routes:{...routes},duration_histogram:{upper_bounds_ms:BOUNDS,counts:[...histogram]},...Object.fromEntries(['active_workers','queued_requests','auth_checks','worker_limit'].filter(key=>Number.isInteger(runtime[key])).map(key=>[key,runtime[key]]))};
+    return {event:'runtime_metrics',time:new Date(now()).toISOString(),requests,failures,suppressed_failure_logs:suppressed,statuses:{...statuses},routes:{...routes},duration_histogram:{upper_bounds_ms:BOUNDS,counts:[...histogram]},route_duration_histograms:Object.fromEntries(Object.entries(routeHistograms).map(([route,counts])=>[route,[...counts]])),...Object.fromEntries(['active_workers','queued_requests','auth_checks','worker_limit'].filter(key=>Number.isInteger(runtime[key])).map(key=>[key,runtime[key]]))};
   }
   let sampling=false;
   async function sample(runtime){if(sampling || !enabled)return;sampling=true;try{emit({...snapshot(runtime),...await memorySnapshot()});}finally{sampling=false;}}

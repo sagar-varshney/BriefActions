@@ -30,10 +30,15 @@ React / Vite → Node HTTP API → Python bridge → extraction and history
 | `deploy/`, `scripts/backup.py` | Hosted migrations, deployment support, and encrypted recovery |
 | `tests/`, `.github/workflows/` | Workflow checks and CI automation |
 
-The Node server calls bounded Python subprocesses rather than a separate always-on
-Python web server. Cold imports affect API response time; benchmark extraction
-latency does not include the full browser/API workflow. Model reports are loaded
-from retained results; the UI does not trigger paid or local LLM calls.
+The Node server calls a bounded pool of serial Python workers, started lazily and
+reused after a response. Imports stay warm; each request gets its own history and
+verified account scope. PostgreSQL connections are cached within each worker,
+with a fresh transaction, role, owner and deletion guard on every checkout.
+Crashes/timeouts discard the worker without automatically replaying an accepted
+write. Exports and initial deep readiness still use dedicated subprocesses.
+See [performance verification](performance.md) for the local before/after drill
+and its limits. Model reports are loaded from retained results; the UI does not
+trigger paid or local LLM calls.
 
 The Python pipeline also offers TF-IDF summaries, TF-IDF/K-Means task grouping,
 and a Logistic Regression workstream classifier trained on a small illustrative

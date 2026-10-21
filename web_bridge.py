@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 import re
 import sys
+from contextvars import ContextVar
 
 from history import HistoryStore, proposals_from_events
 from data_controls import DataError
@@ -16,6 +17,7 @@ from task_deadlines import project as project_deadlines, effective_tasks
 
 ROOT = Path(__file__).resolve().parent
 MAX_TRANSCRIPT = 100_000
+_request_store = ContextVar('request_store', default=None)
 
 
 class ApiError(Exception):
@@ -25,6 +27,11 @@ class ApiError(Exception):
 
 
 def store():
+    scope = _request_store.get()
+    if scope is not None:
+        if scope['store'] is None:
+            scope['store'] = HistoryStore(scope['path'], database_url=os.environ.get('FLOW_DATABASE_URL'), owner=scope['owner'])
+        return scope['store']
     return HistoryStore(os.environ.get('FLOW_HISTORY_PATH', str(ROOT/'data'/'history.sqlite3')),
                         database_url=os.environ.get('FLOW_DATABASE_URL'),owner=os.environ.get('FLOW_ACCOUNT_ID'))
 
@@ -303,9 +310,8 @@ def handle(request):
     raise ApiError('Unknown operation.',404)
 
 
-def main():
+def response(request):
     try:
-        request = json.load(sys.stdin)
         if not isinstance(request,dict):
             raise ApiError('Request must be an object.')
         result = {'ok':True,'data':handle(request)}
@@ -325,8 +331,48 @@ def main():
             print('Worker could not complete the request.',file=sys.stderr)
             code='runtime.dependencies' if isinstance(error,ImportError) else 'storage.failed' if type(error).__module__.startswith('psycopg') else 'worker.failed'
             result = {'ok':False,'status':500,'error':'Your request could not be completed. Please try again.','code':code}
-    print(json.dumps(result,allow_nan=False))
+    # Serialization is inside the request boundary: a bad result cannot poison
+    # the next request's protocol or accidentally reuse its account context.
+    try:
+        json.dumps(result, allow_nan=False)
+    except (ValueError, TypeError):
+        return {'ok':False,'status':500,'error':'Your request could not be completed. Please try again.','code':'worker.failed'}
+    return result
+
+
+def serve():
+    from storage import reusable_connections
+    with reusable_connections():
+        for line in sys.stdin.buffer:
+            request_id = None
+            token = None
+            try:
+                if len(line) > 1_100_000:
+                    raise ApiError('Request is too large.',413)
+                envelope = json.loads(line)
+                request_id = envelope['id']
+                if type(request_id) is not int or request_id < 1:
+                    raise ApiError('Invalid worker request.')
+                history_path = envelope.get('history_path') or os.environ.get('FLOW_HISTORY_PATH', str(ROOT/'data'/'history.sqlite3'))
+                if not isinstance(history_path, str):
+                    raise ApiError('Invalid worker request.')
+                token = _request_store.set({'path':history_path,'owner':envelope.get('account_id'),'store':None})
+                result = response(envelope.get('request'))
+            except Exception:
+                result = {'ok':False,'status':400,'error':'Invalid worker request.'}
+            finally:
+                if token is not None:
+                    _request_store.reset(token)
+            print(json.dumps({'id':request_id, **result},allow_nan=False),flush=True)
+
+
+def main():
+    try:
+        request = json.load(sys.stdin)
+    except (ValueError, TypeError):
+        request = None
+    print(json.dumps(response(request),allow_nan=False))
 
 
 if __name__ == '__main__':
-    main()
+    serve() if sys.argv[1:] == ['--serve'] else main()

@@ -5,6 +5,12 @@ and a 15-second queue wait. Local development keeps two workers. This bounds
 concurrent Python/ML memory on a small host; `FLOW_MAX_WORKERS=1..4` is available
 for larger hosts after measuring their resource budget. Worker runtime remains
 bounded at 60 seconds, and the client preserves request IDs for explicit retries.
+Workers are started lazily and reused, keeping Python/ML imports warm. Each handles
+one request at a time with a new account/history context. Each process retains at
+most two idle PostgreSQL connections; transactions commit or roll back before
+reuse, and transaction-local role/owner settings reset. Expired or closed idle
+sessions reconnect before application work. Failed work is never replayed by the
+pool. Server shutdown drains accepted work before stopping workers and connections.
 Busy requests return HTTP 503 with `Retry-After: 2`; completed retries reuse the
 original run. This does not promise that every simultaneous request is accepted.
 
@@ -68,7 +74,8 @@ Request references therefore support best-effort correlation, not a guaranteed
 permanent audit log. User review history remains in account storage separately.
 
 Once per minute, `runtime_metrics` records cumulative HTTP status/route counts,
-a fixed latency histogram, active/queued workers, the worker limit, auth concurrency,
+a fixed latency histogram and a separate histogram per fixed route name,
+active/queued workers, the worker limit, auth concurrency,
 and Node RSS. Linux cgroup v2 deployments also report current **whole-container**
 memory and its limit, including Python processes. Node RSS alone excludes Python.
 The final histogram bucket counts requests above 90 seconds. Metric snapshots are
