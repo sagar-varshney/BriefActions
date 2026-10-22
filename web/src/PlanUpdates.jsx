@@ -1,3 +1,4 @@
+import Icon from './Icon.jsx';
 import React,{useEffect,useRef,useState} from 'react';
 import {api} from './api.js';
 import accountStorage from './accountStorage.js';
@@ -5,10 +6,7 @@ import {reviewError} from './reviewTools.js';
 import useAfterRender from './useAfterRender.js';
 const labels={added:'Added',changed:'Changed',cancelled:'Cancelled',unchanged:'Unchanged'};
 const fields=['task','owner','deadline'];
-function ChangeIcon({kind}){
- const paths={added:'M12 5v14M5 12h14',changed:'m15 4 5 5M4 20l5-1L21 7l-4-4L5 15z',cancelled:'m6 6 12 12M6 18 18 6',unchanged:'M5 9h14M5 15h14'};
- return <svg className="plan-change-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false"><path d={paths[kind]}/></svg>;
-}
+function ChangeIcon({kind}){return <Icon name={kind} size={16} className="plan-change-icon"/>;}
 const read=key=>{try{return JSON.parse(accountStorage.getItem(key)||'null');}catch{return null;}};
 
 export function FollowupForm({run,client,busy,onStart}){

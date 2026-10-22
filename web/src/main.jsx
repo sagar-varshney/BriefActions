@@ -1,3 +1,5 @@
+import '@fontsource-variable/inter/wght.css';
+import Icon from './Icon.jsx';
 import {authScreen} from './authRouting.js';
 import {api,downloadFile} from './api.js';
 import AuthShell from './AuthShell.jsx';
@@ -46,22 +48,6 @@ function reviewDrafts(proposals,decisions=[]){const byId=new Map(decisions.map(d
 
 const pct = value => value == null ? 'Unknown' : `${(value*100).toFixed(1)}%`;
 const duration = value => value == null ? 'Unknown' : value < 1000 ? `${value.toFixed(1)} ms` : `${(value/1000).toFixed(2)} s`;
-function Icon({name, size = 20}) {
-  const paths = {
-    flow:<path d="m14 2-8 11h6l-2 9 8-11h-6z"/>,
-    extract:<><rect x="4" y="3" width="16" height="18" rx="3"/><path d="M8 8h8M8 12h5M8 16h8"/></>,
-    history:<><path d="M3 11a9 9 0 1 1 2.5 7M3 4v7h7"/><path d="M12 7v5l3 2"/></>,
-    chart:<><path d="M4 3v17h17M8 15v-4M13 15V7M18 15V4"/></>,
-    calendar:<><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 11h18M8 15h2M14 15h2"/></>,
-    owners:<><circle cx="9" cy="8" r="3"/><path d="M3 21v-2a6 6 0 0 1 12 0v2M16 5a3 3 0 0 1 0 6M21 21v-2a6 6 0 0 0-3-5"/></>,
-    day:<><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M5 19l1.5-1.5M17.5 6.5 19 5"/></>,
-    arrow:<path d="M5 12h14m-5-5 5 5-5 5"/>,
-    check:<path d="m5 12 4 4L19 6"/>,
-    download:<><path d="M12 3v12m-4-4 4 4 4-4M4 16v4h16v-4"/></>,
-    quote:<><path d="M5 6h5v7H5zm9 0h5v7h-5zM10 13c0 3-2 5-5 5M19 13c0 3-2 5-5 5"/></>,
-  };
-  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>;
-}
 function Json({value}) { return <pre className="json" tabIndex={0}>{JSON.stringify(value,null,2)}</pre>; }
 function Evidence({passages = [],onInspect,label}) {
   return <div className="evidence"><div className="eyebrow"><Icon name="quote" size={15}/> Supporting transcript</div>{passages.map((e,i)=><div key={i}><blockquote>{e.text}</blockquote><div className="evidence-footer"><span className="span-note">Characters {e.start}–{e.end} in the saved input</span>{onInspect&&<button type="button" className="text-button evidence-jump" aria-label={`Locate passage ${i+1} for ${label}`} onClick={event=>onInspect(e,event.currentTarget)}>Locate passage <Icon name="arrow" size={14}/></button>}</div></div>)}</div>;
@@ -75,7 +61,7 @@ function Download({href,children}) {
     catch(e){setNotice('');setError(e.message);}
     finally{pending.current=false;setBusy(false);}
   }
-  return <span className="download-control"><button type="button" className="button secondary" aria-label={children} aria-busy={busy} disabled={busy} onClick={download}><Icon name="download" size={16}/>{busy?'Preparing…':children}</button><small role="status">{notice}</small>{error&&<small className="download-error" role="alert">{error} Try the download again.</small>}</span>;
+  return <span className="download-control"><button type="button" className="button secondary" aria-label={children} aria-busy={busy} disabled={busy} onClick={download}><Icon name={busy?'spinner':'download'} size={16} className={busy?'icon-spin':''}/>{busy?'Preparing…':children}</button><small role="status">{notice}</small>{error&&<small className="download-error" role="alert">{error} Try the download again.</small>}</span>;
 }
 function downloadJson(value, filename) {
   const url = URL.createObjectURL(new Blob([JSON.stringify(value,null,2)],{type:'application/json'}));
@@ -355,7 +341,7 @@ function App({account,signOut,completeAccountDeletion,authError}) {
             {run&&<button type="button" className="text-button" disabled={busy || restoring || !!pending || meetingTitle===run.title} onClick={saveName}>Save meeting name</button>}
             <TranscriptImport disabled={busy || restoring} onUse={value=>{changeInput({transcript:value,reference_date:'',title:''});setAnalysisStatus('Transcript imported. Choose the meeting date, then analyze.');document.getElementById('meeting-date').focus();}}/>
             <label className="sr-only" htmlFor="transcript">Meeting transcript</label><textarea id="transcript" className="transcript" disabled={busy || restoring} value={transcript} onChange={e=>changeInput({transcript:e.target.value})} maxLength={config?.max_transcript || 100000} required placeholder="Maya: I’ll send the report tomorrow…"/>
-            <div className="input-footer"><div className="settings"><label>Meeting date<input id="meeting-date" type="date" disabled={busy || restoring} value={meetingDate} onChange={e=>changeInput({reference_date:e.target.value})} required/></label><label>Maximum groups<select aria-label="Maximum groups" disabled={busy || restoring} value={clusters} onChange={e=>changeInput({clusters:Number(e.target.value)})}>{[1,2,3,4,5,6].map(n=><option key={n}>{n}</option>)}</select></label></div><button className="button primary" disabled={busy || !config || restoring}>{busy?'Working…':'Analyze transcript'}{!busy&&<Icon name="arrow" size={17}/>}</button></div>
+            <div className="input-footer"><div className="settings"><label>Meeting date<input id="meeting-date" type="date" disabled={busy || restoring} value={meetingDate} onChange={e=>changeInput({reference_date:e.target.value})} required/></label><label>Maximum groups<select aria-label="Maximum groups" disabled={busy || restoring} value={clusters} onChange={e=>changeInput({clusters:Number(e.target.value)})}>{[1,2,3,4,5,6].map(n=><option key={n}>{n}</option>)}</select></label></div><button className="button primary" disabled={busy || !config || restoring}>{busy?'Working…':'Analyze transcript'}<Icon name={busy?'spinner':'arrow'} size={17} className={busy?'icon-spin':''}/></button></div>
             <div className="form-hint">Relative deadlines use the meeting date. Missing people and exact dates stay <strong>Unknown</strong>.</div>
             {config&&transcript===config.sample_transcript&&meetingDate===config.sample_reference_date&&<p className="notice" role="status">Synthetic example meeting · {config.sample_reference_date}. Use your actual meeting date for your own transcript.</p>}
             {run&&<button type="button" className="text-button discard-input" disabled={busy || restoring || !!pending} onClick={discardInput}>Discard transcript draft</button>}

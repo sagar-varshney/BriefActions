@@ -82,7 +82,7 @@ async function body(req) {
     return value;
   } catch { throw new HttpError(400, 'Request must be a JSON object.'); }
 }
-const TYPES = {'.html':'text/html', '.js':'text/javascript', '.css':'text/css', '.svg':'image/svg+xml', '.png':'image/png', '.ico':'image/x-icon'};
+const TYPES = {'.html':'text/html', '.js':'text/javascript', '.css':'text/css', '.svg':'image/svg+xml', '.png':'image/png', '.ico':'image/x-icon', '.woff2':'font/woff2', '.txt':'text/plain'};
 export function createApp({historyPath, config=loadConfig(), maxWorkers=config.maxWorkers ?? 2, verifyAccount=accountVerifier(config), deleteAccount=accountDeleter(config), execute=null, checkHealth=null, telemetry=createTelemetry({enabled:config.telemetry}), queueTimeout=15_000, healthTtl=10_000, healthNow=()=>Date.now(), maxAuthChecks=8} = {}) {
   historyPath ||= config.historyPath;
   if(!Number.isInteger(maxWorkers)||maxWorkers<1||maxWorkers>4)throw new Error('Invalid worker limit.');
@@ -341,7 +341,7 @@ export function createApp({historyPath, config=loadConfig(), maxWorkers=config.m
         info = await stat(file).catch(() => null);
       }
       if (!info?.isFile()) throw new HttpError(503, config.production?'Workspace is temporarily unavailable. Please try again.':'Build the React app first with pnpm build, or use pnpm dev.', 'web.assets_unavailable');
-      res.writeHead(200, {'Content-Type':TYPES[path.extname(file)] || 'application/octet-stream','Cache-Control':'no-cache'});
+      res.writeHead(200, {'Content-Type':TYPES[path.extname(file)] || 'application/octet-stream','Cache-Control':/^\/assets\/[^/]+-[A-Za-z0-9_-]{8}\.(js|css|woff2|png|svg)$/.test(pathname)?'public, max-age=31536000, immutable':'no-cache'});
       if (req.method === 'HEAD') return res.end();
       createReadStream(file).on('error', () => res.destroy()).pipe(res);
     } catch (error) {

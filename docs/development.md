@@ -383,3 +383,22 @@ unfinished transcript drafts, clearing searches, keyboard dismissal of Research
 tools, and CSV/JSON export feedback. A delayed export and a failed first attempt
 verify that repeated clicks do not duplicate downloads and that manual retry
 recovers. The suite also checks mobile/desktop accessibility in both themes.
+
+## Workspace typography and interactions
+
+Inter Variable is bundled with the app through `@fontsource-variable/inter`.
+Font subsets load from the app's own origin; there is no external font service.
+Shared `Icon.jsx` imports individual Phosphor icons. The BriefActions ribbon
+mark stays a separate brand asset. License notices ship in `web/public/licenses/`.
+
+Review cards label owners and deadlines, retain explicit Unknown values, and
+keep their geometry stable when selected or autosaved. Small-screen review
+controls stack to preserve readable option labels. Short CSS transitions cover
+card entry, evidence expansion, chevrons, button presses, and busy indicators;
+reduced-motion preferences disable them. Theme colours switch immediately to
+avoid temporary low-contrast combinations.
+
+Only public assets with build hashes receive immutable caching. HTML revalidates
+and private API responses retain `no-store`. The review polish browser suite
+checks font delivery and notices, cache boundaries, selection stability,
+keyboard evidence controls, Unknown metadata, and reduced motion.
