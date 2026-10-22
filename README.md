@@ -61,10 +61,10 @@ reject it before confirming; extraction can miss or misread commitments.
 | Section | What you can do |
 | --- | --- |
 | **Extract & review** | Turn a transcript into proposed tasks, inspect evidence, edit details, and confirm a plan. |
-| **My day** | See overdue work, today’s deadlines, upcoming tasks, and unfinished reviews. Open a weekly review of recent completions and work needing attention. |
+| **My day** | Start with a priority shortcut, then scan overdue work, today’s deadlines, upcoming tasks, and unfinished reviews. Review your week below the daily lists. |
 | **All tasks** | Search work across meetings and filter by progress, owner, or due date. |
 | **Tasks by owner** | See who has open or overdue work and find tasks that still need an owner. |
-| **Calendar** | Browse meeting dates and current task deadlines, with an agenda view on smaller screens and a separate list for undated tasks. |
+| **Calendar** | Distinguish meeting dates from task deadlines with labels and icons. Inspect selected-day counts, use the mobile agenda, and find undated tasks separately. |
 | **Meeting history** | Find saved conversations, inspect previous decisions, and group recurring meetings into a series. |
 
 ### Keep plans up to date

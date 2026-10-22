@@ -422,3 +422,23 @@ short entry transition.
 corrections and original evidence, reset/reload, both completion destinations,
 and the absence of private API calls. All three stages get responsive and
 automated accessibility checks, in addition to the existing entry/auth tests.
+
+## Calendar and daily planning hierarchy
+
+My day renders daily work before the optional weekly review. Its Start here
+shortcut chooses the first nonempty server-supplied group in this order:
+overdue, today, upcoming, reviews. Counts use the full group total, not the bounded
+preview. The shortcut uses existing filtered-list navigation, makes no additional
+requests, and is hidden while the daily result is loading or has failed. An empty
+workspace keeps its first-meeting guidance without an invented priority.
+
+Calendar meeting/deadline chips use distinct Phosphor icons, labels, and theme-aware
+colours. The selected-day split comes from filtered month counts, so paging the
+entry list does not change the totals. Entry metadata separates the owner, date,
+and source meeting. Overdue labels compare date-only deadlines with the device's
+current day and exclude Done/Unknown. No persisted deadline or task state changes.
+
+The calendar and My day browser suites cover count scope, priority fallbacks and
+their destinations, day rollover, retries, keyboard/evidence links, forced-colour
+calendar use, and light/dark responsive accessibility. Calendar time is fixed in
+its browser fixture so urgency labels do not depend on the CI runner's date.

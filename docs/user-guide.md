@@ -27,6 +27,11 @@ saved meetings awaiting confirmation. It includes tasks for every named owner in
 your private workspace; owner names are not linked to sign-in accounts.
 Completed tasks are excluded. Dates use your device's calendar day.
 
+**Start here** points to the first list with work in it: Overdue, Due today,
+Next 7 days, then Unfinished reviews. Its button opens that full list. It uses
+the complete count, including items beyond the preview, and never changes a task
+or assigns work automatically.
+
 Each section previews up to four items and shows its complete count. **View all**
 opens the corresponding task filter or meetings **Awaiting review**. **Open task &
 evidence** goes to the exact confirmed task and its supporting conversation;
@@ -43,7 +48,7 @@ before starting new work. **My day** does not create or confirm tasks automatica
 
 ### Review your week
 
-Choose **Open weekly review** inside **My day**. **Completed recently** shows tasks
+Below the daily lists, choose **Open weekly review**. **Completed recently** shows tasks
 still marked Done whose completion was recorded during the last seven calendar
 dates, including today, in your device's time zone. A task carried into a follow-up
 plan keeps its original completion date; copying a plan does not count it again.
@@ -204,13 +209,19 @@ changes owners, tasks, or dates.
 ## See meetings and deadlines on the calendar
 
 Open **Calendar** to browse a month. Meeting cards use the conversation's meeting
-date; task cards use the current deadline, including any saved correction. The labels and colored borders tell
-them apart. The calendar shows dates, without scheduling a time of day or sending
+date; task cards use the current deadline, including any saved correction. Labels,
+distinct icons, and colored borders tell them apart. The calendar shows dates, without scheduling a time of day or sending
 reminders. Dates do not shift with time zones.
 
 Choose a date to see its entries. Use arrow keys between dates in the month grid,
 then Enter to select. **Agenda** lists dates with events; small screens use this
 view automatically. **Today** returns to your device's current date.
+
+The selected-day summary separates meeting and task-deadline counts. Counts
+follow your event and status filters and include entries on later pages. Each
+task shows its owner, deadline, and source meeting. **Overdue** marks unfinished
+tasks dated before your device's current day; completed tasks and Unknown
+deadlines are not marked overdue. **How calendar dates work** explains the dates.
 
 Choose **Meetings only**, **Tasks only**, or both. Task status filters apply only
 to tasks; choose **All statuses** to include completed work. Earlier meetings
