@@ -9,6 +9,12 @@ import {createApp} from '../server/index.mjs';
 import {loadConfig} from '../server/config.mjs';
 import {navigate} from './browser-helpers.mjs';
 const titleIs=(page,title)=>page.waitForFunction(expected=>document.title===expected,title);
+async function centeredHeader(page){
+ const [brand,nav,actions]=await Promise.all(['.landing-header>.brand','.landing-header nav','.landing-header-actions'].map(selector=>page.locator(selector).boundingBox()));
+ const width=await page.evaluate(()=>document.documentElement.clientWidth);
+ assert.ok(Math.abs(nav.x+nav.width/2-width/2)<1,`Home ${width}: links must be centered on the page, independent of the logo and sign-in label`);
+ assert.ok(brand.x+brand.width<nav.x&&nav.x+nav.width<actions.x,`Home ${width}: header controls must not overlap`);
+}
 const folder=await mkdtemp(path.join(tmpdir(),'flow-public-home-'));
 const shots=process.env.FLOW_SCREENSHOTS || path.join(folder,'screenshots');await mkdir(shots,{recursive:true});
 const user={id:'11111111-1111-4111-8111-111111111111',email:'alice@example.test',aud:'authenticated',role:'authenticated',app_metadata:{},user_metadata:{},created_at:'2026-10-16T00:00:00Z'};
@@ -63,11 +69,12 @@ try{
    assert.deepEqual(await palette(),expectedPalette,'Saved preference and system appearance must not recolor the homepage');
    assert.equal(await page.evaluate(()=>localStorage.getItem('flow.theme')),preference,'The homepage must preserve the selected workspace theme');
   }
-  for(const width of [1440,1024,768,390,320]){
+  for(const width of [2560,1920,1440,1180,1101,1100,1024,768,390,320]){
    await page.setViewportSize({width,height:1000});
    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`Home ${width} ${preference}: no overflow`);
    const brand=await page.getByRole('link',{name:'BriefActions home',exact:true}).boundingBox(),workflow=await page.locator('.landing-how').boundingBox();
    assert.ok(Math.abs(brand.x-workflow.x)<1,`Home ${width}: header and content must share the same alignment`);
+   if(width>1100)await centeredHeader(page);
    if(preference==='light' && [1440,320].includes(width)){
     const result=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa','wcag22aa']).analyze();checks.push({label:`home-${width}-mixed`,violations:result.violations});assert.deepEqual(result.violations.map(({id,nodes})=>({id,targets:nodes.map(n=>n.target)})),[]);
    }
@@ -88,6 +95,8 @@ try{
  await page.goto(base+'/auth/callback?code=fixture-code');await page.getByText('alice@example.test',{exact:true}).waitFor();assert.equal(new URL(page.url()).pathname,'/tasks');assert.equal(new URL(page.url()).search,'');await titleIs(page,'All tasks · BriefActions');assert.equal(exchange.auth_code,'fixture-code');assert.ok(exchange.code_verifier);
  assert.equal(await page.evaluate(()=>sessionStorage.getItem('flow.authReturn')),null);
  await page.goto(base);await page.getByRole('heading',{name:'Good conversations. Clear next steps.'}).waitFor();await page.getByRole('link',{name:'Open workspace',exact:true}).first().waitFor();
+ for(const width of [1101,1180,1440,1920,2560]){await page.setViewportSize({width,height:1000});await centeredHeader(page);}
+ await page.setViewportSize({width:1440,height:1000});await page.screenshot({path:path.join(shots,'homepage-signed-in-header.png'),clip:{x:0,y:0,width:1440,height:150}});
  // A stored redirect is untrusted, including when it was written outside this UI.
  await page.evaluate(()=>sessionStorage.setItem('flow.authReturn','//untrusted.example/private'));await page.goto(base+'/sign-in');await page.getByText('alice@example.test',{exact:true}).waitFor();assert.equal(new URL(page.url()).origin,base);assert.equal(new URL(page.url()).pathname,'/meetings');
  // A fresh failed callback exposes no provider text or private data and allows retry.
