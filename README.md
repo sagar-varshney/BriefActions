@@ -16,6 +16,10 @@ then follow the work through your task list and calendar.
 
 ## Get started
 
+Want a preview first? [Try the interactive demo](https://briefactions.onrender.com/#product-demo)
+without signing in. Step through an invented transcript, adjust task details,
+and build a sample plan. Demo changes stay on that page and clear on reload.
+
 1. **Sign in.** Open [BriefActions](https://briefactions.onrender.com) and continue
    with GitHub. Your account has its own saved meetings, plans, and reviews.
 2. **Add a conversation.** Paste a transcript, import a TXT, VTT, or SRT file, or

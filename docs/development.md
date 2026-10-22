@@ -402,3 +402,23 @@ Only public assets with build hashes receive immutable caching. HTML revalidates
 and private API responses retain `no-store`. The review polish browser suite
 checks font delivery and notices, cache boundaries, selection stability,
 keyboard evidence controls, Unknown metadata, and reduced motion.
+
+## Public product walkthrough
+
+`LandingDemo.jsx` expands the homepage example into Transcript → Review → Action
+plan. It uses a fixed, invented meeting and React state only: no extraction request,
+account reads, workspace writes, browser storage, or automatic playback. Visitors
+can edit owners and dates, choose tasks, inspect supporting words, and explicitly
+build a sample plan. Unknown details remain valid. Editing a proposal invalidates
+the previous sample plan, while its original transcript remains unchanged.
+
+Reset and reload clear demo state. The completion link points to sign-in for
+visitors or `/workspace` for signed-in users; it never imports the sample into an
+account. Step changes focus and reveal the destination heading. Inline evidence
+keeps the source accessible on narrow screens, and reduced motion disables the
+short entry transition.
+
+`tests/public-home.browser.mjs` exercises the complete demo, selection limits,
+corrections and original evidence, reset/reload, both completion destinations,
+and the absence of private API calls. All three stages get responsive and
+automated accessibility checks, in addition to the existing entry/auth tests.

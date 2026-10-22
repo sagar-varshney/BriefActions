@@ -42,8 +42,46 @@ try{
  await page.getByRole('link',{name:'Sign in',exact:true}).first().waitFor();await titleIs(page,'BriefActions');
  assert.deepEqual(privateRequests,[],'The public demo must not request private workspace data');
  assert.equal((await fetch(base+'/api/runs')).status,401,'Public HTML must not expose private API access');
- await page.getByRole('button',{name:'Show supporting passage for Review the release notes',exact:true}).focus();await page.keyboard.press('Enter');
- assert.equal(await page.locator('.demo-source-active').textContent(),'AlexPlease review the release notes.');assert.equal(await page.getByRole('button',{name:'Show supporting passage for Review the release notes',exact:true}).getAttribute('aria-pressed'),'true');
+ const demo=page.getByRole('region',{name:'Try a conversation. See the plan.',exact:true});
+ const checklist=demo.getByRole('article',{name:'Share the launch checklist',exact:true}),notes=demo.getByRole('article',{name:'Review the release notes',exact:true});
+ const planStep=demo.getByRole('button',{name:'Action plan',exact:true});
+ assert.equal(await demo.getByRole('button',{name:'Transcript',exact:true}).getAttribute('aria-current'),'step');assert.ok(await planStep.isDisabled(),'A sample plan requires an explicit review confirmation');
+ await demo.getByRole('button',{name:'See suggested tasks',exact:true}).focus();await page.keyboard.press('Enter');
+ assert.ok(await demo.getByRole('heading',{name:'Check the details. Make the call.',exact:true}).evaluate(el=>el===document.activeElement),'Focus follows the next step instead of remaining on a removed button');
+ assert.equal(await checklist.locator('dd').last().textContent(),'17 Oct 2026','Tomorrow resolves against the example meeting date');assert.deepEqual(await notes.locator('dd').allTextContents(),['Unknown','Unknown']);
+ await notes.getByRole('button',{name:'Show supporting passage for Review the release notes',exact:true}).focus();await page.keyboard.press('Enter');
+ assert.equal(await page.locator('.demo-source-active').textContent(),'AlexPlease review the release notes.');assert.equal(await notes.getByRole('button',{name:'Show supporting passage for Review the release notes',exact:true}).getAttribute('aria-pressed'),'true');assert.ok(await notes.locator('.demo-evidence').isVisible(),'Evidence remains beside the task on mobile, too');
+ await notes.getByRole('button',{name:'Edit details for Review the release notes',exact:true}).click();
+ await notes.getByLabel('Demo owner for Review the release notes',{exact:true}).fill('Alex');await notes.getByLabel('Demo deadline for Review the release notes',{exact:true}).fill('2026-10-20');
+ await checklist.getByRole('checkbox',{name:'Keep task 1',exact:true}).uncheck();assert.equal(await demo.getByRole('status').textContent(),'1 of 2 tasks selected');
+ await demo.getByRole('button',{name:'Build sample plan',exact:true}).click();
+ assert.ok(await demo.getByRole('heading',{name:'Your plan, ready to use.',exact:true}).evaluate(el=>el===document.activeElement));assert.equal(await planStep.getAttribute('aria-current'),'step');
+ assert.deepEqual(await demo.locator('.demo-plan-list h4').allTextContents(),['Review the release notes']);assert.deepEqual(await demo.locator('.demo-plan-list dd').allTextContents(),['Alex','20 Oct 2026']);
+ assert.ok(await demo.getByText('Details changed during this demo review.',{exact:true}).isVisible());await demo.locator('.demo-plan-list summary').click();assert.equal(await demo.locator('.demo-plan-list .demo-evidence p').textContent(),'“Please review the release notes.”','Corrections never rewrite the original evidence');
+ assert.equal(await demo.getByRole('link',{name:'Try with your meeting',exact:true}).getAttribute('href'),'/sign-in');
+ await demo.getByRole('button',{name:'Back to review',exact:true}).click();assert.equal(await notes.getByLabel('Demo owner for Review the release notes',{exact:true}).inputValue(),'Alex');
+ await notes.getByLabel('Demo owner for Review the release notes',{exact:true}).fill('   ');assert.ok(await planStep.isDisabled(),'Editing invalidates the old sample plan');assert.equal(await notes.locator('dd').first().textContent(),'Unknown');
+ await notes.getByRole('checkbox',{name:'Keep task 2',exact:true}).uncheck();assert.ok(await demo.getByRole('button',{name:'Build sample plan',exact:true}).isDisabled());assert.ok(await demo.getByText('Keep at least one task to build the sample plan.',{exact:true}).isVisible());
+ await notes.getByRole('checkbox',{name:'Keep task 2',exact:true}).check();await demo.getByRole('button',{name:'Build sample plan',exact:true}).click();assert.equal(await demo.locator('.demo-plan-list dd').first().textContent(),'Unknown','Unknown is allowed in the reviewed plan');
+ await demo.getByRole('button',{name:'Reset demo',exact:true}).click();assert.ok(await demo.getByRole('button',{name:'See suggested tasks',exact:true}).isVisible());assert.ok(await planStep.isDisabled());
+ // Every stage remains usable at narrow widths and independent of workspace data.
+ for(const width of [1440,768,390,320]){
+  await page.setViewportSize({width,height:1000});await demo.getByRole('button',{name:'Reset demo',exact:true}).click();
+  for(let stage=0;stage<3;stage++){
+   if(stage===1)await demo.getByRole('button',{name:'Review',exact:true}).click();
+   if(stage===2)await demo.getByRole('button',{name:'Build sample plan',exact:true}).click();
+   if(stage>0){const box=await demo.locator('#demo-stage h3').boundingBox();assert.ok(box.y>=0&&box.y+box.height<=1000,`Demo stage ${stage+1} at ${width}: the next step is brought into view`);}
+   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`Demo stage ${stage+1} at ${width}: no overflow`);
+   assert.equal(await demo.locator('.demo-stage-content').evaluate(el=>getComputedStyle(el).animationName),'none','Reduced motion disables step transitions');
+   if([1440,320].includes(width)){
+    const result=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa','wcag22aa']).analyze();checks.push({label:`demo-${stage+1}-${width}`,violations:result.violations});assert.deepEqual(result.violations.map(({id,nodes})=>({id,targets:nodes.map(n=>n.target)})),[]);
+   }
+   if([1440,390].includes(width))await demo.screenshot({path:path.join(shots,`demo-${stage+1}-${width}.png`)});
+  }
+ }
+ await demo.getByRole('button',{name:'Back to review',exact:true}).click();await notes.getByRole('button',{name:'Edit details for Review the release notes',exact:true}).click();await notes.getByLabel('Demo owner for Review the release notes',{exact:true}).fill('Demo-only change');
+ await page.reload();await demo.getByRole('button',{name:'See suggested tasks',exact:true}).click();assert.deepEqual(await notes.locator('dd').allTextContents(),['Unknown','Unknown'],'Reload clears demo edits');await demo.getByRole('button',{name:'Reset demo',exact:true}).click();
+ assert.deepEqual(privateRequests,[],'The interactive walkthrough never reads or writes private workspace data');
  await page.getByText('Do I need a technical background?',{exact:true}).click();assert.equal(await page.locator('details').first().getAttribute('open'),'');
  // The homepage keeps its art direction; choosing a theme starts at sign-in.
  assert.equal(await page.getByLabel('Color theme').count(),0);
@@ -97,6 +135,7 @@ try{
  await page.goto(base);await page.getByRole('heading',{name:'Good conversations. Clear next steps.'}).waitFor();await page.getByRole('link',{name:'Open workspace',exact:true}).first().waitFor();
  for(const width of [1101,1180,1440,1920,2560]){await page.setViewportSize({width,height:1000});await centeredHeader(page);}
  await page.setViewportSize({width:1440,height:1000});await page.screenshot({path:path.join(shots,'homepage-signed-in-header.png'),clip:{x:0,y:0,width:1440,height:150}});
+ await demo.getByRole('button',{name:'See suggested tasks',exact:true}).click();await demo.getByRole('button',{name:'Build sample plan',exact:true}).click();assert.equal(await demo.getByRole('link',{name:'Try with your meeting',exact:true}).getAttribute('href'),'/workspace','Signed-in visitors return to their workspace');
  // A stored redirect is untrusted, including when it was written outside this UI.
  await page.evaluate(()=>sessionStorage.setItem('flow.authReturn','//untrusted.example/private'));await page.goto(base+'/sign-in');await page.getByText('alice@example.test',{exact:true}).waitFor();assert.equal(new URL(page.url()).origin,base);assert.equal(new URL(page.url()).pathname,'/meetings');
  // A fresh failed callback exposes no provider text or private data and allows retry.
@@ -146,5 +185,5 @@ try{
  await page.goto(localBase+'/meetings');await page.getByRole('button',{name:'Analyze transcript',exact:true}).waitFor();assert.equal(new URL(page.url()).pathname,'/meetings','Explicit section routes must bypass the default selector');
  await page.goto(localBase+'/privacy');await page.getByRole('heading',{name:'Privacy & your data',exact:true}).waitFor();await titleIs(page,'Privacy & your data · BriefActions');
  await page.getByRole('link',{name:'Back to BriefActions',exact:true}).click();await titleIs(page,'BriefActions');
- assert.deepEqual(errors,[]);console.log('Public entry checks passed: fixed light/dark homepage, preserved sign-in/workspace theme preferences, sample-only demo, private API gate, responsive accessibility, forced-color fallbacks, keyboard evidence, email and GitHub PKCE callbacks, intended route, unsafe redirect rejection, callback failure recovery, and honest local preview.');
+ assert.deepEqual(errors,[]);console.log('Public entry checks passed: three-step sample demo, edits and selections, original evidence, confirmation and reset, no private demo requests, responsive accessibility, reduced motion, centered header, preserved themes, private API gate, PKCE callbacks, intended route, unsafe redirect rejection, callback recovery, and local preview.');
 }catch(error){await debugPage?.screenshot({path:path.join(shots,'public-entry-failure.png'),fullPage:true});console.error(await debugPage?.locator('body').innerText());throw error;}finally{await writeFile(path.join(shots,'public-accessibility.json'),JSON.stringify(checks,null,2));await browser?.close();for(const server of [managed,local]){server.closeAllConnections();await server.shutdown();}await rm(folder,{recursive:true,force:true});}
