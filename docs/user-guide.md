@@ -60,6 +60,36 @@ appears when a saved meeting fails to load during startup. A retry of a failed
 read does not create a new meeting or run a model. Interrupted analysis continues
 to use **Retry saved analysis**, which recovers the same saved request.
 
+## Keyboard and small-screen controls
+
+Use the **Skip to workspace** link to bypass navigation. Opening a section brings
+its heading into view below the header. In short landscape windows, the header
+scrolls with the page so it does not cover the workspace.
+
+In **Focus one task**, **Previous task** and **Next task** focus the new card.
+Press Tab to reach its **Keep task** control, then continue through its fields
+and supporting passages. Removing a selected task from the Selected filter
+moves focus to a remaining card, or back to the filter if none remain. Bulk
+selection also keeps focus on the available work. In Needs attention, a task
+that you resolve stays visible until you finish editing and leave its card.
+Your corrections and selections remain saved. Enter in a field or filter does
+not confirm a plan. To confirm, activate the confirmation button with a click,
+tap, Enter, or Space.
+
+The desktop month calendar has one date in the Tab order. Arrow keys move focus;
+Enter selects a date. Home and End move across the current row. Page Up and Page
+Down change the month; hold Shift to change the year. The date is clamped to the
+last valid day when needed, such as 31 January to 28 February. Tab back into the
+calendar to return to its last focused date. Small screens use the agenda view
+and the existing month and selected-date controls. If a focused calendar grid
+changes to the agenda, focus moves to the selected-date control. A supporting
+passage you are reading stays open when the layout changes.
+
+Opening comparison details brings their heading into view when you are still
+waiting on that action. A delayed result does not move focus away from another
+control you have started using. Review disclosures, selection labels, and action
+buttons have larger touch targets.
+
 ## Start your day
 
 **My day** brings together overdue work, deadlines today, the next seven days, and

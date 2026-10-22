@@ -41,6 +41,7 @@ import MeetingTips,{focusMeetingStep} from './MeetingTips.jsx';
 import ResearchHelp from './ResearchHelp.jsx';
 import LoadingState from './LoadingState.jsx';
 import useAfterRender from './useAfterRender.js';
+import useWorkspaceInset from './useWorkspaceInset.js';
 import useDocumentTitle from './useDocumentTitle.js';
 import ComparisonResults,{ResultSummary} from './ComparisonResults.jsx';
 import {readRoute,routePath} from './routing.js';
@@ -53,6 +54,7 @@ function reviewDrafts(proposals,decisions=[]){const byId=new Map(decisions.map(d
 const pct = value => value == null ? 'Unknown' : `${(value*100).toFixed(1)}%`;
 const duration = value => value == null ? 'Unknown' : value < 1000 ? `${value.toFixed(1)} ms` : `${(value/1000).toFixed(2)} s`;
 function Json({value}) { return <pre className="json" tabIndex={0}>{JSON.stringify(value,null,2)}</pre>; }
+function focusPageHeading(){const heading=document.querySelector('main h1');heading?.focus({preventScroll:true});heading?.scrollIntoView({block:'start',behavior:'instant'});}
 function Evidence({passages = [],onInspect,label}) {
   return <div className="evidence"><div className="eyebrow"><Icon name="quote" size={15}/> Supporting transcript</div>{passages.map((e,i)=><div key={i}><blockquote>{e.text}</blockquote><div className="evidence-footer"><span className="span-note">Characters {e.start}–{e.end} in the saved input</span>{onInspect&&<button type="button" className="text-button evidence-jump" aria-label={`Locate passage ${i+1} for ${label}`} onClick={event=>onInspect(e,event.currentTarget)}>Locate passage <Icon name="arrow" size={14}/></button>}</div></div>)}</div>;
 }
@@ -77,6 +79,7 @@ const analysisBrowsePages=new Set(['extract','today','tasks','owners','calendar'
 const activityLabels={analysis:'Analyzing your transcript…',title:'Saving meeting name…',followup:'Comparing the follow-up conversation…',update:'Saving your updated plan…',confirm:'Saving your confirmed plan…',add:'Saving the added action…',open:'Opening your meeting…'};
 
 function App({account,signOut,completeAccountDeletion,authError}) {
+  const workspaceHeader=useRef(null);useWorkspaceInset(workspaceHeader);
   const [historyStatus,setHistoryStatus]=useState('');
   const [ownerFilters,setOwnerFilters]=useState(initialOwnerFilters);
   const [calendarFilters,setCalendarFilters]=useState(initialCalendar);
@@ -98,7 +101,7 @@ function App({account,signOut,completeAccountDeletion,authError}) {
     if(next.invalid){setError('This page does not exist. Choose a section from the navigation.');if(mode==='pop')history.replaceState({},'',committedURL.current);return;}
     if(next.page==='extract' && next.runId && next.runId!==run?.id)return openRun(next.runId,mode,next.taskId);
     if(next.page==='extract' && !next.runId && run){if(!resetMeeting()){if(mode==='pop')history.replaceState({},'',committedURL.current);return;}}
-    navigationEpoch.current++;setError('');commitRoute(next,mode);if(!next.taskId)afterNavigation(()=>document.querySelector('main h1')?.focus({preventScroll:true}));
+    navigationEpoch.current++;setError('');commitRoute(next,mode);if(!next.taskId)afterNavigation(focusPageHeading);
   }
   navigation.current=navigate;
   useEffect(()=>{const pop=()=>{if(authScreen()==='workspace')navigation.current?.(readRoute(),'pop');};window.addEventListener('popstate',pop);return()=>window.removeEventListener('popstate',pop);},[]);
@@ -299,14 +302,14 @@ function App({account,signOut,completeAccountDeletion,authError}) {
     if(!stashInput()){setError('Browser storage is unavailable. Return to Extract & review and copy your unsaved transcript before opening another run.');if(mode==='pop')history.replaceState({},'',committedURL.current);return;}
     const epoch=++navigationEpoch.current;setError('');setActivity('open');setBusy(true);
     try {
-      const value=await api(`/runs/${id}`);if(epoch!==navigationEpoch.current)return;adopt(value);restoreInput(value);commitRoute({page:'extract',runId:id,taskId},mode);if(!taskId)afterRender(()=>document.querySelector('main h1')?.focus({preventScroll:true}));
+      const value=await api(`/runs/${id}`);if(epoch!==navigationEpoch.current)return;adopt(value);restoreInput(value);commitRoute({page:'extract',runId:id,taskId},mode);if(!taskId)afterRender(focusPageHeading);
     }catch(e){if(epoch===navigationEpoch.current){setError(e.message);if(e.retryable)setReadRecovery({kind:'meeting',id,taskId});if(mode==='pop')history.replaceState({},'',committedURL.current);}}finally{if(epoch===navigationEpoch.current)setBusy(false);}
   }
   async function inspect(id) {
-    const epoch=++reportEpoch.current;
+    const epoch=++reportEpoch.current,trigger=document.activeElement;
     setReportId(id);setReport(null);setCaseId('');setReportError('');setReportPending(!!id);setError('');
     if (!id) return;
-    try {const value=await api(`/benchmarks/${id}`);if(epoch===reportEpoch.current){setReport(value);setCaseId(value.report.runs[0]?.id || '');}}
+    try {const value=await api(`/benchmarks/${id}`);if(epoch===reportEpoch.current){setReport(value);setCaseId(value.report.runs[0]?.id || '');afterRender(()=>{if(readRoute().page!=='benchmark'||(document.activeElement!==trigger&&(trigger?.isConnected||document.activeElement!==document.body)))return;const heading=document.getElementById('comparison-detail-title');heading?.focus({preventScroll:true});heading?.scrollIntoView({block:'start',behavior:'instant'});});}}
     catch(e){if(epoch===reportEpoch.current)setReportError(e.message);}
     finally{if(epoch===reportEpoch.current)setReportPending(false);}
   }
@@ -323,7 +326,7 @@ function App({account,signOut,completeAccountDeletion,authError}) {
 
   return <div className="app-shell">
     <a className="skip-link" href="#workspace-main">Skip to workspace</a>
-    <header className="workspace-header">
+    <header ref={workspaceHeader} className="workspace-header">
       <ProductBrand href="/today" onClick={e=>{e.preventDefault();setPage('today');}}/>
       <nav aria-label="Main navigation">{pages.filter(p=>!['benchmark','annotations','data'].includes(p.id)).map(p=><button key={p.id} disabled={busy && !analysisBusy.current || restoring || closing && p.id!=='data'} className={`nav-item ${page===p.id?'active':''}`} aria-current={page===p.id?'page':undefined} onClick={()=>setPage(p.id)}><Icon name={p.icon} size={17}/><span>{p.name}</span></button>)}<ResearchNavigation page={page} disabled={closing || busy || restoring} onNavigate={setPage}/></nav>
       <div className="topbar-actions"><button type="button" className={`text-button account-entry ${page==='data'?'active':''}`} aria-current={page==='data'?'page':undefined} disabled={busy || restoring} onClick={()=>setPage('data')}>Data & account</button><button type="button" className="text-button help-entry" onClick={()=>setHelpTopic(page==='history'&&historySeries.open?'series':page==='owners'?'owners':page==='today'?'today':page==='calendar'?'calendar':page==='annotations'?'annotations':page==='benchmark'?'benchmark':'meetings')}>Help</button><ThemeControl/>{account&&<><span className="account-name" title={account.email}>{account.email || 'Signed in'}</span><button className="text-button" onClick={signOut}>Sign out</button></>}</div>
@@ -411,7 +414,7 @@ function App({account,signOut,completeAccountDeletion,authError}) {
           {bench?.repeat_summaries?.map((summary,n)=><section className="panel benchmark-panel" key={n}><h2>Repeated comparison checks</h2><p>See how results vary when a method runs several times on the same practice examples.</p><p>{summary.limitations}</p><div className="table-scroll" tabIndex={0} role="region" aria-label="Repeated model statistics"><table><thead><tr><th>Method / instructions version</th><th>Repeats</th><th>Detection score: average ± variation</th><th>Detection score range</th><th>Owner mean</th><th>Date mean</th><th>Support mean</th><th>Typical time: average ± variation</th><th>API cost mean</th><th>Failure rate mean</th></tr></thead><tbody>{summary.groups.map((g,i)=><tr key={i}><td>{g.model} / {g.prompt}<small className="span-note">Dataset {g.dataset_sha256.slice(0,8)}</small></td><td>{g.repeats}</td><td>{pct(g.metrics.task_f1.mean)} ± {pct(g.metrics.task_f1.stdev)}</td><td>{pct(g.metrics.task_f1.min)}–{pct(g.metrics.task_f1.max)}</td><td>{pct(g.metrics.owner_accuracy_on_matched.mean)}</td><td>{pct(g.metrics.deadline_accuracy_on_matched.mean)}</td><td>{pct(g.metrics.gold_support_proxy.mean)}</td><td>{duration(g.metrics.latency_p50_ms.mean)} ± {duration(g.metrics.latency_p50_ms.stdev)}</td><td>{g.metrics.cost_usd.known_runs===g.repeats?'$'+g.metrics.cost_usd.mean.toFixed(4):'Unknown'}</td><td>{pct(g.metrics.failure_rate.mean)}</td></tr>)}</tbody></table></div><button className="button secondary" onClick={()=>downloadJson(summary,'repeat-summary.json')}>Download repeat statistics</button></section>)}
           {reportPending&&<LoadingState label="Loading result details…" requestKey={reportId}/>}
           {reportError&&<div className="notice error" role="alert"><span className="error-copy">{reportError}</span><button type="button" className="text-button" onClick={()=>inspect(reportId)}>Retry result details</button></div>}
-          {report&&<section className="panel case-panel"><div className="panel-heading"><div><h2>Inspect: {report.report.label}</h2><p>Compare annotations with the exact retained output.</p></div><button className="button secondary" onClick={()=>downloadJson(report.report,`${report.report.label}-${report.report.dataset}.json`)}><Icon name="download" size={16}/>Full report</button></div><ResultSummary report={report.report}/><p className="form-hint">Next: choose an example conversation and compare expected tasks with suggested tasks below. Matching uses text similarity; extra suggestions need a closer look.</p><label className="case-select">Example conversation<select aria-label="Example conversation" value={caseId} onChange={e=>setCaseId(e.target.value)}>{report.report.runs.map(c=><option key={c.id}>{c.id}</option>)}</select></label>
+          {report&&<section className="panel case-panel"><div className="panel-heading"><div><h2 id="comparison-detail-title" tabIndex={-1}>Inspect: {report.report.label}</h2><p>Compare annotations with the exact retained output.</p></div><button className="button secondary" onClick={()=>downloadJson(report.report,`${report.report.label}-${report.report.dataset}.json`)}><Icon name="download" size={16}/>Full report</button></div><ResultSummary report={report.report}/><p className="form-hint">Next: choose an example conversation and compare expected tasks with suggested tasks below. Matching uses text similarity; extra suggestions need a closer look.</p><label className="case-select">Example conversation<select aria-label="Example conversation" value={caseId} onChange={e=>setCaseId(e.target.value)}>{report.report.runs.map(c=><option key={c.id}>{c.id}</option>)}</select></label>
             {activeCase&&<><div className="eyebrow">TRANSCRIPT · {activeCase.reference_date}</div><pre className="saved-transcript">{activeCase.transcript}</pre></>}
             <div className="case-columns"><div><h3>Expected tasks</h3><Json value={activeCase?.items || []}/></div><div><h3>Suggested tasks & run details</h3><Json value={prediction}/></div></div><details className="disclosure"><summary>Matches and missed tasks</summary><Json value={caseScore}/></details><details className="disclosure"><summary>Experiment fingerprints & configuration</summary><Json value={Object.fromEntries(Object.entries(report.report).filter(([key])=>!['runs','details','metrics','counts'].includes(key)))}/></details></section>}
           <ReviewedBenchmarks api={api} downloadJson={downloadJson} onAnnotate={()=>setPage('annotations')}/>

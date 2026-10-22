@@ -67,6 +67,17 @@ Public hosting uses server-side Supabase and Postgres configuration; follow the
 `.env.example` contains production placeholders, not working development credentials.
 Never expose secret keys or a database URL through React build variables.
 
+Keyboard destinations use the measured sticky-header height from
+`useWorkspaceInset`; its observer and root CSS property are cleaned up on
+unmount. Short windows release the sticky header. Task cards retain focus after
+filtered selection changes and stay mounted while an attention issue is being
+edited. Confirmation uses an explicit button action, preventing Enter in a field
+or filter from implicitly submitting a plan. Calendar focus is separate from the
+selected date; month/year keyboard changes reuse the existing read path.
+`mobile-keyboard.browser.mjs` checks real typing, focus/Tab order, wrapped
+navigation, landscape layouts, touch-target sizes, calendar shortcuts, delayed
+result focus, and both-theme accessibility.
+
 ## Routes and access
 
 Public browser routes are `/`, `/sign-in`, `/auth/callback`, and `/privacy`.
