@@ -167,6 +167,14 @@ Playwright uses `pnpm exec playwright install --with-deps chromium` to include
 system dependencies. `FLOW_SCREENSHOTS` retains screenshots; `FLOW_CHROMIUM_PATH`
 selects an existing executable.
 
+`guided-workflows.browser.mjs` checks optional three-step meeting guidance,
+keyboard focus, hide/reopen and reload behavior, preserved transcript/review
+drafts, worked research examples, explicit confirmation, and desktop/mobile
+accessibility in both themes. `ContextHelp` uses native disclosure elements;
+`MeetingTips` derives its stage from the current saved run. Its opt-in preference
+uses the existing account-scoped browser storage, with best-effort persistence.
+These components make no API requests and add no runtime dependencies.
+
 Run both development quality gates without changing retained results:
 
 ```bash

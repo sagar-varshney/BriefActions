@@ -11,6 +11,9 @@ Do not record names, accounts, or transcript content in feedback notes.
 Before starting, ask whether they understand the navigation labels. Let them open
 **Help** if they choose; observe whether they can skip and reopen the walkthrough.
 Do not explain ML terms in advance.
+Observe whether they discover the inline explanations for Unknown and supporting
+passages. Let them enable **Show meeting tips** in Help, hide them, and reopen
+them; ask whether the tips match the stage they have actually reached.
 
 1. **Create a review.** Ask them to load the example, analyze it, and explain what
    they think has been saved. Observe whether the review is easy to find.
@@ -39,6 +42,8 @@ For someone interested in quality tools, also ask them to explain what an exampl
 dataset and expected task are, select a passage using the keyboard, and explain
 one comparison row. Observe whether they distinguish extra suggestions from proven
 unsupported outputs and can find the detailed score explanations.
+Let them open the worked example first and explain which parts are hypothetical
+and which counts come from the saved comparison.
 
 For each task, record completed without help / completed with help / blocked,
 approximate time, unfamiliar words, misplaced clicks, and the participant's own

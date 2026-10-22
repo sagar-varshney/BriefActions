@@ -3,6 +3,7 @@ import TranscriptImport from './TranscriptImport.jsx';
 import React,{useEffect,useRef,useState} from 'react';
 import useAnnotationDraft,{emptyAnnotation} from './useAnnotationDraft';
 import WorkflowGuide from './WorkflowGuide.jsx';
+import ResearchHelp from './ResearchHelp.jsx';
 import useAfterRender from './useAfterRender.js';
 import {movePassageSelection} from './passageSelection.js';
 
@@ -91,12 +92,12 @@ export default function AnnotationReviewer({api,downloadJson,onHelp}) {
   }downloadJson(value.manifest,`reviewed-${value.snapshot.slice(0,8)}-manifest.json`);}
   const filter=(setter,value)=>{setter(value);setOffset(0);};
   return <>
-    <div className="page-intro"><div><div className="eyebrow accent">BUILD TRUSTWORTHY LABELS</div><h1 tabIndex={-1}>Label & review examples.</h1><p>Write the tasks a conversation should produce, then have another person check your answers. This optional tool helps test extraction methods.</p></div></div>
+    <div className="page-intro"><div><div className="eyebrow accent">BUILD TRUSTWORTHY LABELS</div><h1 tabIndex={-1}>Label & review examples.</h1><p>Write the tasks you expect from a conversation, then have a separate person review it independently. These reference answers help check how well the app finds tasks.</p></div></div>
     <WorkflowGuide id="example-review-guide" title="Build a reliable example set" description="Highlight a passage, record its expected task, and collect a separate review." onHelp={onHelp} steps={[
       {title:'Choose an example',text:'Start with invented practice conversations or add a permitted transcript.',target:'practice-example-title',action:'Choose practice examples'},
       {title:'Label the tasks',text:'Open an example, start your reviewer session, and select the words supporting each expected task.',...(active?{target:'active-example-title',action:'Continue labeling'}:{target:'example-list-title',action:'Find an example'})},
       {title:'Review and lock answers',text:'Collect independent reviews, resolve differences, then lock the agreed answers for comparison.',target:'lock-examples-title',action:'See how locking works'}
-    ]}/>
+    ]}><ResearchHelp mode="examples"/></WorkflowGuide>
     <div className="notice">Reviewers declare their own names and independent work; this app cannot verify either. Each first review starts empty or restores that reviewer’s unfinished draft. Submitted answers cannot be edited.</div>
     {error&&<div className="notice error" role="alert">{error}</div>}
     <section className="panel annotation-panel" aria-label="Practice example import">

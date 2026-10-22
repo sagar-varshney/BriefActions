@@ -6,11 +6,10 @@ const guides={
   ['Prepare the next meeting','Open Prepare next meeting to review unfinished tasks, saved conversations, and updates since the last saved agenda. Completed tasks and replaced plan versions do not add duplicate work.','Add next conversation starts a separate plan in the series. To revise existing commitments, open their meeting and use Review a follow-up conversation.'],
   ['Write and check the agenda','Create an agenda from all current unfinished tasks, then edit the title and discussion topics. Save it to sync across devices or copy it after checking the latest details.','Missing owners and dates stay Unknown. Saving an agenda does not schedule a meeting or create tasks. Erasing a transcript also removes saved agenda versions that used it.']
  ]},
- meetings:{label:'Meeting tasks',page:'extract',steps:[
-  ['Add a conversation','Paste a transcript, import a file, or use Try an example. Choose the meeting date so words like “tomorrow” can be understood.','The example is invented. Loading it does not start analysis.'],
-  ['Check suggested tasks','Click Analyze transcript to save the input and get suggestions. Open Edit & evidence to correct a task, owner, or date. Locate passage shows the original words.','Unknown means no value was identified. Check the source before filling it in.'],
-  ['Choose what to keep','Select the tasks you want, then confirm your selection. Unselected suggestions are rejected. Review edits save automatically before confirmation.','Confirmation locks this plan. Editing the transcript later creates a separate analysis when you submit it.'],
-  ['Follow through','Set tasks to To do, In progress, or Done. Correct deadline changes a date with a required reason while Activity keeps its history. Use All tasks to see confirmed work across meetings, or Meeting history to return to one conversation. Copy or download your confirmed action plan, and use Activity to see what changed.','Progress updates preserve the confirmed task and its original evidence.']
+ meetings:{label:'Your first meeting',page:'extract',openLabel:'Return to your meeting',steps:[
+  ['Add your conversation','Paste a transcript, import a text or caption file, or use Try an example. Choose the date the meeting happened, then select Analyze transcript when you are ready.','The meeting date gives “tomorrow” its context. Loading an example fills the editor but does not start analysis.'],
+  ['Review the suggestions','A proposal is a suggested task. Open Edit & evidence to check its supporting passage: the exact original words. Owner means the person doing the work, who may differ from the speaker. Correct details you can establish, then choose Keep task for the work you want.','Unknown means no clear value was identified. It is fine to keep Unknown; check the conversation before filling a gap. Review edits save automatically.'],
+  ['Confirm your action plan','Select Confirm selected tasks when your choices are ready. Unselected proposals are rejected. If there is no work to keep, you can confirm an empty plan. Afterwards, update progress here or find your tasks in All tasks and Calendar.','Reading this walkthrough never selects or confirms tasks. Meeting tips can stay beside your work and follow the stage you actually reach.']
  ]},
  today:{label:'My day',page:'today',steps:[
   ['Choose your next step','My day brings together overdue tasks, today’s deadlines, the next seven days, and saved reviews waiting for confirmation. It includes every named owner in your private workspace.','Completed tasks are excluded. Dates use your device’s calendar day.'],
@@ -39,7 +38,7 @@ const guides={
   ['Inspect before choosing','Compare expected tasks with the method’s suggestions and the original conversation. Detailed scores explain matching and passage checks. You can also compare your own locked, reviewed example sets.','These measurements describe the selected examples. They do not establish accuracy on all real meetings.']
  ]}
 };
-export default function HelpGuide({initialTopic='meetings',onClose,onNavigate,navigationDisabled}){
+export default function HelpGuide({initialTopic='meetings',onClose,onNavigate,onMeetingTips,navigationDisabled}){
  const [topic,setTopic]=useState(initialTopic),[step,setStep]=useState(0),ref=useRef(null),heading=useRef(null),close=useRef(null);
  useEffect(()=>{const dialog=ref.current,previous=document.activeElement;dialog.showModal();close.current.focus();return()=>{dialog.close();if(previous?.isConnected)previous.focus();};},[]);
  function move(index){setStep(index);afterRender(()=>{heading.current?.focus();heading.current?.scrollIntoView({block:'nearest'});});}
@@ -51,8 +50,12 @@ export default function HelpGuide({initialTopic='meetings',onClose,onNavigate,na
   <label className="field-label">Walkthrough<select aria-label="Walkthrough" value={topic} onChange={event=>{setTopic(event.target.value);setStep(0);}}>{Object.entries(guides).map(([key,g])=><option key={key} value={key}>{g.label}</option>)}</select></label>
   <section className="guide-step" aria-labelledby="guide-step-title"><p className="eyebrow" role="status">Step {step+1} of {guide.steps.length}</p><h3 id="guide-step-title" ref={heading} tabIndex={-1}>{current[0]}</h3><p>{current[1]}</p><p className="guide-example">{current[2]}</p></section>
   <div className="guide-actions"><button type="button" className="button secondary" disabled={step===0} onClick={()=>move(step-1)}>Previous step</button>{step<guide.steps.length-1?<button type="button" className="button primary" onClick={()=>move(step+1)}>Next step</button>:<button type="button" className="button primary" onClick={onClose}>Finish guide</button>}<button type="button" className="text-button" onClick={onClose}>Skip walkthrough</button></div>
-  <button type="button" className="text-button guide-open" disabled={navigationDisabled} onClick={()=>{onClose();onNavigate(guide.page);}}>Open {guide.label.toLowerCase()} workspace</button>
+  {topic==='meetings'&&onMeetingTips&&<div className="guide-follow"><p>Want guidance beside your work?</p><button className="button secondary" type="button" disabled={navigationDisabled} onClick={onMeetingTips}>Show meeting tips</button><small>Optional. Hide anytime and reopen from Help.</small></div>}
+  <button type="button" className="text-button guide-open" disabled={navigationDisabled} onClick={()=>{onClose();onNavigate(guide.page);}}>{guide.openLabel||`Open ${guide.label.toLowerCase()} workspace`}</button>
   <details className="guide-glossary"><summary>Words used in this app</summary><dl>
+   <dt>Proposal (suggested task)</dt><dd>A possible action found in the conversation. It becomes part of the plan only when you select and confirm it.</dd>
+   <dt>Owner</dt><dd>The person responsible for doing the work. The person speaking may be asking someone else to act.</dd>
+   <dt>Unknown</dt><dd>No clear value was identified. Check the original conversation, supply a detail you can establish, or leave it Unknown. It does not prove the conversation contains no answer.</dd>
    <dt>Supporting passage (evidence)</dt><dd>The exact words linked to a suggested task. Your correction is recorded separately from the original passage.</dd>
    <dt>Example dataset (corpus)</dt><dd>A collection of conversations used to check extraction, with expected answers where available.</dd>
    <dt>Expected tasks (gold labels)</dt><dd>The reference answers used for comparison. Draft answers can contain mistakes; independent reviews help check them.</dd>

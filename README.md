@@ -31,6 +31,9 @@ and build a sample plan. Demo changes stay on that page and clear on reload.
 
 New accounts start at **Extract & review**. Returning users open **My day**.
 Short walkthroughs and a glossary are available under **Help** throughout the tool.
+Choose **Show meeting tips** for optional guidance beside your transcript, review,
+and confirmed plan. Inline explanations define unfamiliar terms; Research tools
+include a worked example before the technical scores.
 
 The public app runs on free hosting, so the first visit after inactivity can be
 slower while the server wakes up. [About Render’s free-hosting behavior](https://render.com/docs/free#spinning-down-on-idle).

@@ -20,6 +20,27 @@ need a machine-learning background to turn a meeting into tasks. Open **Help** a
 in the workspace for a short walkthrough and glossary. You can close or skip it
 without changing your work, and open it again later.
 
+The **Your first meeting** walkthrough follows three steps: add a conversation,
+review suggestions, and confirm your plan. In Help, choose **Show meeting tips**
+to keep guidance beside your work. Tips follow the stage you actually reach;
+their buttons focus the relevant section without analyzing, selecting, or
+confirming anything. **Hide meeting tips** dismisses them. Reopen them through
+Help whenever needed. The choice is remembered in this browser for your account,
+not across devices; storage must be available to remember it after a reload.
+
+Open the short explanations beside the transcript and review controls using a
+click, tap, or keyboard Enter. A **proposal** is a suggested task. Its **supporting
+passage** contains the original words; corrections never rewrite those words.
+The **owner** does the work and may differ from the speaker. **Unknown** means the
+app did not identify a clear value, not that the conversation has no answer.
+Check the source, enter details you can establish, or leave Unknown.
+
+Research tools offer **How does a comparison work?** and **What does labeling an
+example mean?**. These use an invented conversation to explain expected answers,
+missing owners and dates, tasks found or missed, independent review, and locked
+example sets. They do not run a model, import examples, change scores, or create
+tasks. Technical scores remain available in their existing disclosures.
+
 ## Start your day
 
 **My day** brings together overdue work, deadlines today, the next seven days, and

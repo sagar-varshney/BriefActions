@@ -36,6 +36,9 @@ import ResearchNavigation from './ResearchNavigation.jsx';
 import WorkspaceLayout from './WorkspaceLayout.jsx';
 import HelpGuide from './HelpGuide.jsx';
 import WorkflowGuide from './WorkflowGuide.jsx';
+import ContextHelp from './ContextHelp.jsx';
+import MeetingTips,{focusMeetingStep} from './MeetingTips.jsx';
+import ResearchHelp from './ResearchHelp.jsx';
 import useAfterRender from './useAfterRender.js';
 import useDocumentTitle from './useDocumentTitle.js';
 import ComparisonResults,{ResultSummary} from './ComparisonResults.jsx';
@@ -76,6 +79,7 @@ function App({account,signOut,completeAccountDeletion,authError}) {
   const [ownerFilters,setOwnerFilters]=useState(initialOwnerFilters);
   const [calendarFilters,setCalendarFilters]=useState(initialCalendar);
   const [helpTopic,setHelpTopic]=useState(null);
+  const [meetingTips,setMeetingTips]=useState(()=>{try{return accountStorage.getItem('flow.meetingTips')==='show';}catch{return false;}});
   const [taskFilters,setTaskFilters]=useState(initialTaskFilters),[taskTarget,setTaskTarget]=useState(()=>readRoute().taskId || null);
   const [page,setPageState] = useState(()=>readRoute().page);
   const [historySeries,setHistorySeries]=useState(()=>({open:!!readRoute().seriesView,id:readRoute().seriesId||null}));
@@ -118,6 +122,8 @@ function App({account,signOut,completeAccountDeletion,authError}) {
   const [busy,setBusy] = useState(false);
   const afterRender=useAfterRender(!busy && !restoring);
   const afterNavigation=useAfterRender(!restoring);
+  function showMeetingTips(){setHelpTopic(null);setMeetingTips(true);try{accountStorage.setItem('flow.meetingTips','show');}catch{}setPage('extract');afterNavigation(()=>{const heading=document.getElementById('meeting-tips-title');heading?.focus({preventScroll:true});heading?.scrollIntoView({block:'start',behavior:'instant'});});}
+  function hideMeetingTips(){setMeetingTips(false);try{accountStorage.removeItem('flow.meetingTips');}catch{}afterNavigation(()=>focusMeetingStep(run));}
   const [error,setError] = useState('');
   const [bench,setBench] = useState(null);
   const [report,setReport] = useState(null);
@@ -315,7 +321,7 @@ function App({account,signOut,completeAccountDeletion,authError}) {
       <nav aria-label="Main navigation">{pages.filter(p=>!['benchmark','annotations','data'].includes(p.id)).map(p=><button key={p.id} disabled={busy && !analysisBusy.current || restoring || closing && p.id!=='data'} className={`nav-item ${page===p.id?'active':''}`} aria-current={page===p.id?'page':undefined} onClick={()=>setPage(p.id)}><Icon name={p.icon} size={17}/><span>{p.name}</span></button>)}<ResearchNavigation page={page} disabled={closing || busy || restoring} onNavigate={setPage}/></nav>
       <div className="topbar-actions"><button type="button" className={`text-button account-entry ${page==='data'?'active':''}`} aria-current={page==='data'?'page':undefined} disabled={busy || restoring} onClick={()=>setPage('data')}>Data & account</button><button type="button" className="text-button help-entry" onClick={()=>setHelpTopic(page==='history'&&historySeries.open?'series':page==='owners'?'owners':page==='today'?'today':page==='calendar'?'calendar':page==='annotations'?'annotations':page==='benchmark'?'benchmark':'meetings')}>Help</button><ThemeControl/>{account&&<><span className="account-name" title={account.email}>{account.email || 'Signed in'}</span><button className="text-button" onClick={signOut}>Sign out</button></>}</div>
     </header>
-    {helpTopic&&<HelpGuide initialTopic={helpTopic} onClose={()=>setHelpTopic(null)} onNavigate={target=>target==='series'?openSeries():setPage(target)} navigationDisabled={busy || restoring || closing || !!pending}/>}
+    {helpTopic&&<HelpGuide onMeetingTips={showMeetingTips} initialTopic={helpTopic} onClose={()=>setHelpTopic(null)} onNavigate={target=>target==='series'?openSeries():setPage(target)} navigationDisabled={busy || restoring || closing || !!pending}/>}
     <main id="workspace-main" tabIndex={-1} aria-busy={restoring || busy && page==='extract'}>
       <div className="topbar"><span>Workspace <span className="slash">/</span> {pages.find(p=>p.id===page).name}</span><span className="local-badge"><span/> {account?'Private account':'Local workspace'}</span></div>
       <div className={`content ${run && page==='extract'?'meeting-content':''}`}>
@@ -324,6 +330,7 @@ function App({account,signOut,completeAccountDeletion,authError}) {
         {authError&&<div className="notice error" role="alert">{authError}</div>}{error&&<div className="notice error" role="alert">{error}{!config&&<button className="text-button" onClick={()=>location.reload()}>Retry workspace loading</button>}<button aria-label="Dismiss error" onClick={()=>setError('')}>×</button></div>}
         {page==='extract'&&<>
           {run?<div className="meeting-heading"><div className="meeting-title"><h1 tabIndex={-1}>{run.title || `Meeting ${run.reference_date}`}</h1><p>{run.reference_date} <span aria-hidden="true">·</span> {run.status==='confirmed'?'Your confirmed plan':'Review your suggested tasks'}</p></div><div className="meeting-heading-actions"><button type="button" className="button secondary" disabled={busy || restoring || !!pending} onClick={newMeeting}>New meeting</button><button type="button" className="text-button" aria-label="Edit meeting input" aria-expanded={editorVisible} aria-controls="meeting-editor" disabled={busy || restoring || !!pending} onClick={()=>editorVisible?setEditorOpen(false):openEditor()}>{editorVisible?'Close editor':'Edit meeting'}</button></div></div>:<div className="page-intro extraction-intro"><div><div className="eyebrow accent">START HERE · EXTRACT & REVIEW</div><h1 tabIndex={-1}>Make your next move <em>clear.</em></h1><p>Add a transcript, review the suggested actions, then confirm your plan.</p></div><div className="intro-note"><Icon name="check" size={17}/><span>Evidence attached.<br/><strong>You make the final call.</strong></span></div></div>}
+          {meetingTips&&<MeetingTips run={run} disabled={busy||restoring||!!pending} onHide={hideMeetingTips} onHelp={()=>setHelpTopic('meetings')}/>}
           {run?.superseded_by&&<div className="notice" role="status">This is an earlier plan version. Its tasks and evidence are preserved; All tasks uses the newer version.{run.superseded_available?<button className="text-button" disabled={busy} onClick={()=>openRun(run.superseded_by)}>Open newer plan</button>:<p>The newer version has been deleted.</p>}</div>}
           {run&&<SeriesMembership key={`series-${run.id}`} run={run} client={draftClient} disabled={busy||restoring||!!pending} onUpdate={setRun} onManage={()=>openSeries()} onPrepare={openSeries}/>}
           {(!run?.settings?.plan_update||run.status==='confirmed')&&<WorkspaceSummary run={run} drafts={drafts} selected={selected}/>}
@@ -342,7 +349,7 @@ function App({account,signOut,completeAccountDeletion,authError}) {
             <TranscriptImport disabled={busy || restoring} onUse={value=>{changeInput({transcript:value,reference_date:'',title:''});setAnalysisStatus('Transcript imported. Choose the meeting date, then analyze.');document.getElementById('meeting-date').focus();}}/>
             <label className="sr-only" htmlFor="transcript">Meeting transcript</label><textarea id="transcript" className="transcript" disabled={busy || restoring} value={transcript} onChange={e=>changeInput({transcript:e.target.value})} maxLength={config?.max_transcript || 100000} required placeholder="Maya: I’ll send the report tomorrow…"/>
             <div className="input-footer"><div className="settings"><label>Meeting date<input id="meeting-date" type="date" disabled={busy || restoring} value={meetingDate} onChange={e=>changeInput({reference_date:e.target.value})} required/></label><label>Maximum groups<select aria-label="Maximum groups" disabled={busy || restoring} value={clusters} onChange={e=>changeInput({clusters:Number(e.target.value)})}>{[1,2,3,4,5,6].map(n=><option key={n}>{n}</option>)}</select></label></div><button className="button primary" disabled={busy || !config || restoring}>{busy?'Working…':'Analyze transcript'}<Icon name={busy?'spinner':'arrow'} size={17} className={busy?'icon-spin':''}/></button></div>
-            <div className="form-hint">Relative deadlines use the meeting date. Missing people and exact dates stay <strong>Unknown</strong>.</div>
+            <div className="form-hint">Relative deadlines use the meeting date. Missing people and exact dates stay <strong>Unknown</strong>.</div><ContextHelp title="Why is a person or date Unknown?"><p>Unknown means the app did not identify a clear value. It is not proof that the conversation contains no answer. Check the original words, supply a detail you can establish, or leave Unknown.</p><p>For example, “Alex: Please review the notes” does not name the person doing the review or an exact deadline. Alex is the speaker, which does not automatically make Alex the owner.</p></ContextHelp>
             {config&&transcript===config.sample_transcript&&meetingDate===config.sample_reference_date&&<p className="notice" role="status">Synthetic example meeting · {config.sample_reference_date}. Use your actual meeting date for your own transcript.</p>}
             {run&&<button type="button" className="text-button discard-input" disabled={busy || restoring || !!pending} onClick={discardInput}>Discard transcript draft</button>}
           </form>
@@ -381,12 +388,12 @@ function App({account,signOut,completeAccountDeletion,authError}) {
         {page==='calendar'&&<Calendar refreshToken={analysisRevision} filters={calendarFilters} onFilters={setCalendarFilters} onOpen={item=>openRun(item.run_id,'push',item.proposal_id)} busy={busy || restoring || !!pending}/>}
         {page==='history'&&(historySeries.open?<MeetingSeries key={historySeries.id||'series-list'} seriesId={historySeries.id} client={draftClient} busy={busy||restoring||!!pending} onBack={()=>historySeries.id?openSeries():setPage('history')} onSelect={openSeries} onOpen={(id,task)=>openRun(id,'push',task)} onStart={meetingInSeries}/>:<MeetingHistory refreshToken={analysisRevision} key={historyStatus} initialStatus={historyStatus} onOpen={openRun} onStart={newMeeting} onSeries={()=>openSeries()} busy={busy || restoring || !!pending}/>)}
         {page==='benchmark'&&<>
-          <div className="page-intro"><div><div className="eyebrow accent">QUALITY BEFORE GUESSWORK</div><h1 tabIndex={-1}>Compare extraction methods.</h1><p>See how different methods turn conversations into tasks. You can use this app without setting up these optional checks.</p></div></div>
+          <div className="page-intro"><div><div className="eyebrow accent">QUALITY BEFORE GUESSWORK</div><h1 tabIndex={-1}>Compare extraction methods.</h1><p>Check how well an approach finds tasks by comparing its saved suggestions with expected answers. These optional checks help improve extraction.</p></div></div>
           <WorkflowGuide id="comparison-guide" title="Check a method in three steps" description="Test suggestions against expected answers, then inspect the differences." onHelp={()=>setHelpTopic('benchmark')} steps={[
             {title:'Choose examples',text:'Practice examples help improve a method. Reserved test examples check it afterwards.',target:'comparison-table-title',action:'Choose an example set'},
             {title:'Compare the results',text:'Start with tasks found, extra suggestions, response time, and failures. Select a method name to see its examples.'},
             {title:'Inspect the differences',text:'Check the original conversation against expected and suggested tasks. Detailed scores explain how matching works.'}
-          ]}/>
+          ]}><ResearchHelp mode="comparison"/></WorkflowGuide>
           <div className="stat-grid"><div className="stat"><span>LABELED EXAMPLE CONVERSATIONS</span><strong>84</strong><small>Invented examples across two datasets</small></div><div className="stat"><span>PRACTICE / RESERVED TEST</span><strong>42 / 42</strong><small>30 + 12 in each set; related scenarios</small></div><div className="stat"><span>TEST DETECTION SCORE (F1)</span><strong>{pct(bench?.reports.find(r=>r.label==='rules' && r.dataset==='test.jsonl')?.metrics.task_f1)}</strong><small>Text-based task matching; higher is better</small></div></div>
           <div className="panel benchmark-panel"><div className="panel-heading"><div><h2 id="comparison-table-title" tabIndex={-1}>Extraction method comparison</h2><p>Choose a method name to inspect its saved results. Nothing is run automatically.</p></div><label className="split-filter">Example set<select aria-label="Example set" value={split} onChange={e=>setSplit(e.target.value)}><option value="test.jsonl">Reserved test examples</option><option value="dev.jsonl">Practice examples</option><option value="revision-dev">Revision v1 practice examples</option><option value="revision-test">Revision v1 reserved test examples</option><option value="all">All reports</option></select></label></div>
             {!bench?<p className="loading">Loading comparisons…</p>:<ComparisonResults reports={bench.reports.filter(r=>split==='all' || (split.startsWith('revision-') ? r.dataset_sha256===bench.additional_corpora?.[0]?.splits[split==='revision-dev'?'dev':'test'].sha256 : r.dataset_sha256===bench.manifest.splits[split==='dev.jsonl'?'dev':'test'].sha256))} selectedId={reportId} onInspect={inspect}/>}
