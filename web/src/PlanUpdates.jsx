@@ -9,7 +9,7 @@ const fields=['task','owner','deadline'];
 function ChangeIcon({kind}){return <Icon name={kind} size={16} className="plan-change-icon"/>;}
 const read=key=>{try{return JSON.parse(accountStorage.getItem(key)||'null');}catch{return null;}};
 
-export function FollowupForm({run,client,busy,onStart}){
+export function FollowupForm({run,client,busy,comparing=busy,onStart}){
  const key=`flow.planUpdateInput.${run.id}.${client}`;
  const [input,setInput]=useState(()=>read(key)||{transcript:'',reference_date:'',request_id:null});
  const [error,setError]=useState('');
@@ -20,13 +20,13 @@ export function FollowupForm({run,client,busy,onStart}){
   <label className="field-label">Follow-up meeting date<input aria-label="Follow-up meeting date" type="date" min={run.reference_date} value={input.reference_date} onChange={e=>change({reference_date:e.target.value})} required disabled={busy}/></label>
   <p className="form-hint">Use the follow-up date for “tomorrow” and weekdays. Comparison saves a separate draft; your current plan stays active until you confirm.</p>
   {error&&<p className="notice error" role="alert">{error} Retry the same input to recover a completed comparison.</p>}
-  <button className="button primary" disabled={busy}>{busy?'Comparing…':input.request_id?'Retry comparison':'Compare with this plan'}</button></form>
+  <button className="button primary" disabled={busy} aria-busy={comparing}>{comparing?'Comparing…':input.request_id?'Retry comparison':'Compare with this plan'}</button></form>
  </div></details>;
 }
 
 function defaults(rows,decisions=[]){const saved=new Map(decisions.map(d=>[d.change_id,d]));return rows.filter(r=>r.kind!=='unchanged').map(r=>saved.get(r.change_id)||{change_id:r.change_id,apply:false,...Object.fromEntries(fields.map(k=>[k,(r.after||r.before)[k]]))});}
 function FieldSummary({task}){return <><p className="plan-task-name">{task.task}</p><dl className="plan-change-meta"><div><dt>Owner</dt><dd>{task.owner}</dd></div><div><dt>Deadline</dt><dd>{task.deadline}</dd></div></dl></>;}
-export default function PlanChangeReview({run,client,busy,onConfirm,renderEvidence,onOpen,onViewChange=()=>{}}){
+export default function PlanChangeReview({run,client,busy,confirming=busy,onConfirm,renderEvidence,onOpen,onViewChange=()=>{}}){
  const update=run.settings.plan_update,rows=update.rows,confirmed=run.status==='confirmed';
  const confirmedDecisions=run.events.find(e=>e.kind==='plan_update_review')?.payload.decisions;
  const key=`flow.planUpdateReview.${run.id}.${client}`,server=run.update_draft||{version:0,decisions:[]},cached=useRef(read(key));
@@ -70,7 +70,7 @@ export default function PlanChangeReview({run,client,busy,onConfirm,renderEviden
     <details className="plan-change-evidence"><summary>Check supporting passages</summary>{row.before&&<div><h4>Previous conversation</h4>{renderEvidence(row.before,`previous task ${number}`)}</div>}{!!row.evidence.length&&<div><h4>Follow-up conversation</h4>{renderEvidence({evidence:row.evidence},`follow-up task ${number}`)}</div>}</details>
    </article>;})}
    {!confirmed&&<><p className="form-hint" role="status">{status}</p>{error&&<p className="notice error" role="alert">{error}</p>}{(error||blocked)&&<div className="plan-change-actions"><button className="button secondary" type="button" onClick={retrySave} disabled={busy||blocked}>Retry saving review</button><button className="button secondary" type="button" onClick={reload} disabled={busy}>Use saved review</button></div>}
-    <p className="plan-confirmation-help" id="plan-confirmation-help">Unapproved changes keep the previous task, or skip a new task. Confirmation replaces the previous version in All tasks and carries over progress for retained tasks.</p><div className="plan-confirmation" role="region" aria-label="Review confirmation"><strong role="status">{selected} of {decisions.length} changes approved.</strong><button className="button primary" aria-describedby="plan-confirmation-help" disabled={busy||blocked}>{busy?'Saving…':'Confirm updated plan'}</button></div>
+    <p className="plan-confirmation-help" id="plan-confirmation-help">Unapproved changes keep the previous task, or skip a new task. Confirmation replaces the previous version in All tasks and carries over progress for retained tasks.</p><div className="plan-confirmation" role="region" aria-label="Review confirmation"><strong role="status">{selected} of {decisions.length} changes approved.</strong><button className="button primary" aria-describedby="plan-confirmation-help" disabled={busy||blocked} aria-busy={confirming}>{confirming?'Saving…':'Confirm updated plan'}</button></div>
    </>}
   </form>
  </section>;

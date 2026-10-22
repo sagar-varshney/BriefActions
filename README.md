@@ -34,6 +34,8 @@ Short walkthroughs and a glossary are available under **Help** throughout the to
 Choose **Show meeting tips** for optional guidance beside your transcript, review,
 and confirmed plan. Inline explanations define unfamiliar terms; Research tools
 include a worked example before the technical scores.
+Requests show the action in progress, explain longer waits, and offer a nearby
+retry when loading fails. Saved confirmations appear after the server responds.
 
 The public app runs on free hosting, so the first visit after inactivity can be
 slower while the server wakes up. [About Render’s free-hosting behavior](https://render.com/docs/free#spinning-down-on-idle).

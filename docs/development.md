@@ -175,6 +175,15 @@ accessibility in both themes. `ContextHelp` uses native disclosure elements;
 uses the existing account-scoped browser storage, with best-effort persistence.
 These components make no API requests and add no runtime dependencies.
 
+`interaction-feedback.browser.mjs` holds real test responses to check pending
+analysis, confirmation, rename success, disabled duplicate refreshes, startup and
+meeting-read retries, comparison/detail failure recovery, and both-theme
+mobile/desktop accessibility. `LoadingState` adds an explanation after eight
+seconds without inventing progress or sending requests. Its timer resets for a
+new request and is cleared on unmount. Pending live feedback sits outside the
+busy editor region so assistive technology can announce it. Searches keep their
+previous response hidden until the current filter/refresh request completes.
+
 Run both development quality gates without changing retained results:
 
 ```bash

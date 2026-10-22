@@ -41,6 +41,25 @@ missing owners and dates, tasks found or missed, independent review, and locked
 example sets. They do not run a model, import examples, change scores, or create
 tasks. Technical scores remain available in their existing disclosures.
 
+## While a request is running
+
+Loading messages name the current action, such as analyzing a transcript, opening
+a meeting, or saving a plan. After a longer wait, a short explanation appears.
+This means the response is still pending; it is not a failure message or a
+percentage-complete estimate. Saved confirmations appear only after the server
+responds. A meeting-name save notice disappears if you edit that name again.
+
+While analysis runs, you can browse your tasks and calendar and return to its
+result. Refresh buttons are disabled while their current read is pending;
+filters and navigation still work. Loading views do not show old counts or empty
+results as if a new search had already finished.
+
+If loading fails, use the nearby retry button. Meeting opening, comparison lists,
+and result details have their own retry actions. **Retry workspace loading** also
+appears when a saved meeting fails to load during startup. A retry of a failed
+read does not create a new meeting or run a model. Interrupted analysis continues
+to use **Retry saved analysis**, which recovers the same saved request.
+
 ## Start your day
 
 **My day** brings together overdue work, deadlines today, the next seven days, and

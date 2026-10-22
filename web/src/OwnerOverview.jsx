@@ -1,5 +1,6 @@
 import React,{useEffect,useState} from 'react';
 import {api} from './api.js';
+import LoadingState from './LoadingState.jsx';
 import {localToday,progressLabels} from './reviewTools.js';
 import {dateLabel} from './calendarDates.js';
 
@@ -12,11 +13,11 @@ export default function OwnerOverview({filters,onFilters,onTasks,onOpen,onStart,
  const change=patch=>onFilters({...filters,...patch,page:0}),refresh=()=>{setToday(localToday());setRetry(value=>value+1);};
  const show=(item,status='open',view='all')=>onTasks({owner:item.owner,status,view});
  return <section className="owner-workspace" aria-labelledby="owner-title">
-  <div className="page-intro"><div><div className="eyebrow accent">A CLEAR VIEW OF WHO HAS WHAT</div><h1 id="owner-title" tabIndex={-1}>Tasks by owner</h1><p>See who’s responsible, what’s due, and which tasks still need an owner.</p></div><button className="button secondary" type="button" onClick={refresh}>Refresh owner overview</button></div>
+  <div className="page-intro"><div><div className="eyebrow accent">A CLEAR VIEW OF WHO HAS WHAT</div><h1 id="owner-title" tabIndex={-1}>Tasks by owner</h1><p>See who’s responsible, what’s due, and which tasks still need an owner.</p></div><button className="button secondary" type="button" disabled={waiting} aria-busy={waiting} onClick={refresh}>Refresh owner overview</button></div>
   <p className="owner-scope">These names are labels from your plans, not team accounts. Different spellings or capitalization stay separate; joint owner labels stay together. Missing owners appear under Unassigned.</p>
   <form className="panel owner-filters" role="search" aria-label="Find owner workloads" onSubmit={event=>event.preventDefault()}><label className="field-label">Search owner names<input type="search" aria-label="Search owner names" placeholder="Name from your plans, or Unassigned" maxLength={200} value={filters.query} onChange={event=>change({query:event.target.value})}/></label><label className="field-label">Workload view<select aria-label="Workload view" value={filters.view} onChange={event=>change({view:event.target.value})}><option value="open">Owners with open tasks</option><option value="all">All owner groups</option><option value="overdue">Owners with overdue tasks</option><option value="unassigned">Unassigned tasks</option></select></label><button className="button secondary" type="button" disabled={!filters.query && filters.view==='open'} onClick={()=>onFilters({...initialOwnerFilters})}>Reset owner filters</button></form>
   <p className="form-hint">Dates use your device’s date ({today}). Overdue, due-today, and no-deadline counts include open tasks only. Summary counts follow both filters.</p>
-  {waiting?<p className="empty-state" role="status">Loading owner workloads…</p>:error?<div className="notice error" role="alert">{error}<button className="text-button" type="button" onClick={refresh}>Retry owner overview</button></div>:result&&<>
+  {waiting?<LoadingState label="Loading owner workloads…" requestKey={requestKey}/>:error?<div className="notice error" role="alert">{error}<button className="text-button" type="button" onClick={refresh}>Retry owner overview</button></div>:result&&<>
    <dl className="owner-summary" aria-label="Owner workload summary">{[['Owner names',result.summary.named_owners],['Open tasks',result.summary.open_tasks],['Overdue tasks',result.summary.overdue_tasks],['Unassigned open tasks',result.summary.unassigned_open]].map(([label,value])=><div className="panel" key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>
    {!result.total?<div className="empty-state"><h2>No owner groups in this view</h2><p>Confirm tasks from a meeting, or broaden the owner filters. Completed-only groups appear in All owner groups.</p><button className="button secondary" disabled={busy} type="button" onClick={onStart}>Add a conversation</button></div>:<>
     <p className="form-hint" role="status">{result.total} owner group{result.total===1?'':'s'} · Page {result.page+1} of {Math.ceil(result.total/result.page_size)}. Unassigned comes first, followed by overdue and open workload.</p>

@@ -4,7 +4,7 @@ import accountStorage from './accountStorage.js';
 import {issues,reviewError} from './reviewTools.js';
 import Icon from './Icon.jsx';
 import ContextHelp from './ContextHelp.jsx';
-export default function ReviewProposals({run,drafts,busy,onChange,onConfirm,onViewChange=()=>{},renderEvidence,children}){
+export default function ReviewProposals({run,drafts,busy,confirming=busy,onChange,onConfirm,onViewChange=()=>{},renderEvidence,children}){
  const afterRender=useAfterRender(!busy);
  const [filter,setFilter]=useState('all'),[layout,setLayout]=useState(()=>{try{return accountStorage.getItem('flow.reviewLayout') || (matchMedia('(max-width:760px)').matches?'focus':'detailed');}catch{return 'detailed';}}),[expanded,setExpanded]=useState({}),[focusId,setFocusId]=useState(null),[validation,setValidation]=useState(null);
  const attentionById=useMemo(()=>new Map(drafts.map(item=>[item.proposal_id,issues(item,drafts)])),[drafts]);
@@ -37,6 +37,6 @@ export default function ReviewProposals({run,drafts,busy,onChange,onConfirm,onVi
     {p.source!=='manual'&&<details className="suggestions"><summary>Advanced suggestions</summary><p>Priority: {p.priority} · Group {p.cluster}<br/>Suggested slot: {p.suggested_slot || 'Unknown'}<br/>Workstream classifier probability: {p['confidence_%'] ?? 'Unknown'}%</p><p>Priority and scheduling use heuristics. Classifier probability is not extraction confidence. These suggestions are not included in the confirmed plan.</p></details>}
    </div>
   </article>;})}
-  <div className="confirm-bar"><div><strong>{selected} of {run.proposals.length} selected</strong><span>{run.proposals.length-selected} proposal{run.proposals.length-selected===1?'':'s'} will be rejected.</span>{hiddenSelected>0&&<span>{hiddenSelected} selected task{hiddenSelected===1?' is':'s are'} outside this {layout==='focus'?'view':'filter'} and will also be confirmed.</span>}</div><button className="button primary" disabled={busy}>{busy?'Saving…':selected?'Confirm selected tasks':'Confirm empty plan'}</button></div>
+  <div className="confirm-bar"><div><strong>{selected} of {run.proposals.length} selected</strong><span>{run.proposals.length-selected} proposal{run.proposals.length-selected===1?'':'s'} will be rejected.</span>{hiddenSelected>0&&<span>{hiddenSelected} selected task{hiddenSelected===1?' is':'s are'} outside this {layout==='focus'?'view':'filter'} and will also be confirmed.</span>}</div><button className="button primary" disabled={busy} aria-busy={confirming}>{confirming?'Saving…':selected?'Confirm selected tasks':'Confirm empty plan'}</button></div>
  </form>;
 }
