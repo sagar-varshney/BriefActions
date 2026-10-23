@@ -4,6 +4,7 @@ import {api} from './api.js';
 import accountStorage from './accountStorage.js';
 import {reviewError} from './reviewTools.js';
 import useAfterRender from './useAfterRender.js';
+import SaveFeedback from './SaveFeedback.jsx';
 const labels={added:'Added',changed:'Changed',cancelled:'Cancelled',unchanged:'Unchanged'};
 const fields=['task','owner','deadline'];
 function ChangeIcon({kind}){return <Icon name={kind} size={16} className="plan-change-icon"/>;}
@@ -33,21 +34,22 @@ export default function PlanChangeReview({run,client,busy,confirming=busy,onConf
  const initial=confirmed?confirmedDecisions:cached.current?.dirty&&cached.current.version===server.version?cached.current.decisions:server.decisions;
  const [decisions,setDecisions]=useState(()=>defaults(rows,initial)),current=useRef(decisions),version=useRef(server.version);
  const [status,setStatus]=useState(cached.current?.dirty?'Recovered your browser review.':'Choose which changes to apply. Nothing is applied automatically.');
+ const [savePhase,setSavePhase]=useState('info'),localCopy=useRef(!!cached.current);
  const [error,setError]=useState(''),[filter,setFilter]=useState('all'),[blocked,setBlocked]=useState(!!cached.current?.dirty&&cached.current.version!==server.version&&!confirmed);
  const timer=useRef(null),queue=useRef(Promise.resolve()),alive=useRef(true),edit=useRef(0);
  const afterRef=useRef(null),afterRender=useAfterRender(!busy);
  useEffect(()=>{alive.current=true;return()=>{alive.current=false;clearTimeout(timer.current);};},[]);
- function cache(value,dirty){accountStorage.setItem(key,JSON.stringify({version:version.current,decisions:value,dirty}));}
+ function cache(value,dirty){try{accountStorage.setItem(key,JSON.stringify({version:version.current,decisions:value,dirty}));localCopy.current=true;return true;}catch{localCopy.current=false;return false;}}
  async function save(value,epoch){
   if(blocked)return;
-  try{const snapshot=await api(`/runs/${run.id}/update-draft`,{method:'POST',body:JSON.stringify({decisions:value,version:version.current})});version.current=snapshot.update_draft.version;cache(current.current,epoch!==edit.current);if(alive.current&&epoch===edit.current){setStatus('Review saved to history.');setError('');}}
-  catch(e){if(alive.current){setError(e.message);setStatus('Your browser review is kept. Retry saving or reload the saved review.');if(e.status===409)setBlocked(true);}throw e;}
+  try{const snapshot=await api(`/runs/${run.id}/update-draft`,{method:'POST',body:JSON.stringify({decisions:value,version:version.current})});version.current=snapshot.update_draft.version;cache(current.current,epoch!==edit.current);if(alive.current&&epoch===edit.current){setSavePhase('saved');setStatus('Review saved to history.');setError('');}}
+  catch(e){if(alive.current){if(epoch===edit.current||e.status===409){setSavePhase('error');setError(e.message);setStatus(localCopy.current?'Your browser review is kept. Retry saving or reload the saved review.':'History save failed and browser storage is unavailable. Keep this page open.');}if(e.status===409)setBlocked(true);}throw e;}
  }
- function schedule(value,epoch){clearTimeout(timer.current);timer.current=setTimeout(()=>{queue.current=queue.current.catch(()=>{}).then(()=>save(value,epoch));queue.current.catch(()=>{});},400);}
+ function schedule(value,epoch){clearTimeout(timer.current);setSavePhase('saving');timer.current=setTimeout(()=>{queue.current=queue.current.catch(()=>{}).then(()=>save(value,epoch));queue.current.catch(()=>{});},400);}
  useEffect(()=>{if(!confirmed&&cached.current?.dirty&&cached.current.version===server.version)schedule(current.current,edit.current);if(confirmed)accountStorage.removeItem(key);},[]);
- function change(id,patch){const value=current.current.map(d=>d.change_id===id?{...d,...patch}:d);current.current=value;setDecisions(value);const epoch=++edit.current;try{cache(value,true);setError('');setStatus('Review saved in this browser; saving to history…');schedule(value,epoch);}catch{setError('Browser storage is unavailable. Keep this page open until you can save.');}}
- async function retrySave(){clearTimeout(timer.current);queue.current=queue.current.catch(()=>{}).then(()=>save(current.current,edit.current));await queue.current.catch(()=>{});}
- async function reload(){try{clearTimeout(timer.current);await queue.current.catch(()=>{});const snapshot=await api(`/runs/${run.id}`);if(snapshot.status==='confirmed'){location.reload();return;}const saved=snapshot.update_draft||{version:0,decisions:[]};clearTimeout(timer.current);await queue.current.catch(()=>{});version.current=saved.version;const value=defaults(rows,saved.decisions);current.current=value;setDecisions(value);cache(value,false);setBlocked(false);setError('');setStatus('Loaded the saved review; browser edits were replaced.');}catch(e){setError(e.message);}}
+ function change(id,patch){const value=current.current.map(d=>d.change_id===id?{...d,...patch}:d);current.current=value;setDecisions(value);const epoch=++edit.current,stored=cache(value,true);setError('');setStatus(stored?'Review saved in this browser; saving to history…':'Saving to history. Browser storage is unavailable; keep this page open.');schedule(value,epoch);}
+ async function retrySave(){clearTimeout(timer.current);setSavePhase('saving');setStatus('Saving the current review to history…');const value=current.current,epoch=edit.current;queue.current=queue.current.catch(()=>{}).then(()=>save(value,epoch));await queue.current.catch(()=>{});}
+ async function reload(){try{clearTimeout(timer.current);await queue.current.catch(()=>{});const snapshot=await api(`/runs/${run.id}`);if(snapshot.status==='confirmed'){location.reload();return;}const saved=snapshot.update_draft||{version:0,decisions:[]};clearTimeout(timer.current);await queue.current.catch(()=>{});version.current=saved.version;const value=defaults(rows,saved.decisions);current.current=value;setDecisions(value);cache(value,false);setBlocked(false);setError('');setSavePhase('info');setStatus('Loaded the saved review; browser edits were replaced.');}catch(e){setError(e.message);}}
  async function submit(event){event.preventDefault();clearTimeout(timer.current);await queue.current.catch(()=>{});if(blocked)return;const chosen=rows.filter(r=>r.after&&current.current.some(d=>d.change_id===r.change_id&&d.apply)).map(r=>({row:r,...current.current.find(d=>d.change_id===r.change_id)}));const invalid=reviewError(chosen);if(invalid){const target=chosen[invalid.index];setFilter('all');setError(`Check the approved change: ${invalid.message}`);afterRender(()=>document.getElementById(`change-${target.change_id}-${invalid.field}`)?.focus());return;}try{await onConfirm({decisions:current.current,version:version.current});accountStorage.removeItem(key);}catch(e){setError(e.message);if(e.status===409)setBlocked(true);afterRef.current?.focus();}}
  const byId=new Map(decisions.map(d=>[d.change_id,d])),counts=Object.fromEntries(Object.keys(labels).map(kind=>[kind,rows.filter(r=>r.kind===kind).length]));
  const selected=decisions.filter(d=>d.apply).length,visible=rows.filter(r=>filter==='all'||r.kind===filter);
@@ -69,7 +71,7 @@ export default function PlanChangeReview({run,client,busy,confirming=busy,onConf
     </>}
     <details className="plan-change-evidence"><summary>Check supporting passages</summary>{row.before&&<div><h4>Previous conversation</h4>{renderEvidence(row.before,`previous task ${number}`)}</div>}{!!row.evidence.length&&<div><h4>Follow-up conversation</h4>{renderEvidence({evidence:row.evidence},`follow-up task ${number}`)}</div>}</details>
    </article>;})}
-   {!confirmed&&<><p className="form-hint" role="status">{status}</p>{error&&<p className="notice error" role="alert">{error}</p>}{(error||blocked)&&<div className="plan-change-actions"><button className="button secondary" type="button" onClick={retrySave} disabled={busy||blocked}>Retry saving review</button><button className="button secondary" type="button" onClick={reload} disabled={busy}>Use saved review</button></div>}
+   {!confirmed&&<><SaveFeedback phase={savePhase} detail={status}/>{error&&<p className="notice error" role="alert">{error}</p>}{(error||blocked)&&<div className="plan-change-actions"><button className="button secondary" type="button" onClick={retrySave} disabled={busy||blocked||savePhase==='saving'}>Retry saving review</button><button className="button secondary" type="button" onClick={reload} disabled={busy||savePhase==='saving'}>Use saved review</button></div>}
     <p className="plan-confirmation-help" id="plan-confirmation-help">Unapproved changes keep the previous task, or skip a new task. Confirmation replaces the previous version in All tasks and carries over progress for retained tasks.</p><div className="plan-confirmation" role="region" aria-label="Review confirmation"><strong role="status">{selected} of {decisions.length} changes approved.</strong><button type="button" className="button primary" aria-describedby="plan-confirmation-help" disabled={busy||blocked} aria-busy={confirming} onClick={submit}>{confirming?'Saving…':'Confirm updated plan'}</button></div>
    </>}
   </form>

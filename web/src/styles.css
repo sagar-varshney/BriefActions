@@ -524,3 +524,15 @@ main.signin-shell{
 .app-shell .notice.error>button[aria-label]{min-width:44px;min-height:44px}
 
 .app-shell .experiment{min-height:44px;min-width:44px}
+
+/* Save location is explicit: a browser draft is different from account history. */
+.save-feedback {display:flex;align-items:center;flex-wrap:wrap;gap:8px 16px;margin:12px 0;color:var(--muted)}
+.save-feedback p {display:flex;align-items:flex-start;gap:8px;margin:0;min-width:0;font-size:.875rem;line-height:1.55}
+.save-feedback .ui-icon {flex:none;margin-top:3px}
+.save-feedback strong {display:block;color:var(--text);font-weight:650}
+.save-feedback-detail {display:block;overflow-wrap:anywhere}
+.save-feedback-error {border-inline-start:3px solid var(--accent);padding-inline-start:12px}
+.section-download {margin:24px auto;max-width:720px}
+.section-download h1 {font-size:1.6rem}
+.calendar-next-steps {margin-bottom:24px;padding:24px}
+.calendar-next-steps h2 {font-size:1.25rem}

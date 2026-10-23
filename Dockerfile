@@ -5,6 +5,7 @@ COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY web ./web
 COPY vite.config.js ./
+COPY scripts/check_web_bundle.mjs ./scripts/check_web_bundle.mjs
 RUN pnpm build
 RUN pnpm prune --prod
 

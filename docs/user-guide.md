@@ -460,3 +460,25 @@ separate to check it afterwards. Do not repeatedly tune a method against test
 errors. Synthetic results describe the invented examples tested; they do not
 establish real-meeting accuracy. Independent review and permitted real examples
 remain useful next steps.
+
+## Saving and opening sections
+
+Review drafts show **Saving…** while the latest edits are being sent to history,
+**Saved** after the server confirms them, or **Couldn’t save** with recovery help.
+An earlier response cannot mark newer typing saved. Use **Retry saving draft**
+beside a failed task review or example-labeling draft; follow-up plan reviews use
+**Retry saving review**. Draft saves do not confirm a plan or submit labels.
+
+**Saved in this browser** means the transcript input is stored on this browser
+for your account and tab. It is not yet saved as a meeting or available on another
+device. If both browser storage and a history save fail, keep the page open and
+copy your text before leaving.
+
+The workspace and optional research sections download as you open them. If a
+section cannot download, check your connection and choose **Reload page**.
+Successfully stored browser drafts remain available after reload.
+
+An empty calendar month offers **Add a meeting** and **View all confirmed tasks**.
+The first returns to Extract & review and preserves your parked transcript draft.
+**Show all events this month** clears event/status filters while keeping the month
+and date. Empty month counts do not mean your entire account has no tasks.

@@ -470,3 +470,34 @@ The calendar and My day browser suites cover count scope, priority fallbacks and
 their destinations, day rollover, retries, keyboard/evidence links, forced-colour
 calendar use, and light/dark responsive accessibility. Calendar time is fixed in
 its browser fixture so urgency labels do not depend on the CI runner's date.
+
+## On-demand downloads and truthful save feedback
+
+The entry mounts WorkspaceApp only after AuthShell allows the workspace. Privacy,
+BenchmarkPage, and AnnotationReviewer have separate dynamic entries. Research
+navigation waits for the section commit before focusing its heading; a late
+chunk must not focus a section the user has left. DeferredSection catches load
+failures and offers a full-page reload, also recovering obsolete asset URLs after
+a deployment. There are no automatic reload loops or private-data prefetches.
+
+`pnpm build` writes Vite's asset manifest and runs `scripts/check_web_bundle.mjs`.
+It walks the entry's static JavaScript graph (not just its largest file) and fails
+over 350,000 bytes or 110,000 gzip bytes. It also requires workspace and research
+entries to stay dynamic. CI retains `artifacts/web-bundle.json`. The measured
+initial graph is about 303 kB versus the prior 562 kB entry; CSS/fonts and the
+on-demand auth SDK are separate. This reduces download size, not Render wake-up
+or server extraction time.
+
+SaveFeedback distinguishes server-confirmed saves, browser-only copies, pending
+writes, and failures. Task and annotation autosaves track the latest edit and
+retain its in-memory state independently of local storage. Older responses update
+versions but cannot mark newer typing saved or replace a newer cached draft with
+older content. Local storage failures do not prevent a server save or claim a
+browser copy exists. Writes retain the existing queues, version checks, and
+explicit confirmation/submission boundaries.
+
+`tests/loading-save.browser.mjs` checks actual browser downloads, failed-chunk
+reload with an unfinished draft, late-navigation focus, delayed/failed saves,
+blocked local storage, review and annotation retries, and calendar empty-state
+navigation with a parked input. Existing auth, mobile/keyboard, plan-change,
+annotation, and history suites remain part of CI.

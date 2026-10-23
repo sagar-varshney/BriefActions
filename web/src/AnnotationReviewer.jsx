@@ -2,6 +2,7 @@ import accountStorage from './accountStorage.js';
 import TranscriptImport from './TranscriptImport.jsx';
 import React,{useEffect,useRef,useState} from 'react';
 import useAnnotationDraft,{emptyAnnotation} from './useAnnotationDraft';
+import SaveFeedback from './SaveFeedback.jsx';
 import WorkflowGuide from './WorkflowGuide.jsx';
 import ResearchHelp from './ResearchHelp.jsx';
 import useAfterRender from './useAfterRender.js';
@@ -128,7 +129,7 @@ export default function AnnotationReviewer({api,downloadJson,onHelp}) {
     {active&&<section className="panel annotation-panel" aria-label="Active example">
       <h2 id="active-example-title" tabIndex={-1}>Label: {title(active)}</h2><p>Meeting {active.reference_date}. Choose a reviewer session, then highlight the exact words that support a task. Missing owners and dates stay Unknown.</p>
       <div className="reviewer-session"><label className="field-label">Reviewer identity<input disabled={busy} value={reviewer} onChange={e=>{setReviewer(e.target.value);setIndependent(false);}} placeholder="A distinct reviewer name or ID"/></label><button className="button secondary" disabled={busy || !reviewer.trim()} onClick={()=>start()}>Start or resume review</button>{active.disagreement&&!active.resolution&&!frozen&&<button className="button secondary" disabled={busy || !reviewer.trim()} onClick={()=>start('resolution')}>Open disagreement resolution</button>}</div>
-      {draft.session&&<><p role="status" className="form-hint">{draft.status}</p><p className="field-hint">Editing as <strong>{draft.session.reviewer}</strong> · {draft.session.mode==='resolution'?'Disagreement resolution':'Independent review'}. Changing the identity field takes effect when you start a session.</p>
+      {draft.session&&<><SaveFeedback phase={draft.phase} detail={draft.status} onRetry={()=>draft.flush().catch(()=>{})} disabled={locked||draft.conflict}/><p className="field-hint">Editing as <strong>{draft.session.reviewer}</strong> · {draft.session.mode==='resolution'?'Disagreement resolution':'Independent review'}. Changing the identity field takes effect when you start a session.</p>
         {draft.conflict&&<button className="button secondary" disabled={locked} onClick={draft.recover}>Restore my browser draft</button>}
         {locked&&!busy&&<div className="notice">These answers are locked: the review was submitted, or this example has been resolved or locked for comparison.</div>}
       </>}

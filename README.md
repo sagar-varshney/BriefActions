@@ -38,6 +38,9 @@ Requests show the action in progress, explain longer waits, and offer a nearby
 retry when loading fails. Saved confirmations appear after the server responds.
 Keyboard navigation keeps the active task and page heading in view. Review
 controls have larger touch targets, and the calendar supports month/year shortcuts.
+Workspace and research code download when needed, keeping the public page lighter.
+Review drafts show Saving, Saved, or Couldn’t save, with a retry beside failed saves.
+Transcript input clearly distinguishes browser-only drafts from saved meeting history.
 
 The public app runs on free hosting, so the first visit after inactivity can be
 slower while the server wakes up. [About Render’s free-hosting behavior](https://render.com/docs/free#spinning-down-on-idle).
