@@ -531,7 +531,7 @@ main.signin-shell{
 .save-feedback .ui-icon {flex:none;margin-top:3px}
 .save-feedback strong {display:block;color:var(--text);font-weight:650}
 .save-feedback-detail {display:block;overflow-wrap:anywhere}
-.save-feedback-error {border-inline-start:3px solid var(--accent);padding-inline-start:12px}
+.save-feedback-error,.save-feedback-conflict {border-inline-start:3px solid var(--accent);padding-inline-start:12px}
 .section-download {margin:24px auto;max-width:720px}
 .section-download h1 {font-size:1.6rem}
 .calendar-next-steps {margin-bottom:24px;padding:24px}

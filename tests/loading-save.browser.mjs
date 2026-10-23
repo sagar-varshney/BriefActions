@@ -41,6 +41,12 @@ try{
  await page.evaluate(()=>{window.originalSetItem=Storage.prototype.setItem;Storage.prototype.setItem=function(key,value){if(key.includes('flow.draft.'))throw new DOMException('Blocked','QuotaExceededError');return window.originalSetItem.call(this,key,value);};});
  await page.route(`**/api/runs/${run.id}/draft`,route=>route.fulfill({status:503,json:{error:'Invented save outage.'}}),{times:1});await owner.fill('Drew');await feedback.getByText('Couldn’t save',{exact:true}).waitFor();assert.match(await feedback.innerText(),/Browser storage is unavailable/);assert.doesNotMatch(await feedback.innerText(),/Draft kept in this browser/);
  await page.evaluate(()=>{Storage.prototype.setItem=window.originalSetItem;});await feedback.getByRole('button',{name:'Retry saving draft',exact:true}).click();await feedback.getByText('Saved',{exact:true}).waitFor();
+ // A stale browser copy needs explicit recovery, not a retry that replaces it.
+ const savedDraft=(await get('/api/runs/'+run.id)).draft;
+ await page.evaluate(id=>{const key=Object.keys(localStorage).find(key=>key.startsWith('flow.draft.'+id+'.')),value=JSON.parse(localStorage.getItem(key));value.decisions[0].owner='Parked browser owner';value.dirty=true;value.edit_id++;localStorage.setItem(key,JSON.stringify(value));},run.id);
+ await post(`/api/runs/${run.id}/draft`,{decisions:savedDraft.decisions.map(d=>({...d,owner:'Different tab owner'})),version:savedDraft.version,client_id:crypto.randomUUID(),edit_id:1});
+ await page.reload();await feedback.getByText('Review needed',{exact:true}).waitFor();assert.equal(await owner.inputValue(),'Different tab owner');assert.equal(await feedback.getByRole('button',{name:'Retry saving draft',exact:true}).count(),0);
+ await page.locator('.review-recovery>summary').click();await page.getByRole('button',{name:'Restore browser copy',exact:true}).click();await feedback.getByText('Saved',{exact:true}).waitFor();assert.equal(await owner.inputValue(),'Parked browser owner');
  // A failed workspace download can recover on reload, including a dirty browser draft.
  await owner.fill('Emery');simulateChunkFailure=true;
  await page.route('**'+asset('WorkspaceApp'),route=>route.abort('failed'),{times:1});await page.reload();await page.getByRole('heading',{name:'This section couldn’t load.',exact:true}).waitFor();assert.ok(expectedChunkFailure);simulateChunkFailure=false;

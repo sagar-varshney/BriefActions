@@ -465,7 +465,10 @@ remain useful next steps.
 
 Review drafts show **Saving…** while the latest edits are being sent to history,
 **Saved** after the server confirms them, or **Couldn’t save** with recovery help.
-An earlier response cannot mark newer typing saved. Use **Retry saving draft**
+An earlier response cannot mark newer typing saved. **Review needed** means a
+newer history draft conflicts with a preserved browser copy; use the explicit
+**Restore browser copy** action under Review help if you want that copy back.
+Use **Retry saving draft**
 beside a failed task review or example-labeling draft; follow-up plan reviews use
 **Retry saving review**. Draft saves do not confirm a plan or submit labels.
 

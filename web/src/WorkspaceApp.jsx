@@ -189,7 +189,7 @@ export default function WorkspaceApp({account,signOut,completeAccountDeletion,au
     setSavePhase('info');setSaveStatus(restored?'Restored unfinished review.':'');
     if(snapshot.status==='confirmed')accountStorage.removeItem(draftKey(snapshot.id));
     else if(cached?.dirty && restored===cached.decisions){const edit_id=++editEpoch.current;cacheDraft(snapshot.id,{...cached,decisions:merged,edit_id});scheduleSave(snapshot.id,merged,edit_id);}
-    else if(cached?.dirty && !compatible){setSavePhase('error');setSaveStatus('History changed in another tab. Your browser copy is preserved; use Restore browser copy to recover it.');}
+    else if(cached?.dirty && !compatible){setSavePhase('conflict');setSaveStatus('History changed in another tab. Your browser copy is preserved; use Restore browser copy to recover it.');}
     accountStorage.setItem('flow.activeRun',snapshot.id);
   }
   useEffect(()=>{
