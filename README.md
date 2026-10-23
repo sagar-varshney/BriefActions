@@ -12,7 +12,7 @@ then follow the work through your task list and calendar.
 
 ![Review proposed tasks alongside the original transcript in BriefActions](docs/screenshots/review-light.png)
 
-*Shown with an invented example meeting.* [Dark mode](docs/screenshots/review-dark.png) · [All tasks](docs/screenshots/all-tasks-light.png)
+*Shown with an invented example meeting.* [Dark mode](docs/screenshots/review-dark.png) · [All tasks](docs/screenshots/all-tasks-light.png) · [Calendar](docs/screenshots/calendar-light.png)
 
 ## Get started
 
@@ -165,6 +165,7 @@ See the [evaluation methodology](evaluation/README.md) for datasets, results, an
 | [First deployment](docs/first-deploy.md) | Setup walkthrough for a new Render and Supabase project |
 | [Backups](docs/backups.md) | Encrypted snapshots and recovery; scheduling requires operator setup |
 | [Launch checks](docs/launch-checks.md) | Operational and live verification |
+| [Release notes](CHANGELOG.md) | Changes, internal verification, and current limitations |
 | [Evaluation](evaluation/README.md) | Annotation policy, scoring, and model experiments |
 
 A separate legacy FastAPI/RAG backend is preserved in `app/`; its

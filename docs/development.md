@@ -15,7 +15,9 @@ React / Vite → Node HTTP API → Python bridge → extraction and history
 
 | Location | Responsibility |
 | --- | --- |
-| `web/src/main.jsx`, `web/src/styles.css` | Public homepage, sign-in, private workspace, themes, and responsive UI |
+| `web/src/main.jsx`, `web/src/AuthShell.jsx` | Public entry, sign-in, account scope, and deferred workspace loading |
+| `web/src/WorkspaceApp.jsx`, `web/src/styles.css` | Private workspace, themes, and responsive UI |
+| `web/src/DeferredSection.jsx`, `web/src/BenchmarkPage.jsx`, `web/src/AnnotationReviewer.jsx` | On-demand research screens and explicit chunk-load recovery |
 | `server/` | HTTP routes, authentication, request limits, worker lifecycle, and built asset serving |
 | `web_bridge.py`, `export_bridge.py` | JSON worker protocol and streaming workspace export |
 | `extraction.py`, `baseline_extractor.py` | Current evidence-backed rules and frozen original rules |
@@ -82,6 +84,7 @@ result focus, and both-theme accessibility.
 
 Public browser routes are `/`, `/sign-in`, `/auth/callback`, and `/privacy`.
 Workspace routes are `/meetings`, `/meetings/:id`, `/tasks`, `/history`, `/account`,
+`/today`, `/owners`, `/calendar`, `/history/series`,
 `/research/evaluation`, and `/research/annotations`. A meeting link can include
 `?task=<proposal-id>`. Sign-in preserves recognized same-origin destinations;
 signing out clears that destination. Hosted access is verified at the API, not
@@ -507,3 +510,29 @@ the runner's Azure mirror after observed slow package transfers. Signed package
 verification and fallback mirrors stay enabled. APT retries/timeouts and a five-
 minute installation limit bound infrastructure waits; missing dependencies still
 fail the job, and the browser/container checks are never skipped to publish.
+
+## Release rehearsal and screenshots
+
+`tests/release-journey.browser.mjs` follows one invented meeting from a fresh
+account through extraction, evidence inspection, correction/selection, an expired
+refresh token, re-authentication, confirmation, progress, a reasoned deadline
+correction, the calendar, and export. It checks an interrupted calendar read and
+mobile keyboard selection, plus automated accessibility in both themes.
+It uses the real Supabase browser SDK with provider responses supplied by local
+fixtures and a disposable SQLite database. It never contacts a live auth project
+or reads production accounts. This is internal QA, not a live OAuth or human
+usability study. It runs in `pnpm test:browser` alongside the focused suites.
+
+To refresh the README images from that same passing journey:
+
+```sh
+pnpm build
+pnpm screenshots
+```
+
+The command replaces the homepage, sign-in, review, task-list, and calendar images
+in `docs/screenshots/`, including light/dark review and mobile examples. Review the
+resulting images and Git diff before committing. Capture fails on a failed journey;
+it can leave partially refreshed images, so rerun successfully before publishing.
+Ordinary browser checks write captures to `FLOW_SCREENSHOTS` or a temporary folder
+and do not modify tracked images. No production credentials are needed.
