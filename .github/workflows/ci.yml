@@ -107,7 +107,23 @@ jobs:
         run: node scripts/benchmark_workers.mjs artifacts/worker-performance.json
 
       - name: Install Chromium and Linux dependencies
-        run: pnpm exec playwright install --with-deps chromium
+        timeout-minutes: 5
+        run: |
+          # Avoid intermittent slow Azure mirror transfers on hosted Ubuntu runners.
+          # Keep signed Ubuntu packages and the existing fallback mirrors.
+          if [[ -f /etc/apt/apt-mirrors.txt ]]; then
+            printf '%s\tpriority:%s\n' \
+              'https://archive.ubuntu.com/ubuntu/' 1 \
+              'https://security.ubuntu.com/ubuntu/' 2 \
+              'http://azure.archive.ubuntu.com/ubuntu/' 3 \
+              | sudo tee /etc/apt/apt-mirrors.txt >/dev/null
+          fi
+          printf '%s\n' \
+            'Acquire::Retries "2";' \
+            'Acquire::http::Timeout "30";' \
+            'Acquire::https::Timeout "30";' \
+            | sudo tee /etc/apt/apt.conf.d/80briefactions-ci-network >/dev/null
+          pnpm exec playwright install --with-deps chromium
 
       - name: Run desktop and mobile browser checks
         run: pnpm test:browser 2>&1 | tee artifacts/browser-tests.log

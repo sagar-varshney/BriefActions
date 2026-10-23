@@ -501,3 +501,9 @@ reload with an unfinished draft, late-navigation focus, delayed/failed saves,
 blocked local storage, review and annotation retries, and calendar empty-state
 navigation with a parked input. Existing auth, mobile/keyboard, plan-change,
 annotation, and history suites remain part of CI.
+
+The hosted Ubuntu browser-install step prefers the official Ubuntu archives over
+the runner's Azure mirror after observed slow package transfers. Signed package
+verification and fallback mirrors stay enabled. APT retries/timeouts and a five-
+minute installation limit bound infrastructure waits; missing dependencies still
+fail the job, and the browser/container checks are never skipped to publish.
