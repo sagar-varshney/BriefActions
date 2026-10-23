@@ -20,7 +20,9 @@ const deviceTime='2026-10-24T08:00:00Z',now=Math.floor(new Date(deviceTime).getT
  refresh_token:'invented-release-refresh',expires_at:now+3600,expires_in:3600,token_type:'bearer',
  user:{id:account,email:'demo@example.test',aud:'authenticated',role:'authenticated',app_metadata:{},user_metadata:{},created_at:'2026-10-24T00:00:00Z'}
 };
-const server=createApp({historyPath:path.join(folder,'history.sqlite3'),config:{...loadConfig(),authMode:'supabase',supabaseUrl:'https://test-project.supabase.co',supabaseKey:'sb_publishable_test'},verifyAccount:async token=>token===session.access_token?account:null});
+// Ignore inherited hosting settings: even a shell with production credentials
+// must rehearse against this disposable local database and fixture provider.
+const server=createApp({historyPath:path.join(folder,'history.sqlite3'),config:{...loadConfig({}),authMode:'supabase',supabaseUrl:'https://test-project.supabase.co',supabaseKey:'sb_publishable_test'},verifyAccount:async token=>token===session.access_token?account:null});
 const checks=[],errors=[];let browser,page,expiredRefreshes=0;
 const transcript="Maya: I'll send the launch checklist tomorrow.\nJon: I'll review the onboarding flow by Monday.\nAction item: Update the FAQ.";
 async function scan(label){
