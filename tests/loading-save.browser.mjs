@@ -29,10 +29,11 @@ try{
  await page.goto(base+'/meetings/'+run.id);await page.getByRole('heading',{name:/Review action proposals/}).waitFor();
  for(const name of ['AnnotationReviewer','BenchmarkPage'])assert.ok(!requests.includes(asset(name)),name+' is not downloaded by the meeting workspace');
  const owner=page.getByLabel('Owner 1',{exact:true}),feedback=page.locator('.review-save-state .save-feedback');
- const first=await hold(page,`**/api/runs/${run.id}/draft`);await owner.fill('Alex');await first.entered;
+ const title=page.locator('.proposal-card h3').first(),titleTop=()=>title.evaluate(el=>el.getBoundingClientRect().top+scrollY),beforeSaveTop=await titleTop();
+ const first=await hold(page,`**/api/runs/${run.id}/draft`);await owner.fill('Alex');await first.entered;assert.equal(await titleTop(),beforeSaveTop,'Pending feedback must not move the task title');
  await owner.fill('Bea');const second=await hold(page,`**/api/runs/${run.id}/draft`);first.release();await second.entered;
  await feedback.getByText('Saving…',{exact:true}).waitFor();assert.equal(await feedback.getByText('Saved',{exact:true}).count(),0,'An older response cannot mark newer edits saved');
- second.release();await feedback.getByText('Saved',{exact:true}).waitFor();assert.equal((await get('/api/runs/'+run.id)).draft.decisions[0].owner,'Bea');
+ second.release();await feedback.getByText('Saved',{exact:true}).waitFor();assert.equal(await titleTop(),beforeSaveTop,'Saved feedback must not move the task title');assert.equal((await get('/api/runs/'+run.id)).draft.decisions[0].owner,'Bea');
  await page.route(`**/api/runs/${run.id}/draft`,route=>route.fulfill({status:503,json:{error:'Invented save outage.'}}),{times:1});await owner.fill('Casey');
  await feedback.getByText('Couldn’t save',{exact:true}).waitFor();assert.match(await feedback.innerText(),/Draft kept in this browser/);
  for(const width of [320,1440])for(const theme of ['light','dark']){await page.setViewportSize({width,height:1000});await page.getByLabel('Color theme').selectOption(theme);await scan(page,`save-retry-${width}-${theme}`);await feedback.screenshot({path:path.join(shots,`save-feedback-${width}-${theme}.png`)});}

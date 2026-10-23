@@ -130,7 +130,7 @@ export default function WorkspaceApp({account,signOut,completeAccountDeletion,au
   const [split,setSplit] = useState('test.jsonl');
   const [caseId,setCaseId] = useState('');
   const reportEpoch = useRef(0);
-  const [saveStatus,setSaveStatus]=useState(''),[savePhase,setSavePhase]=useState('info');
+  const [saveStatus,setSaveStatus]=useState('Edits save automatically.'),[savePhase,setSavePhase]=useState('info');
   const saveQueue=useRef(Promise.resolve()),saveTimer=useRef(null),draftVersions=useRef({}),activeRun=useRef(null),latestEdits=useRef({}),latestDrafts=useRef({}),localCopies=useRef({});
   const [draftClient]=useState(()=>{const value=sessionStorage.getItem('flow.draftClient')||crypto.randomUUID();sessionStorage.setItem('flow.draftClient',value);return value;});
   const editEpoch=useRef(0);
@@ -186,7 +186,7 @@ export default function WorkspaceApp({account,signOut,completeAccountDeletion,au
     editEpoch.current=Math.max(editEpoch.current,cached?.edit_id || 0,saved?.edit_id || 0);
     const merged=reviewDrafts(snapshot.proposals,restored);
     setDrafts(merged);
-    setSavePhase('info');setSaveStatus(restored?'Restored unfinished review.':'');
+    setSavePhase('info');setSaveStatus(restored?'Restored unfinished review.':'Edits save automatically.');
     if(snapshot.status==='confirmed')accountStorage.removeItem(draftKey(snapshot.id));
     else if(cached?.dirty && restored===cached.decisions){const edit_id=++editEpoch.current;cacheDraft(snapshot.id,{...cached,decisions:merged,edit_id});scheduleSave(snapshot.id,merged,edit_id);}
     else if(cached?.dirty && !compatible){setSavePhase('conflict');setSaveStatus('History changed in another tab. Your browser copy is preserved; use Restore browser copy to recover it.');}
