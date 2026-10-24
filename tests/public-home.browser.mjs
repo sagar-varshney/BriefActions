@@ -7,7 +7,7 @@ import {chromium} from 'playwright';
 import AxeBuilder from '@axe-core/playwright';
 import {createApp} from '../server/index.mjs';
 import {loadConfig} from '../server/config.mjs';
-import {navigate} from './browser-helpers.mjs';
+import {navigationButton,navigate} from './browser-helpers.mjs';
 const titleIs=(page,title)=>page.waitForFunction(expected=>document.title===expected,title);
 async function centeredHeader(page){
  const [brand,nav,actions]=await Promise.all(['.landing-header>.brand','.landing-header nav','.landing-header-actions'].map(selector=>page.locator(selector).boundingBox()));
@@ -130,7 +130,7 @@ try{
  await page.goto(base+'/tasks');await page.getByRole('button',{name:'Continue with GitHub',exact:true}).waitFor();assert.equal(new URL(page.url()).pathname,'/sign-in');assert.equal(await page.evaluate(()=>sessionStorage.getItem('flow.authReturn')),'/tasks');assert.deepEqual(privateRequests,[]);
  await page.getByRole('button',{name:'Continue with GitHub',exact:true}).click();await page.getByRole('heading',{name:'Fixture identity provider'}).waitFor();
  const authorize=new URL(page.url());assert.equal(authorize.searchParams.get('provider'),'github');assert.equal(authorize.searchParams.get('redirect_to'),base+'/auth/callback');assert.equal(authorize.searchParams.get('code_challenge_method'),'s256');assert.ok(authorize.searchParams.get('code_challenge'));
- await page.goto(base+'/auth/callback?code=fixture-code');await page.getByText('alice@example.test',{exact:true}).waitFor();assert.equal(new URL(page.url()).pathname,'/tasks');assert.equal(new URL(page.url()).search,'');await titleIs(page,'All tasks · BriefActions');assert.equal(exchange.auth_code,'fixture-code');assert.ok(exchange.code_verifier);
+ await page.goto(base+'/auth/callback?code=fixture-code');await navigationButton(page,'Sign out');await page.getByText('alice@example.test',{exact:true}).waitFor();if(await page.getByRole('button',{name:'Close navigation',exact:true}).isVisible())await page.getByRole('button',{name:'Close navigation',exact:true}).click();assert.equal(new URL(page.url()).pathname,'/tasks');assert.equal(new URL(page.url()).search,'');await titleIs(page,'All tasks · BriefActions');assert.equal(exchange.auth_code,'fixture-code');assert.ok(exchange.code_verifier);
  assert.equal(await page.evaluate(()=>sessionStorage.getItem('flow.authReturn')),null);
  await page.goto(base);await page.getByRole('heading',{name:'Good conversations. Clear next steps.'}).waitFor();await page.getByRole('link',{name:'Open workspace',exact:true}).first().waitFor();
  for(const width of [1101,1180,1440,1920,2560]){await page.setViewportSize({width,height:1000});await centeredHeader(page);}
@@ -170,9 +170,11 @@ try{
  }
  // Stable workflow navigation, account utilities, and optional research.
  await page.goto(localBase+'/meetings');await page.getByRole('button',{name:'Try an example',exact:true}).waitFor();
+ await navigationButton(page,'Research tools');
  const nav=page.getByRole('navigation',{name:'Main navigation',exact:true});
  assert.deepEqual(await nav.locator(':scope > button').allTextContents(),['Extract & review','My day','All tasks','Tasks by owner','Calendar','Meeting history']);
- assert.equal(await nav.getByRole('button',{name:'Data & account',exact:true}).count(),0);assert.ok(await page.locator('.topbar-actions').getByRole('button',{name:'Data & account',exact:true}).isVisible());assert.equal(await nav.getByRole('button',{name:'Research tools',exact:true}).getAttribute('aria-expanded'),'false');
+ assert.equal(await nav.getByRole('button',{name:'Data & account',exact:true}).count(),0);assert.ok(await page.getByRole('navigation',{name:'Workspace settings',exact:true}).getByRole('button',{name:'Data & account',exact:true}).isVisible());assert.equal(await nav.getByRole('button',{name:'Research tools',exact:true}).getAttribute('aria-expanded'),'false');
+ if(await page.getByRole('button',{name:'Close navigation',exact:true}).isVisible())await page.getByRole('button',{name:'Close navigation',exact:true}).click();
  assert.ok(await page.getByRole('group',{name:'Meeting workflow',exact:true}).isVisible());await page.getByRole('button',{name:'Start a quick walkthrough',exact:true}).click();assert.equal(await page.getByLabel('Walkthrough',{exact:true}).inputValue(),'meetings');await page.getByRole('button',{name:'Close guide',exact:true}).click();
  await page.setViewportSize({width:1440,height:1000});await page.screenshot({path:path.join(shots,'workflow-start-desktop.png'),fullPage:true});await page.setViewportSize({width:320,height:1000});await page.screenshot({path:path.join(shots,'workflow-start-mobile.png'),fullPage:true});
  // A failed account lookup never silently chooses the wrong default; retry is read-only.

@@ -5,7 +5,7 @@ import path from 'node:path';
 import {chromium} from 'playwright';
 import AxeBuilder from '@axe-core/playwright';
 import {createApp} from '../server/index.mjs';
-import {navigate} from './browser-helpers.mjs';
+import {navigate,scrollWorkspace} from './browser-helpers.mjs';
 
 const folder=await mkdtemp(path.join(tmpdir(),'briefactions-mobile-keyboard-')),shots=process.env.FLOW_SCREENSHOTS||path.join(folder,'screenshots');await mkdir(shots,{recursive:true});
 const server=createApp({historyPath:path.join(folder,'history.sqlite3')});let browser;const checks=[],releases=[];
@@ -44,7 +44,7 @@ try{
  // Bulk selection can disable its own control; focus still lands on retained work.
  await page.getByLabel('Keep task 3',{exact:true}).check();await page.getByRole('button',{name:'Clear visible selection',exact:true}).click();await page.waitForFunction(id=>document.activeElement?.id===`proposal-${id}`,run.proposals[2].proposal_id);await page.getByRole('button',{name:'Select visible (1)',exact:true}).click();await page.waitForFunction(id=>document.activeElement?.id===`proposal-${id}`,run.proposals[2].proposal_id);await page.getByLabel('Show proposals',{exact:true}).selectOption('selected');await page.getByRole('button',{name:'Clear visible selection',exact:true}).click();await page.waitForFunction(id=>document.activeElement?.id===`proposal-${id}`,run.proposals[1].proposal_id);
  // Navigation from a long scrolled review reveals the new page heading.
- await page.evaluate(()=>scrollTo(0,document.body.scrollHeight));await page.getByRole('button',{name:'Calendar',exact:true}).focus();await page.keyboard.press('Enter');await page.waitForFunction(()=>document.activeElement?.id==='calendar-title');await focusVisible(page,'calendar navigation');
+ await scrollWorkspace(page,'end');await page.getByRole('button',{name:'Calendar',exact:true}).focus();await page.keyboard.press('Enter');await page.waitForFunction(()=>document.activeElement?.id==='calendar-title');await focusVisible(page,'calendar navigation');
  const ready=()=>page.getByRole('status').filter({hasText:/meetings? and \d+ task deadlines? this month/}).waitFor();await ready();await page.getByLabel('Calendar month',{exact:true}).fill('2026-01');await ready();await page.getByLabel('Selected calendar date',{exact:true}).fill('2026-01-31');await ready();
  const february=await hold(page,'**/api/calendar?**');await page.locator('#calendar-day-2026-01-31').focus();await page.keyboard.press('PageDown');await february.entered;await page.waitForFunction(()=>document.activeElement?.id==='calendar-day-2026-02-28');assert.equal(await page.getByLabel('Selected calendar date',{exact:true}).inputValue(),'2026-02-28');assert.ok(await page.getByRole('button',{name:'Refresh calendar',exact:true}).isDisabled());february.release();await ready();
  await page.keyboard.press('Shift+PageDown');await ready();await page.waitForFunction(()=>document.activeElement?.id==='calendar-day-2027-02-28');await page.keyboard.press('Shift+PageUp');await ready();await page.waitForFunction(()=>document.activeElement?.id==='calendar-day-2026-02-28');await page.keyboard.press('PageUp');await ready();await page.waitForFunction(()=>document.activeElement?.id==='calendar-day-2026-01-28');

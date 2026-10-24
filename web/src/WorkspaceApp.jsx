@@ -1,7 +1,6 @@
 import Icon from './Icon.jsx';
 import {authScreen} from './authRouting.js';
 import {api,downloadFile} from './api.js';
-import ThemeControl from './ThemeControl.jsx';
 import accountStorage from './accountStorage.js';
 import React, {useEffect, useRef, useState} from 'react';
 import MissedActionForm from './MissedActionForm.jsx';
@@ -19,13 +18,11 @@ import {initialCalendar} from './calendarDates.js';
 import PlanExport from './PlanExport.jsx';
 import FollowupDraft from './FollowupDraft.jsx';
 import PlanChangeReview,{FollowupForm} from './PlanUpdates.jsx';
-import ProductBrand from './ProductBrand.jsx';
 import SourceTranscript from './SourceTranscript.jsx';
 import WorkspaceSummary from './WorkspaceSummary.jsx';
 import ReviewProposals from './ReviewProposals.jsx';
 import TaskFollowThrough from './TaskFollowThrough.jsx';
 import ActivityTimeline,{ConversationChanges} from './ActivityTimeline.jsx';
-import ResearchNavigation from './ResearchNavigation.jsx';
 import WorkspaceLayout from './WorkspaceLayout.jsx';
 import HelpGuide from './HelpGuide.jsx';
 import WorkflowGuide from './WorkflowGuide.jsx';
@@ -35,9 +32,9 @@ import LoadingState from './LoadingState.jsx';
 import useAfterRender from './useAfterRender.js';
 import {deferSection} from './DeferredSection.jsx';
 import SaveFeedback from './SaveFeedback.jsx';
+import WorkspaceShell from './WorkspaceShell.jsx';
 const AnnotationReviewer=deferSection(()=>import('./AnnotationReviewer.jsx'),'Label & review examples');
 const BenchmarkPage=deferSection(()=>import('./BenchmarkPage.jsx'),'Compare extraction methods');
-import useWorkspaceInset from './useWorkspaceInset.js';
 import useDocumentTitle from './useDocumentTitle.js';
 import {readRoute,routePath} from './routing.js';
 import {readInputDraft,saveInputDraft,removeInputDraft} from './inputDraft.js';
@@ -71,7 +68,6 @@ const analysisBrowsePages=new Set(['extract','today','tasks','owners','calendar'
 const activityLabels={analysis:'Analyzing your transcript…',title:'Saving meeting name…',followup:'Comparing the follow-up conversation…',update:'Saving your updated plan…',confirm:'Saving your confirmed plan…',add:'Saving the added action…',open:'Opening your meeting…'};
 
 export default function WorkspaceApp({account,signOut,completeAccountDeletion,authError}) {
-  const workspaceHeader=useRef(null);useWorkspaceInset(workspaceHeader);
   const [historyStatus,setHistoryStatus]=useState('');
   const [ownerFilters,setOwnerFilters]=useState(initialOwnerFilters);
   const [calendarFilters,setCalendarFilters]=useState(initialCalendar);
@@ -317,16 +313,12 @@ export default function WorkspaceApp({account,signOut,completeAccountDeletion,au
   const editorVisible=!run || editorOpen || !!pending;
   const nameChanged=run && meetingTitle!==run.title;
 
-  return <div className="app-shell">
-    <a className="skip-link" href="#workspace-main">Skip to workspace</a>
-    <header ref={workspaceHeader} className="workspace-header">
-      <ProductBrand href="/today" onClick={e=>{e.preventDefault();setPage('today');}}/>
-      <nav aria-label="Main navigation">{pages.filter(p=>!['benchmark','annotations','data'].includes(p.id)).map(p=><button key={p.id} disabled={busy && !analysisBusy.current || restoring || closing && p.id!=='data'} className={`nav-item ${page===p.id?'active':''}`} aria-current={page===p.id?'page':undefined} onClick={()=>setPage(p.id)}><Icon name={p.icon} size={17}/><span>{p.name}</span></button>)}<ResearchNavigation page={page} disabled={closing || busy || restoring} onNavigate={setPage}/></nav>
-      <div className="topbar-actions"><button type="button" className={`text-button account-entry ${page==='data'?'active':''}`} aria-current={page==='data'?'page':undefined} disabled={busy || restoring} onClick={()=>setPage('data')}>Data & account</button><button type="button" className="text-button help-entry" onClick={()=>setHelpTopic(page==='history'&&historySeries.open?'series':page==='owners'?'owners':page==='today'?'today':page==='calendar'?'calendar':page==='annotations'?'annotations':page==='benchmark'?'benchmark':'meetings')}>Help</button><ThemeControl/>{account&&<><span className="account-name" title={account.email}>{account.email || 'Signed in'}</span><button className="text-button" onClick={signOut}>Sign out</button></>}</div>
-    </header>
+  return <WorkspaceShell pages={pages} page={page} navigationKey={committedURL.current} account={account}
+    isDisabled={id=>id==='data'?busy||restoring:['benchmark','annotations'].includes(id)?closing||busy||restoring:busy&&!analysisBusy.current||restoring||closing}
+    onNavigate={setPage} onSignOut={signOut}
+    onHelp={()=>setHelpTopic(page==='history'&&historySeries.open?'series':page==='owners'?'owners':page==='today'?'today':page==='calendar'?'calendar':page==='annotations'?'annotations':page==='benchmark'?'benchmark':'meetings')}>
     {helpTopic&&<HelpGuide onMeetingTips={showMeetingTips} initialTopic={helpTopic} onClose={()=>setHelpTopic(null)} onNavigate={target=>target==='series'?openSeries():setPage(target)} navigationDisabled={busy || restoring || closing || !!pending}/>}
     <main id="workspace-main" tabIndex={-1} aria-busy={restoring}>
-      <div className="topbar"><span>Workspace <span className="slash">/</span> {pages.find(p=>p.id===page).name}</span><span className="local-badge"><span/> {account?'Private account':'Local workspace'}</span></div>
       <div className={`content ${run && page==='extract'?'meeting-content':''}`}>
       {page!=='extract'&&(analysisBusy.current || pending && page!=='today' || analysisResultId===run?.id)&&<div className="notice" role="status">{analysisBusy.current?'Your transcript is being analyzed. You can browse your tasks and calendar.':pending?(analysisStatus || 'An unfinished analysis is saved in this browser.'):'Your analysis is ready to review.'}<button type="button" className="text-button" onClick={()=>setPage('extract')}>{analysisBusy.current || pending?'Return to analysis':'Open analysis result'}</button></div>}
         {page==='today'&&pending&&!analysisBusy.current&&<div className="notice" role="status">An interrupted analysis is saved in this browser. Recover it before starting another meeting.<button className="text-button" type="button" disabled={busy||restoring} onClick={()=>setPage('extract')}>Recover saved analysis</button></div>}
@@ -395,5 +387,5 @@ export default function WorkspaceApp({account,signOut,completeAccountDeletion,au
         <footer className="page-footer">BriefActions <a href="/privacy">Privacy & your data</a><span>Evidence → Review → Action</span></footer>
       </div>
     </main>
-  </div>;
+  </WorkspaceShell>;
 }

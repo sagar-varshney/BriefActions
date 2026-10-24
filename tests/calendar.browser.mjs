@@ -1,3 +1,4 @@
+import {scrollWorkspace} from './browser-helpers.mjs';
 import assert from 'node:assert/strict';
 import {mkdtemp,mkdir,rm,writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
@@ -44,7 +45,7 @@ try{
  await meeting.getByRole('button',{name:'Open meeting & transcript',exact:true}).click();await page.waitForURL(base+'/meetings/'+review.id);await page.goBack();await ready();
  await page.getByLabel('Show calendar events',{exact:true}).selectOption('tasks');await ready();assert.equal(await detail.locator('.calendar-entry').count(),0);await page.getByLabel('Selected calendar date',{exact:true}).fill('2026-10-21');await ready();
  await page.getByLabel('Show calendar events',{exact:true}).selectOption('all');await ready();
- for(const width of [1440,1366,1280,1180,768,390,320]){await page.setViewportSize({width,height:1000});for(const theme of ['light','dark']){await page.getByLabel('Color theme').selectOption(theme);await scan(page,`calendar-${width}-${theme}`);await page.evaluate(()=>scrollTo(0,0));if([1440,320].includes(width))await page.screenshot({path:path.join(shots,`calendar-${width}-${theme}.png`),fullPage:width===320});if(width===320)await page.screenshot({path:path.join(shots,`calendar-mobile-top-${theme}.png`)});}}
+ for(const width of [1440,1366,1280,1180,768,390,320]){await page.setViewportSize({width,height:1000});for(const theme of ['light','dark']){await page.getByLabel('Color theme').selectOption(theme);await scan(page,`calendar-${width}-${theme}`);await scrollWorkspace(page);if([1440,320].includes(width))await page.screenshot({path:path.join(shots,`calendar-${width}-${theme}.png`),fullPage:width===320});if(width===320)await page.screenshot({path:path.join(shots,`calendar-mobile-top-${theme}.png`)});}}
  assert.equal(await page.locator('.calendar-month').count(),0,'Small screens use the agenda');const day=page.locator('.calendar-agenda-day').filter({hasText:'review item'});await day.click();await ready();assert.ok(await detail.getByRole('heading').first().evaluate(el=>el===document.activeElement));
  await page.getByRole('button',{name:'Help',exact:true}).click();assert.equal(await page.getByLabel('Walkthrough',{exact:true}).inputValue(),'calendar');await page.getByRole('button',{name:'Close guide',exact:true}).click();
  await page.setViewportSize({width:1440,height:1000});await page.getByRole('group',{name:'Calendar layout',exact:true}).getByRole('button',{name:'Agenda',exact:true}).click();assert.equal(await page.locator('.calendar-month').count(),0);await scan(page,'desktop-agenda');
