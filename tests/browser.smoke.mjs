@@ -82,7 +82,7 @@ try {
   assert.equal(audit.find(e=>e.kind==='review').payload.decisions[0].corrections.owner.after,'Ravi');
   assert.equal(audit.find(e=>e.kind==='review').payload.decisions[1].accept,false);
   await page.reload();await page.getByRole('heading',{name:'Your confirmed plan'}).waitFor();
-  await page.getByRole('button',{name:'Meeting history'}).click();await page.getByRole('button',{name:'Open meeting'}).waitFor();
+  await navigate(page,'Meeting history');await page.getByRole('button',{name:'Open meeting'}).waitFor();
   assert.equal(await page.locator('.history-card').count(),1);
   await page.getByRole('button',{name:'Open meeting'}).click();await page.getByRole('heading',{name:'Your confirmed plan'}).waitFor();
   await navigate(page,'Compare extraction methods');
@@ -109,7 +109,7 @@ try {
   await page.getByText('You confirmed a plan with no tasks. All proposals were rejected.',{exact:true}).waitFor();
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Mobile extraction overflows viewport');
   await page.screenshot({path:path.join(screenshotDir,'mobile-confirmed.png'),fullPage:true});
-  await page.getByRole('button',{name:'Meeting history'}).click();
+  await navigate(page,'Meeting history');
   await page.waitForFunction(()=>document.querySelectorAll('.history-card').length===2);
   await page.setViewportSize({width:1440,height:1000});
   await navigate(page,'Label & review examples');

@@ -8,7 +8,7 @@ import {chromium} from 'playwright';
 import AxeBuilder from '@axe-core/playwright';
 import {createApp} from '../server/index.mjs';
 import {loadConfig} from '../server/config.mjs';
-import {meetingField,navigate} from './browser-helpers.mjs';
+import {meetingField,navigate,scrollWorkspace} from './browser-helpers.mjs';
 
 const refresh=process.argv.includes('--refresh-screenshots');
 const folder=await mkdtemp(path.join(tmpdir(),'briefactions-release-'));
@@ -33,11 +33,12 @@ async function scan(label){
 }
 async function screenshot(name){
  const original=page.viewportSize(),mobile=original.width===320;
- // Include the actual task fields and calendar entries, rather than clipping the
- // showcase immediately below its heading. Do not alter the application DOM.
+ // Show task fields and calendar entries at desktop size. Mobile uses the actual
+ // framed viewport, scrolled to the review instead of an artificial full page.
  if(!mobile&&/^(review|calendar)-/.test(name))await page.setViewportSize({width:original.width,height:1500});
- await page.evaluate(()=>scrollTo(0,0));await page.evaluate(()=>document.fonts.ready);
- await page.screenshot({path:path.join(shots,name),animations:'disabled',fullPage:mobile});
+ await scrollWorkspace(page);await page.evaluate(()=>document.fonts.ready);
+ if(mobile){await page.locator('.save-feedback').getByText('Saved',{exact:true}).waitFor();await page.locator('.proposal-card').first().evaluate(el=>el.scrollIntoView({block:'start',behavior:'instant'}));}
+ await page.screenshot({path:path.join(shots,name),animations:'disabled'});
  if(!mobile)await page.setViewportSize(original);
 }
 try{

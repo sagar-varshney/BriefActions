@@ -1,3 +1,4 @@
+import {navigate} from './browser-helpers.mjs';
 import assert from 'node:assert/strict';
 import {mkdtemp,mkdir,rm,writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
@@ -50,15 +51,15 @@ try{
   await page.setViewportSize({width,height});
   for(const theme of ['light','dark']){
    await page.getByLabel('Color theme').selectOption(theme);
-   await page.locator('.plan-change-card').nth(1).evaluate(el=>scrollTo({top:scrollY+el.getBoundingClientRect().top-100,behavior:'instant'}));
+   await page.locator('.plan-change-card').nth(1).evaluate(el=>{const main=document.getElementById('workspace-main');if(getComputedStyle(main).overflowY==='auto')main.scrollTo({top:main.scrollTop+el.getBoundingClientRect().top-main.getBoundingClientRect().top-16,behavior:'instant'});else scrollTo({top:scrollY+el.getBoundingClientRect().top-100,behavior:'instant'});});
    const bar=page.getByRole('region',{name:'Review confirmation',exact:true});
-   await page.waitForFunction(()=>{const r=document.querySelector('.plan-confirmation').getBoundingClientRect();return r.top>=0&&Math.abs(r.bottom-(innerHeight-8))<=2;});
+   await page.waitForFunction(()=>{const r=document.querySelector('.plan-confirmation').getBoundingClientRect(),main=document.getElementById('workspace-main'),edge=getComputedStyle(main).overflowY==='auto'?main.getBoundingClientRect().bottom:innerHeight;return r.top>=0&&Math.abs(r.bottom-(edge-8))<=2;});
    assert.equal(await bar.getByRole('status').textContent(),'2 of 3 changes approved.');
    const reachable=await bar.getByRole('button',{name:'Confirm updated plan',exact:true}).evaluate(el=>{const r=el.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth&&r.bottom<=innerHeight&&el.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2));});assert.ok(reachable,`Sticky confirm is reachable: ${width}x${height} ${theme}`);
    await page.getByLabel('Deadline for change 4',{exact:true}).focus();
    const bounds=await page.evaluate(()=>{const field=document.activeElement.getBoundingClientRect(),bar=document.querySelector('.plan-confirmation').getBoundingClientRect();return {fieldTop:field.top,fieldBottom:field.bottom,barTop:bar.top,headerBottom:Math.max(0,document.querySelector('.workspace-header').getBoundingClientRect().bottom)};});assert.ok(bounds.fieldTop>=bounds.headerBottom&&bounds.fieldBottom<=bounds.barTop,`Focused field stays above controls: ${JSON.stringify(bounds)}`);
    await page.keyboard.press('Tab');assert.equal(await page.evaluate(()=>document.activeElement.tagName),'SUMMARY');
-   const clear=await page.evaluate(()=>document.activeElement.getBoundingClientRect().bottom<=document.querySelector('.plan-confirmation').getBoundingClientRect().top);assert.ok(clear,'Keyboard focus must not be hidden under the action bar');
+   const clear=await page.evaluate(()=>{const field=document.activeElement.getBoundingClientRect(),bar=document.querySelector('.plan-confirmation').getBoundingClientRect();return {visible:field.bottom<=bar.top,field:field.toJSON(),bar:bar.toJSON(),main:document.getElementById('workspace-main').getBoundingClientRect().toJSON()};});assert.ok(clear.visible,`Keyboard focus must not be hidden under the action bar: ${width}x${height} ${theme} ${JSON.stringify(clear)}`);
    await page.keyboard.press('Tab');assert.ok(await bar.getByRole('button',{name:'Confirm updated plan',exact:true}).evaluate(el=>el===document.activeElement));
    await scan(page,`sticky-confirmation-${width}-${height}-${theme}`);await page.screenshot({path:path.join(shots,`sticky-confirmation-${width}-${height}-${theme}.png`)});
   }
@@ -81,6 +82,6 @@ try{
  // Wait for the real load event: the old heading/hash navigation can otherwise
  // satisfy checks just before reload destroys their JavaScript context.
  await page.goto(base+'/meetings/'+child);await page.getByRole('heading',{name:'Your confirmed plan',exact:true}).waitFor();await page.evaluate(({root,child})=>{localStorage.setItem(`flow.planUpdateReview.${child}.fixture`,JSON.stringify({root,private:'synthetic'}));},{root:original.id,child});
- await page.getByRole('button',{name:'Data & account',exact:true}).click();await page.getByRole('button',{name:`Delete extraction ${original.id.slice(0,8)}`,exact:true}).click();await page.getByLabel('Deletion confirmation').fill('DELETE TRANSCRIPT');await Promise.all([page.waitForEvent('load'),page.getByRole('button',{name:'Delete transcript',exact:true}).click()]);await page.getByRole('heading',{name:'Data & account.',exact:true}).waitFor();await page.waitForFunction(id=>!Object.keys(localStorage).some(k=>k.includes(id)),child);assert.equal((await fetch(base+'/api/runs/'+child)).status,404);assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('flow.erasure')).id),original.id);
+ await navigate(page,'Data & account');await page.getByRole('button',{name:`Delete extraction ${original.id.slice(0,8)}`,exact:true}).click();await page.getByLabel('Deletion confirmation').fill('DELETE TRANSCRIPT');await Promise.all([page.waitForEvent('load'),page.getByRole('button',{name:'Delete transcript',exact:true}).click()]);await page.getByRole('heading',{name:'Data & account.',exact:true}).waitFor();await page.waitForFunction(id=>!Object.keys(localStorage).some(k=>k.includes(id)),child);assert.equal((await fetch(base+'/api/runs/'+child)).status,404);assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('flow.erasure')).id),original.id);
  assert.deepEqual(errors,[]);await writeFile(path.join(shots,'plan-change-accessibility.json'),JSON.stringify(checks,null,2));console.log('Plan changes: types, draft recovery, approval/corrections, private links, supersession, progress, stale reviews, lost responses, erasure, keyboard, mobile, and both-theme accessibility passed.');
 }finally{await browser?.close();server.closeAllConnections();await server.shutdown();await rm(folder,{recursive:true,force:true});}

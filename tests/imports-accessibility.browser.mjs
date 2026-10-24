@@ -1,4 +1,4 @@
-import {navigate,meetingField} from './browser-helpers.mjs';
+import {navigationButton,navigate,meetingField} from './browser-helpers.mjs';
 import assert from 'node:assert/strict';
 import {mkdtemp,mkdir,rm,writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
@@ -67,7 +67,7 @@ try{
   await upload.setInputFiles({name:'bad.vtt',mimeType:'text/vtt',buffer:Buffer.from('broken')});await page.getByRole('alert').filter({hasText:'WEBVTT header'}).waitFor();
   assert.equal((await (await fetch(base+'/api/runs')).json()).length,1);
   // Keyboard navigation places focus on the new page heading, including unchanged pages.
-  const history=page.getByRole('button',{name:'Meeting history',exact:true});await history.focus();await page.keyboard.press('Enter');await page.waitForFunction(()=>document.activeElement?.tagName==='H1');
+  const history=await navigationButton(page,'Meeting history');await history.focus();await page.keyboard.press('Enter');await page.waitForFunction(()=>document.activeElement?.tagName==='H1');
   assert.equal(await page.evaluate(()=>document.activeElement.textContent),'Your meeting history.');
   const pages=['Extract & review','Meeting history','Compare extraction methods','Label & review examples','Data & account'];
   for(const width of [1440,320]){
@@ -91,7 +91,7 @@ try{
   }
   // Hosted meter states are UI fixtures; backend byte counts and isolation are tested separately.
   await page.route('**/api/account',async route=>{const response=await route.fetch();await route.fulfill({response,json:{...await response.json(),storage:{history:{used_bytes:20_000_000,limit_bytes:25_000_000},drafts:{used_bytes:4_500_000,limit_bytes:5_000_000}}}});});
-  await page.getByRole('button',{name:'Meeting history',exact:true}).click();await page.getByRole('button',{name:'Data & account',exact:true}).click();
+  await navigate(page,'Meeting history');await navigate(page,'Data & account');
   await page.getByRole('meter',{name:'Saved history usage'}).waitFor();
   assert.equal(await page.getByRole('meter',{name:'Saved history usage'}).getAttribute('value'),'20000000');
   assert.equal(await page.getByRole('meter',{name:'Annotation drafts usage'}).getAttribute('max'),'5000000');

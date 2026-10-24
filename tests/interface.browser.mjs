@@ -1,4 +1,4 @@
-import {meetingField} from './browser-helpers.mjs';
+import {meetingField,scrollWorkspace} from './browser-helpers.mjs';
 import assert from 'node:assert/strict';
 import {mkdtemp,mkdir,rm,writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
@@ -50,7 +50,7 @@ try{
    const layout=`${width} ${theme}: ${JSON.stringify({left,right})}`;
    if(width>=1180)assert.ok(left.x+left.width<=right.x+1,'Desktop source and review must sit alongside each other; '+layout);
    if(width<=1024)assert.ok(right.y>=left.y+left.height-1,'Narrow layouts must stack source before review; '+layout);
-   if([1440,390,320].includes(width)){await page.evaluate(()=>scrollTo(0,0));await page.screenshot({path:path.join(shots,`flow-review-${width}-${theme}.png`),fullPage:width<=390});}
+   if([1440,390,320].includes(width)){await scrollWorkspace(page);await page.screenshot({path:path.join(shots,`flow-review-${width}-${theme}.png`),fullPage:width<=390});}
   }
  }
  await page.setViewportSize({width:1440,height:1000});await page.getByRole('button',{name:'Confirm selected tasks',exact:true}).click();await page.getByRole('heading',{name:'Your confirmed plan',exact:true}).waitFor();assert.equal(await metric('Confirmed tasks').textContent(),'1');assert.equal(await metric('Need owner or date').textContent(),'0');

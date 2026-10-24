@@ -1,4 +1,4 @@
-import {meetingField} from './browser-helpers.mjs';
+import {meetingField,navigate} from './browser-helpers.mjs';
 import assert from 'node:assert/strict';
 import {mkdtemp,mkdir,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
@@ -35,15 +35,15 @@ try{
  // Park an unsubmitted meeting, open a saved plan, then resume without overwriting either input.
  await page.getByRole('button',{name:'New meeting',exact:true}).click();assert.equal(await (await meetingField(page,'Meeting transcript')).inputValue(),'');
  await (await meetingField(page,'Meeting transcript')).fill('Jon will review the board notes.');await (await meetingField(page,'Meeting name')).fill('Unsubmitted board');
- await page.getByRole('button',{name:'Meeting history',exact:true}).click();await page.getByRole('button',{name:'Open meeting',exact:true}).click();await page.getByRole('heading',{name:'Your confirmed plan',exact:true}).waitFor();assert.equal(await (await meetingField(page,'Meeting transcript')).inputValue(),input);
+ await navigate(page,'Meeting history');await page.getByRole('button',{name:'Open meeting',exact:true}).click();await page.getByRole('heading',{name:'Your confirmed plan',exact:true}).waitFor();assert.equal(await (await meetingField(page,'Meeting transcript')).inputValue(),input);
  await page.getByRole('button',{name:'New meeting',exact:true}).click();assert.equal(await (await meetingField(page,'Meeting transcript')).inputValue(),'Jon will review the board notes.');await page.reload();await page.getByRole('status').filter({hasText:'Restored transcript draft'}).waitFor();assert.equal(await (await meetingField(page,'Meeting name')).inputValue(),'Unsubmitted board');
  await page.getByRole('button',{name:'Discard transcript draft',exact:true}).click();await page.reload();await page.getByRole('button',{name:'Try an example',exact:true}).waitFor();assert.equal(await (await meetingField(page,'Meeting transcript')).inputValue(),'');
  // Storage failures must be visible and must not permit replacing unsaved input with another run.
  await page.evaluate(()=>{window.originalStorageSet=Storage.prototype.setItem;Storage.prototype.setItem=function(k,v){if(k.includes('flow.inputDraft.'))throw new DOMException('Blocked','QuotaExceededError');return window.originalStorageSet.call(this,k,v);};});
- await (await meetingField(page,'Meeting transcript')).fill('Unsaved text while storage is blocked.');await page.getByRole('status').filter({hasText:'could not be saved'}).waitFor();await page.getByRole('button',{name:'Meeting history',exact:true}).click();await page.getByRole('button',{name:'Open meeting',exact:true}).click();assert.ok(await page.getByRole('heading',{name:'Your meeting history.',exact:true}).isVisible());
+ await (await meetingField(page,'Meeting transcript')).fill('Unsaved text while storage is blocked.');await page.getByRole('status').filter({hasText:'could not be saved'}).waitFor();await navigate(page,'Meeting history');await page.getByRole('button',{name:'Open meeting',exact:true}).click();assert.ok(await page.getByRole('heading',{name:'Your meeting history.',exact:true}).isVisible());
  await page.evaluate(()=>{Storage.prototype.setItem=window.originalStorageSet;});await page.getByRole('button',{name:'Extract & review',exact:true}).click();assert.equal(await (await meetingField(page,'Meeting transcript')).inputValue(),'Unsaved text while storage is blocked.');await page.getByRole('button',{name:'Discard transcript draft',exact:true}).click();
  const seed=spawnSync(pythonBinary(),['-B','-c',"import sys; from history import HistoryStore; h=HistoryStore(sys.argv[1]); [h.create_run('Meeting fixture '+str(i),'2026-09-15',[],title='Planning '+str(i)) for i in range(26)]",historyPath],{encoding:'utf8'});assert.equal(seed.status,0,seed.stderr);
- await page.getByRole('button',{name:'Meeting history',exact:true}).click();await page.getByRole('status').filter({hasText:'27 meetings'}).waitFor();assert.equal(await page.locator('.history-card').count(),12);
+ await navigate(page,'Meeting history');await page.getByRole('status').filter({hasText:'27 meetings'}).waitFor();assert.equal(await page.locator('.history-card').count(),12);
  await page.getByRole('button',{name:'Next meetings',exact:true}).click();await page.getByText('Page 2 of 3',{exact:true}).waitFor();assert.equal(await page.locator('.history-card').count(),12);
  await page.getByRole('button',{name:'Next meetings',exact:true}).click();await page.getByText('Page 3 of 3',{exact:true}).waitFor();assert.equal(await page.locator('.history-card').count(),3);
  await page.getByLabel('Search meetings',{exact:true}).fill('CAFÉ');await page.getByRole('status').filter({hasText:'1 meeting · Page 1 of 1'}).waitFor();assert.equal(await page.locator('.history-card h3').textContent(),'Release planning');

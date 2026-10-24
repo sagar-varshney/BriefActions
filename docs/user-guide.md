@@ -10,11 +10,23 @@ or task link returns to that item after sign-in. Local development instead shows
 **System** from **Theme** on the sign-in page; the workspace remembers that choice.
 The public homepage always uses its own mix of light and dark sections.
 
-Navigation follows this order: **Extract & review → My day → All tasks → Tasks by owner → Calendar → Meeting history**.
+Desktop navigation follows this order: **Extract & review → My day → All tasks → Tasks by owner → Calendar → Meeting history**.
+The sidebar groups everyday work above your meeting library and Research tools.
+Use **Collapse navigation** to leave an icon rail, or **Expand navigation** to
+restore the labels. This choice is remembered in this browser for your account
+when browser storage is available. Opening Research tools expands a collapsed
+sidebar so its links remain readable.
+
+On phones and narrower tablets, use the bottom bar for **Review**, **My day**,
+**Tasks**, and **Calendar**. **More** opens the remaining sections, account controls,
+and Research tools. Close it with its close button, Escape, or the backdrop.
+The slim top toolbar keeps the current section, Theme, and Help close to hand.
+
 Start in **Extract & review**: add a transcript, check proposed actions, then confirm
 your plan. Its **Start here** label, three-step progress bar, sample, and optional
 walkthrough help you get started. Use **My day** to choose your next step once work
-is saved. **Data & account** sits beside the theme and account controls.
+is saved. **Data & account** sits at the foot of the desktop sidebar and inside
+More on smaller screens. Signed-in users can also sign out there.
 The optional **Research tools** menu stays collapsed until you open it; you do not
 need a machine-learning background to turn a meeting into tasks. Open **Help** anywhere
 in the workspace for a short walkthrough and glossary. You can close or skip it
@@ -63,8 +75,12 @@ to use **Retry saved analysis**, which recovers the same saved request.
 ## Keyboard and small-screen controls
 
 Use the **Skip to workspace** link to bypass navigation. Opening a section brings
-its heading into view below the header. In short landscape windows, the header
-scrolls with the page so it does not cover the workspace.
+its heading into view below the header. On smaller screens, the content scrolls
+between the toolbar and bottom navigation so neither covers its fields. The
+toolbar does not stick over content in short landscape windows. More keeps Tab
+and Shift+Tab inside its dialog; closing it returns focus to More. Choosing a
+section closes the dialog and moves focus to the destination heading. If Research
+tools is expanded, the first Escape closes that disclosure; another closes More.
 
 In **Focus one task**, **Previous task** and **Next task** focus the new card.
 Press Tab to reach its **Keep task** control, then continue through its fields

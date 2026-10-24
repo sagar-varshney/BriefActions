@@ -1,4 +1,4 @@
-import {meetingField} from './browser-helpers.mjs';
+import {meetingField,navigate} from './browser-helpers.mjs';
 import assert from 'node:assert/strict';
 import {mkdtemp,mkdir,rm,readFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
@@ -35,10 +35,10 @@ try{
   await page.getByRole('button',{name:'Analyze transcript',exact:true}).click();await page.getByRole('button',{name:'Retry saved analysis'}).waitFor();
   assert.equal((await (await fetch(base+'/api/runs')).json()).length,1);await page.unroute('**/api/runs');await page.reload();
   await page.getByRole('button',{name:'Retry saved analysis'}).waitFor();assert.equal(await (await meetingField(page,'Meeting transcript')).inputValue(),'Jon will send the invoice tomorrow.');
-  await page.getByRole('button',{name:'Data & account',exact:true}).click();await page.getByRole('heading',{name:/Saved transcripts/}).waitFor();await page.getByRole('button',{name:'Extract & review',exact:true}).click();
+  await navigate(page,'Data & account');await page.getByRole('heading',{name:/Saved transcripts/}).waitFor();await page.getByRole('button',{name:'Extract & review',exact:true}).click();
   await page.getByRole('button',{name:'Retry saved analysis'}).click();await page.getByRole('status').filter({hasText:'Analysis saved. Review the proposals below.'}).waitFor();
   const runs=await (await fetch(base+'/api/runs')).json();assert.equal(runs.length,2);assert.equal(runs[0].id,firstId);assert.notEqual(firstId,droppedId);
-  await page.getByRole('button',{name:'Data & account',exact:true}).click();await page.getByRole('heading',{name:/Saved transcripts/}).waitFor();
+  await navigate(page,'Data & account');await page.getByRole('heading',{name:/Saved transcripts/}).waitFor();
   const exportEvent=page.waitForEvent('download');await page.getByRole('button',{name:'Download workspace JSONL'}).click();const lines=(await readFile(await (await exportEvent).path(),'utf8')).trim().split('\n').map(JSON.parse);assert.equal(lines.at(-1).type,'complete');assert.equal(lines.filter(r=>r.kind==='extraction').length,2);
   const remove=page.getByRole('button',{name:`Delete extraction ${firstId.slice(0,8)}`,exact:true});await remove.click();
   assert.ok(await page.getByRole('button',{name:'Cancel',exact:true}).evaluate(el=>el===document.activeElement));
