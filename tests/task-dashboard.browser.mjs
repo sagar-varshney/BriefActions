@@ -46,6 +46,11 @@ try{
  await page.getByLabel('Search tasks',{exact:true}).fill('slow');await received.promise;
  await page.getByLabel('Search tasks',{exact:true}).fill('Customer');await page.getByRole('status').filter({hasText:'1 task ·'}).waitFor();release.resolve();await fulfilled.promise;await page.waitForFunction(()=>document.querySelector('.dashboard-task h2')?.textContent.includes('send invoices'));
  await page.getByLabel('Search tasks',{exact:true}).fill('Launch');await page.getByLabel('Task status',{exact:true}).selectOption('open');await view('Upcoming').click();await page.getByRole('status').filter({hasText:'1 task ·'}).waitFor();
+ // Escape clears only the search, keeps focus and filters, and respects IME composition.
+ const search=page.getByLabel('Search tasks',{exact:true});await search.dispatchEvent('keydown',{key:'Escape',isComposing:true});assert.equal(await search.inputValue(),'Launch','Escape during text composition must not clear the query');
+ const cleared=page.waitForResponse(response=>{const url=new URL(response.url());return url.pathname==='/api/tasks'&&url.searchParams.get('query')===''&&url.searchParams.get('status')==='open'&&url.searchParams.get('view')==='upcoming';});
+ await search.press('Escape');await cleared;await page.getByRole('status').filter({hasText:'1 task ·'}).waitFor();assert.equal(await search.inputValue(),'');assert.equal(await page.getByLabel('Task status',{exact:true}).inputValue(),'open');assert.equal(await view('Upcoming').getAttribute('aria-pressed'),'true');assert.ok(await search.evaluate(el=>el===document.activeElement),'Clearing search keeps keyboard focus');
+ await search.fill('Launch');await page.getByRole('status').filter({hasText:'1 task ·'}).waitFor();
  const target=launch.final_tasks.find(task=>task.owner==='Jon'),taskURL=`/meetings/${launch.id}?task=${target.proposal_id}`;
  await page.getByRole('button',{name:/^Open task & evidence/}).click();await page.waitForFunction(id=>document.activeElement?.id===`confirmed-task-${id}`,target.proposal_id);assert.equal(new URL(page.url()).pathname+new URL(page.url()).search,taskURL);
  await page.getByRole('button',{name:'Locate passage 1 for confirmed task 3',exact:true}).click();await page.waitForFunction(()=>document.activeElement?.id==='saved-source');assert.equal(await page.locator('#saved-source mark').textContent(),target.evidence[0].text);
