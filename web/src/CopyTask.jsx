@@ -1,15 +1,18 @@
 import Icon from './Icon.jsx';
-import React,{useEffect,useId,useRef,useState} from 'react';
+import React,{useEffect,useId,useLayoutEffect,useRef,useState} from 'react';
 
 export default function CopyTask({task}){
  const [busy,setBusy]=useState(false),[copied,setCopied]=useState(false),[manual,setManual]=useState(false),preview=useRef(null),previewId=useId();
  const text=`Task: ${task.task}\nOwner: ${task.owner}\nDeadline: ${task.deadline}`;
+ const latestText=useRef(text);
+ // Clipboard results belong to the displayed text, including its current deadline.
+ useLayoutEffect(()=>{latestText.current=text;setCopied(false);setManual(false);},[text]);
  useEffect(()=>{if(manual){preview.current?.focus();preview.current?.select();}},[manual]);
  async function copy(){
   if(busy)return;
   setBusy(true);setCopied(false);setManual(false);
-  try{await navigator.clipboard.writeText(text);setCopied(true);}
-  catch{setManual(true);}
+  try{await navigator.clipboard.writeText(text);if(latestText.current===text)setCopied(true);}
+  catch{if(latestText.current===text)setManual(true);}
   finally{setBusy(false);}
  }
  return <div className="task-copy-control">
