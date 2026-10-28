@@ -144,6 +144,30 @@ waiting on that action. A delayed result does not move focus away from another
 control you have started using. Review disclosures, selection labels, and action
 buttons have larger touch targets.
 
+## Inspect task details
+
+Choose **Open task & evidence** in All tasks, My day (including the weekly review),
+Calendar, or Tasks by owner. A side panel opens on desktop; on small screens it
+fills the screen. Your current search, filters, selected calendar date, and result
+page stay in place.
+
+The panel contains one task, its progress, deadline correction controls, original
+supporting conversation, and a history of that task's deadline and progress
+changes. **Locate passage** highlights the original words; **Back to task** returns
+to the control you used. Unknown owners and deadlines remain Unknown.
+
+Use **Back to your view**, the close button, or Escape to return. If a deadline
+correction has unsaved edits, choose **Keep editing** or explicitly discard them.
+Let a save finish before closing; if its response is interrupted, reopening the
+task offers the existing retry without creating a new update. Saved changes can
+move a task out of your current filters or result page. The view refreshes when
+you return, preserving your position where the updated results allow.
+
+**Open full meeting** opens the complete plan at the selected task. That private
+meeting link can be bookmarked and reloaded; reloading a list closes its panel.
+An older plan replaced by a reviewed follow-up stays read-only and links to the
+current plan. Meetings awaiting review still open their review workflow directly.
+
 ## Start your day
 
 **My day** brings together overdue work, deadlines today, the next seven days, and
@@ -158,7 +182,7 @@ or assigns work automatically.
 
 Each section previews up to four items and shows its complete count. **View all**
 opens the corresponding task filter or meetings **Awaiting review**. **Open task &
-evidence** goes to the exact confirmed task and its supporting conversation;
+evidence** opens the task-details panel and its supporting conversation;
 **Continue review** resumes a saved task or follow-up review.
 
 **Refresh My day**, returning from another screen, or refocusing the browser checks
@@ -300,9 +324,9 @@ Completed tasks do not appear in those date views. **Unassigned** finds Unknown
 owners, including completed tasks when your status filter includes them.
 
 View counts follow the current search and status filter. **Refresh tasks** checks
-for changes from other tabs. **Open task & evidence** opens that exact task inside
-its meeting, where you can change progress or use **Locate passage**. Task links
-remain private to your account. Browser Back restores the dashboard filters during
+for changes from other tabs. **Open task & evidence** opens that task's side panel,
+where you can change progress or use **Locate passage**. **Open full meeting**
+provides its private meeting link. Browser Back restores the dashboard filters during
 the same session; reloading the dashboard starts with the default filters.
 
 ## Tasks by owner
@@ -353,8 +377,9 @@ remain in history, while task deadlines follow the current confirmed plan.
 Unconfirmed suggestions do not appear as task deadlines.
 
 **Open meeting & transcript** returns to the saved meeting. **Open task & evidence**
-opens the exact confirmed task, where **Locate passage** shows its supporting
-words. Browser Back restores your calendar selection and filters in the same tab;
+opens the task-details panel, where **Locate passage** shows its supporting
+words. Closing the panel keeps your selected date and filters. Browser Back
+restores your calendar selection and filters after a full-meeting visit in the same tab;
 reloading starts at the current month. **Refresh calendar** checks for changes.
 
 **Unscheduled tasks** lists confirmed work with an Unknown deadline, across all

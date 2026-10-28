@@ -1,8 +1,8 @@
-import React,{useId,useRef,useState} from 'react';
+import React,{useId,useLayoutEffect,useRef,useState} from 'react';
 import {validDeadline} from './reviewTools.js';
 import useAfterRender from './useAfterRender.js';
 
-export default function TaskDeadline({run,task,index,disabled,onSave}){
+export default function TaskDeadline({run,task,index,disabled,onSave,onDirtyChange}){
  const id=useId(),trigger=useRef(null),dateField=useRef(null),unknownField=useRef(null),afterRender=useAfterRender(!disabled);
  const [open,setOpen]=useState(false),[date,setDate]=useState(''),[unknown,setUnknown]=useState(false),[reason,setReason]=useState('');
  const correction=task.deadline_correction,version=run.task_deadlines?.[task.proposal_id]?.version || 0;
@@ -10,6 +10,7 @@ export default function TaskDeadline({run,task,index,disabled,onSave}){
  function edit(){setBaseVersion(version);setDate(task.deadline==='Unknown'?'':task.deadline);setUnknown(task.deadline==='Unknown');setReason('');setOpen(true);afterRender(()=>(task.deadline==='Unknown'?unknownField:dateField).current?.focus());}
  function close(){setOpen(false);afterRender(()=>trigger.current?.focus());}
  const value=unknown?'Unknown':date;
+ useLayoutEffect(()=>{onDirtyChange?.(open&&(value!==task.deadline||!!reason.trim()));},[open,value,reason,task.deadline,onDirtyChange]);
  async function submit(event){event.preventDefault();if(disabled || value===task.deadline || !validDeadline(value) || !reason.trim())return;
   if(await onSave({run_id:run.id,proposal_id:task.proposal_id,deadline:value,reason:reason.trim(),version:baseVersion,request_id:crypto.randomUUID().replaceAll('-','')}))close();
  }

@@ -18,6 +18,7 @@ React / Vite → Node HTTP API → Python bridge → extraction and history
 | `web/src/main.jsx`, `web/src/AuthShell.jsx` | Public entry, sign-in, account scope, and deferred workspace loading |
 | `web/src/WorkspaceApp.jsx`, `web/src/styles.css` | Private workspace, themes, and responsive UI |
 | `web/src/WorkspaceShell.jsx`, `web/src/workspace-shell.css` | Compact top navigation, full-width desktop workspace, mobile navigation, and modal keyboard handling |
+| `web/src/TaskDetails.jsx`, `web/src/task-details.css` | Task inspector, scoped history, modal focus/scroll return, and explicit full-meeting handoff |
 | `web/src/DeferredSection.jsx`, `web/src/BenchmarkPage.jsx`, `web/src/AnnotationReviewer.jsx` | On-demand research screens and explicit chunk-load recovery |
 | `server/` | HTTP routes, authentication, request limits, worker lifecycle, and built asset serving |
 | `web_bridge.py`, `export_bridge.py` | JSON worker protocol and streaming workspace export |
@@ -528,6 +529,31 @@ layouts via `legacyReviewDefaults`, preserving that coverage rather than relying
 on a product default. The fixture preference is seeded only once per origin so it
 does not undo account-erasure tests or later user layout choices.
 
+`TaskDetails.jsx` opens confirmed tasks from All tasks, Calendar, My day/weekly
+review, and Tasks by owner in a native modal inspector. The originating screen
+remains mounted; its URL, filters, pagination, and calendar selection do not change.
+The existing private full-meeting task URL remains the explicit handoff and
+bookmark target. Closing restores focus and scroll when the originating control
+still exists; automatic read refreshes use `useReadContext.js` to preserve context
+and fall back to the page heading when an updated task leaves the current results.
+
+The inspector reuses `TaskFollowThrough`, `TaskDeadline`, `SourceTranscript`, and
+the extracted `Evidence` component. It keeps versioned/idempotent writes and
+account-scoped pending-request recovery. Read revisions refresh the background
+after closing; mutation completion still invalidates reads if the inspector was
+unmounted. Unsaved deadline edits require an explicit discard, including workspace
+Back navigation. Auth loss still unmounts the inspector through the normal gate.
+Its history includes only progress/deadline events for the selected proposal ID;
+superseded plans remain read-only. No API routes or database schema change.
+
+`tests/task-details.browser.mjs` checks the inspector's originating views, filters,
+pagination, focus/scroll restoration, Unicode evidence, scoped history, saved
+corrections/progress, response-loss recovery after reopening, in-flight writes,
+stale/failed/missing reads, superseded plans, dirty Back/discard behavior, explicit
+full-meeting links, forced colours, and light/dark axe checks at 320–1440 pixels
+including short landscape screens. Existing full-meeting suites use the explicit
+handoff so their task-link, export, and navigation coverage remains intact.
+
 The workspace shell has a dedicated `tests/workspace-shell.browser.mjs` check.
 It exercises horizontal desktop navigation, retired sidebar-preference compatibility, research
 disclosure, mobile More, Tab/Shift+Tab containment, nested Escape, focus return,
@@ -555,7 +581,7 @@ pnpm build
 pnpm screenshots
 ```
 
-The command replaces the homepage, sign-in, review, task-list, and calendar images
+The command replaces the homepage, sign-in, review, task-list, task-inspector, and calendar images
 in `docs/screenshots/`, including light/dark review and mobile examples. Review the
 resulting images and Git diff before committing. Capture fails on a failed journey;
 it can leave partially refreshed images, so rerun successfully before publishing.

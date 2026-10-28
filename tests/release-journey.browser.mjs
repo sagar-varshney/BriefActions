@@ -8,7 +8,7 @@ import {chromium} from 'playwright';
 import AxeBuilder from '@axe-core/playwright';
 import {createApp} from '../server/index.mjs';
 import {loadConfig} from '../server/config.mjs';
-import {legacyReviewDefaults,meetingField,navigate,scrollWorkspace} from './browser-helpers.mjs';
+import {openFullMeeting,legacyReviewDefaults,meetingField,navigate,scrollWorkspace} from './browser-helpers.mjs';
 
 const refresh=process.argv.includes('--refresh-screenshots');
 const folder=await mkdtemp(path.join(tmpdir(),'briefactions-release-'));
@@ -42,7 +42,7 @@ async function screenshot(name){
  // Capture real guided review at desktop size and the actual mobile scroll frame.
  if(!mobile&&/^(review|calendar)-/.test(name))await page.setViewportSize({width:original.width,height:1500});
  await scrollWorkspace(page);await page.evaluate(()=>document.fonts.ready);
- if(mobile)await page.locator('.proposal-card').first().evaluate(el=>el.scrollIntoView({block:'start',behavior:'instant'}));
+ if(mobile&&review)await page.locator('.proposal-card').first().evaluate(el=>el.scrollIntoView({block:'start',behavior:'instant'}));
  await page.screenshot({path:path.join(shots,name),animations:'disabled'});
  if(review){await page.locator('.guided-review-options>summary').click();await page.getByLabel('Review layout',{exact:true}).selectOption(previous);}
  if(!mobile)await page.setViewportSize(original);
@@ -115,13 +115,19 @@ try{
  await page.route('**/api/calendar?**',route=>route.fulfill({status:503,json:{error:'Calendar temporarily unavailable.'}}),{times:1});
  await page.getByRole('button',{name:'Refresh calendar',exact:true}).click();await page.getByRole('button',{name:'Retry calendar loading',exact:true}).click();
  await detail.locator('.calendar-entry-task').waitFor();assert.equal(await page.getByLabel('Selected calendar date',{exact:true}).inputValue(),'2026-10-27');
- await detail.getByRole('button',{name:'Open task & evidence',exact:true}).click();await page.getByRole('heading',{name:'Your confirmed plan',exact:true}).waitFor();
+ for(const width of [1440,320]){await page.setViewportSize({width,height:width===320?844:1000});for(const theme of ['light','dark']){
+  await page.getByLabel('Color theme').selectOption(theme);await detail.getByRole('button',{name:'Open task & evidence',exact:true}).click();
+  const inspector=page.getByRole('dialog',{name:'Task details',exact:true});await inspector.locator('.confirmed-card').waitFor();await scan(`task-details-${width}-${theme}`);
+  await screenshot(`task-details-${width===320?'mobile-':''}${theme}.png`);await inspector.getByRole('button',{name:'Close task details',exact:true}).click();await inspector.waitFor({state:'hidden'});
+ }}
+ await page.setViewportSize({width:1440,height:1000});
+ await detail.getByRole('button',{name:'Open task & evidence',exact:true}).click();await openFullMeeting(page);await page.getByRole('heading',{name:'Your confirmed plan',exact:true}).waitFor();
  await page.getByRole('button',{name:'Locate passage 1 for confirmed task 1',exact:true}).click();await page.waitForFunction(()=>document.activeElement?.id==='saved-source');
  assert.equal(await page.locator('#saved-source mark').textContent(),"Maya: I'll send the launch checklist tomorrow.");
  const download=page.waitForEvent('download');await page.getByRole('button',{name:'Export CSV',exact:true}).click();assert.equal(await (await download).failure(),null);
  const response=await fetch(base+`/api/runs/${runId}`,{headers:{Authorization:`Bearer ${session.access_token}`}});assert.ok(response.ok);const saved=await response.json();
  assert.equal(saved.final_tasks.length,2);assert.equal(saved.final_tasks[0].deadline,'2026-10-23');assert.equal(saved.current_tasks[0].deadline,'2026-10-27');assert.equal(saved.final_tasks[1].owner,'Jordan');assert.equal(saved.transcript,transcript);
  assert.deepEqual(errors,[]);
- console.log('Release journey passed: first-use routing, real extraction and evidence, Unknown metadata, correction/selection, expired-refresh/re-auth draft recovery, explicit confirmation, progress, traceable deadline/calendar update, read retry and CSV; desktop/mobile accessibility in both themes. Auth is fixture-backed, not live OAuth.');
+ console.log('Release journey passed: first-use routing, real extraction and evidence, Unknown metadata, correction/selection, expired-refresh/re-auth draft recovery, explicit confirmation, progress, traceable deadline/calendar update, task inspector/full-meeting handoff, read retry and CSV; desktop/mobile accessibility in both themes. Auth is fixture-backed, not live OAuth.');
 }catch(error){if(page){await page.screenshot({path:path.join(shots,'release-journey-failure.png'),fullPage:true}).catch(()=>{});await writeFile(path.join(shots,'release-journey-failure.txt'),await page.locator('body').innerText().catch(()=>''));}throw error;}
 finally{await writeFile(path.join(refresh?folder:shots,'release-journey-accessibility.json'),JSON.stringify(checks,null,2));await browser?.close();server.closeAllConnections();await server.shutdown();await rm(folder,{recursive:true,force:true});}

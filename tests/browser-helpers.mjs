@@ -18,6 +18,11 @@ export async function navigationButton(page,name){
 export async function navigate(page,name){
  await (await navigationButton(page,name)).click();
 }
+// Existing full-meeting suites retain coverage of the explicit handoff from the
+// new inspector. The dedicated task-details suite verifies staying in the view.
+export async function openFullMeeting(page){
+ await page.getByRole('dialog',{name:'Task details',exact:true}).getByRole('button',{name:'Open full meeting',exact:true}).click();
+}
 export async function scrollWorkspace(page,position=0){
  await page.evaluate(position=>{
   const main=document.getElementById('workspace-main'),framed=main&&getComputedStyle(main).overflowY==='auto';
