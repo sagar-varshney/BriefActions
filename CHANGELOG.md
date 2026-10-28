@@ -1,5 +1,21 @@
 # Release notes
 
+## 28 October 2026 — Guided review and top navigation
+
+- Desktop navigation runs across the top, leaving the full workspace width for
+  reviewing tasks and their original conversation. Mobile quick navigation and
+  the More menu remain available on smaller screens.
+- The default **Guided workspace** shows a task list, one task editor, and the
+  supporting conversation on wide screens. On mobile, use the task picker and
+  **Keep & next** or **Skip & next**. Existing review layouts remain available
+  under **Review options**.
+- **Review selection** opens a summary of all selected tasks, including those
+  outside the current filter. Only explicit confirmation creates the plan;
+  missing owners and deadlines can remain **Unknown**.
+
+See the [user guide](docs/user-guide.md) for the workflow and
+[PR #2](https://github.com/sagar-varshney/BriefActions/pull/2) for the shipped change.
+
 ## 2.0.0 — 24 October 2026
 
 BriefActions is publicly available at [briefactions.onrender.com](https://briefactions.onrender.com).
