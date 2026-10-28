@@ -11,11 +11,9 @@ or task link returns to that item after sign-in. Local development instead shows
 The public homepage always uses its own mix of light and dark sections.
 
 Desktop navigation follows this order: **Extract & review → My day → All tasks → Tasks by owner → Calendar → Meeting history**.
-The sidebar groups everyday work above your meeting library and Research tools.
-Use **Collapse navigation** to leave an icon rail, or **Expand navigation** to
-restore the labels. This choice is remembered in this browser for your account
-when browser storage is available. Opening Research tools expands a collapsed
-sidebar so its links remain readable.
+Everyday work and Research tools appear in a horizontal navigation row at the top.
+The row above holds the brand, account controls, Theme, and Help. The workspace
+uses the full width; there is no side navigation or collapse control.
 
 On phones and narrower tablets, use the bottom bar for **Review**, **My day**,
 **Tasks**, and **Calendar**. **More** opens the remaining sections, account controls,
@@ -25,7 +23,7 @@ The slim top toolbar keeps the current section, Theme, and Help close to hand.
 Start in **Extract & review**: add a transcript, check proposed actions, then confirm
 your plan. Its **Start here** label, three-step progress bar, sample, and optional
 walkthrough help you get started. Use **My day** to choose your next step once work
-is saved. **Data & account** sits at the foot of the desktop sidebar and inside
+is saved. **Data & account** sits in the desktop toolbar and inside
 More on smaller screens. Signed-in users can also sign out there.
 The optional **Research tools** menu stays collapsed until you open it; you do not
 need a machine-learning background to turn a meeting into tasks. Open **Help** anywhere
@@ -52,6 +50,46 @@ example mean?**. These use an invented conversation to explain expected answers,
 missing owners and dates, tasks found or missed, independent review, and locked
 example sets. They do not run a model, import examples, change scores, or create
 tasks. Technical scores remain available in their existing disclosures.
+
+## Review suggested tasks
+
+New review sessions default to **Guided workspace** unless this browser already
+remembers another layout for your account. On wide screens, choose a task from
+the list, edit it in the middle, and read the highlighted original conversation
+beside it. At narrower desktop widths, the full transcript sits below the editor.
+Phones and tablets use **Go to task** instead of the list.
+
+**Keep & next** includes the task and moves forward. **Skip & next** leaves it out
+and moves forward. On the final task these buttons read **Keep task** and **Skip
+task**. Previous/Next navigation alone does not change a selection. The list says
+**Not kept** for every unselected task, including tasks you have not checked; it
+does not claim they have been reviewed. Position and kept counts are separate.
+
+Edits and choices use the existing autosave. The active task is remembered in this
+browser for your account when storage is available. **Needs attention** filters
+missing or conflicting details; an unflagged task still needs your judgment.
+Open **What to check** for an explanation, or keep Unknown when the conversation
+does not establish an owner or exact deadline.
+
+**Locate passage** opens and focuses the full original conversation. **Back to
+task** returns to that exact control. Selecting another task highlights its first
+supporting passage without moving focus into the transcript. Corrections never
+rewrite the source words or their Unicode character offsets.
+
+Choose **Review selection** to inspect every kept task, including selections
+outside the current filter. **Back to review** or Escape closes the summary without
+confirming. Only **Confirm selected tasks** (or **Confirm empty plan**) saves the
+final plan. Invalid fields return you to their task; a server failure keeps the
+review available for retry. Unknown owners and deadlines remain allowed.
+
+**Add a missed action** opens the new unchecked task in the editor after it is saved;
+you still choose whether to keep it.
+
+**Meeting overview** holds meeting actions, series membership, and summary counts.
+**Review options** holds filters, bulk selection, help, and the existing Compact
+rows, Detailed cards, and Focus one task layouts. Choosing another layout keeps
+your edits and selections. Transcript-width controls remain available in those
+layouts through **Layout options**.
 
 ## While a request is running
 

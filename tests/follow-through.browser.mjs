@@ -1,3 +1,4 @@
+import {legacyReviewDefaults} from './browser-helpers.mjs';
 import assert from 'node:assert/strict';
 import {mkdtemp,mkdir,rm,writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
@@ -15,7 +16,7 @@ try{
  const json=async response=>{assert.ok(response.ok,await response.clone().text());return response.json();},get=url=>fetch(base+url).then(json),post=(url,body)=>fetch(base+url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(json);
  browser=await chromium.launch({headless:true,...(process.env.FLOW_CHROMIUM_PATH?{executablePath:process.env.FLOW_CHROMIUM_PATH}:{})});const context=await browser.newContext({viewport:{width:1440,height:1000},timezoneId:'America/Los_Angeles'}),page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
  const weekly=page.locator('.weekly-review'),ready=()=>weekly.getByRole('status').filter({hasText:'Weekly review ready'}).waitFor();
- await page.goto(base+'/today');await page.getByRole('button',{name:'Open weekly review',exact:true}).click();await ready();assert.equal((await get('/api/runs')).length,0);assert.equal(await weekly.locator('.weekly-stat strong').allTextContents().then(v=>v.join(',')),'0,0,0,0');
+ await legacyReviewDefaults(page,[]);await page.goto(base+'/today');await page.getByRole('button',{name:'Open weekly review',exact:true}).click();await ready();assert.equal((await get('/api/runs')).length,0);assert.equal(await weekly.locator('.weekly-stat strong').allTextContents().then(v=>v.join(',')),'0,0,0,0');
  const today=await page.evaluate(()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}),shift=n=>{const d=new Date(today+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10);};
  const create=async(title,text,confirm=true)=>{const run=await post('/api/runs',{title,transcript:text,reference_date:today});return confirm?post(`/api/runs/${run.id}/finalize`,{decisions:run.proposals.map(p=>({...p,accept:true}))}):run;};
  let run=await create('Weekly planning 📋',Array.from({length:13},(_,i)=>`Maya will review queue item ${i} by ${shift(-1)}.`).join('\n')+`\nSam will check capacity by ${today}.\nJon will send the brief by ${shift(2)}.\nPlease prepare the agenda.\nLee will review the notes.`);

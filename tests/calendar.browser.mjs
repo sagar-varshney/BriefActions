@@ -1,4 +1,4 @@
-import {scrollWorkspace} from './browser-helpers.mjs';
+import {legacyReviewDefaults,scrollWorkspace} from './browser-helpers.mjs';
 import assert from 'node:assert/strict';
 import {mkdtemp,mkdir,rm,writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
@@ -24,7 +24,7 @@ try{
  browser=await chromium.launch({headless:true,...(process.env.FLOW_CHROMIUM_PATH?{executablePath:process.env.FLOW_CHROMIUM_PATH}:{})});
  const context=await browser.newContext({viewport:{width:1440,height:1000},timezoneId:'America/Los_Angeles'}),page=await context.newPage(),errors=[];page.on('pageerror',error=>errors.push(error.message));
  await page.clock.setFixedTime(new Date('2026-10-22T18:00:00Z'));
- await page.goto(base+'/calendar');await page.getByRole('heading',{name:'Calendar',exact:true}).waitFor();await page.getByLabel('Calendar month',{exact:true}).fill('2026-10');
+ await legacyReviewDefaults(page,[]);await page.goto(base+'/calendar');await page.getByRole('heading',{name:'Calendar',exact:true}).waitFor();await page.getByLabel('Calendar month',{exact:true}).fill('2026-10');
  const ready=()=>page.getByRole('status').filter({hasText:/meetings? and \d+ task deadlines? this month/}).waitFor();await ready();assert.equal(await page.title(),'Calendar · BriefActions');assert.equal(await page.locator('.calendar-month button[tabindex="0"]').count(),1);
  assert.ok((await page.locator('#calendar-day-2026-10-01').innerText()).includes('1 task'),'A deadline on the first day must not shift to the previous month');
  assert.ok((await page.locator('#calendar-day-2026-10-20').innerText()).includes('2 meetings'));assert.ok(!(await page.locator('#calendar-day-2026-10-22').innerText()).includes('task'),'Unconfirmed proposals do not become calendar tasks');

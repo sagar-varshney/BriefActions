@@ -1,4 +1,4 @@
-import {navigate,meetingField} from './browser-helpers.mjs';
+import {legacyReviewDefaults,navigate,meetingField} from './browser-helpers.mjs';
 // Run after `pnpm build` and `pnpm exec playwright install chromium`.
 import assert from 'node:assert/strict';
 import {mkdtemp, mkdir, readFile, rm} from 'node:fs/promises';
@@ -18,7 +18,7 @@ try {
   browser=await chromium.launch({headless:true, ...(process.env.FLOW_CHROMIUM_PATH ? {executablePath:process.env.FLOW_CHROMIUM_PATH} : {})});
   const page=await browser.newPage({viewport:{width:1440,height:1000}});
   const errors=[];page.on('pageerror',error=>errors.push(error.message));
-  await page.goto(base+'/meetings');
+  await legacyReviewDefaults(page,[]);await page.goto(base+'/meetings');
   await page.getByRole('button',{name:'Analyze transcript',exact:true}).waitFor();
   await page.getByLabel('Color theme').selectOption('dark');
   assert.equal(await page.locator('html').getAttribute('data-theme'),'dark');

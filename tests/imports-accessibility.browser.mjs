@@ -1,4 +1,4 @@
-import {navigationButton,navigate,meetingField} from './browser-helpers.mjs';
+import {legacyReviewDefaults,navigationButton,navigate,meetingField} from './browser-helpers.mjs';
 import assert from 'node:assert/strict';
 import {mkdtemp,mkdir,rm,writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
@@ -24,7 +24,7 @@ try{
   const base=`http://127.0.0.1:${server.address().port}`,authBase=`http://127.0.0.1:${authServer.address().port}`;
   browser=await chromium.launch({headless:true,...(process.env.FLOW_CHROMIUM_PATH?{executablePath:process.env.FLOW_CHROMIUM_PATH}:{})});
   const context=await browser.newContext({viewport:{width:1440,height:1000}});const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
-  await page.goto(base+'/meetings');await page.getByRole('button',{name:'Try an example',exact:true}).waitFor();
+  await legacyReviewDefaults(page,[]);await page.goto(base+'/meetings');await page.getByRole('button',{name:'Try an example',exact:true}).waitFor();
   assert.equal(await (await meetingField(page,'Meeting transcript')).inputValue(),'');
   assert.equal(await (await meetingField(page,'Meeting date')).inputValue(),'');
   await page.getByRole('button',{name:'Paste my transcript',exact:true}).click();

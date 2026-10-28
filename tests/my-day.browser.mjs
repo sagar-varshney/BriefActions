@@ -1,4 +1,4 @@
-import {scrollWorkspace} from './browser-helpers.mjs';
+import {legacyReviewDefaults,scrollWorkspace} from './browser-helpers.mjs';
 import assert from 'node:assert/strict';
 import {mkdtemp,mkdir,rm,writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
@@ -15,7 +15,7 @@ try{
  const post=async(url,body)=>{const response=await fetch(base+url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});assert.ok(response.ok,await response.clone().text());return response.json();};
  browser=await chromium.launch({headless:true,...(process.env.FLOW_CHROMIUM_PATH?{executablePath:process.env.FLOW_CHROMIUM_PATH}:{})});
  const context=await browser.newContext({viewport:{width:1440,height:1000},timezoneId:'America/Los_Angeles'}),page=await context.newPage(),errors=[];page.on('pageerror',error=>errors.push(error.message));
- await page.goto(base+'/today');const ready=()=>page.getByRole('status').filter({hasText:'Overview ready for'}).waitFor();await ready();await page.getByRole('heading',{name:'Your day starts with a conversation.',exact:true}).waitFor();assert.equal(await page.title(),'My day · BriefActions');assert.equal((await (await fetch(base+'/api/runs')).json()).length,0);
+ await legacyReviewDefaults(page,[]);await page.goto(base+'/today');const ready=()=>page.getByRole('status').filter({hasText:'Overview ready for'}).waitFor();await ready();await page.getByRole('heading',{name:'Your day starts with a conversation.',exact:true}).waitFor();assert.equal(await page.title(),'My day · BriefActions');assert.equal((await (await fetch(base+'/api/runs')).json()).length,0);
  assert.equal(await page.locator('.daily-focus').count(),0,'A new workspace has no invented priority');
  for(const theme of ['light','dark']){await page.getByLabel('Color theme').selectOption(theme);await scan(page,`daily-first-use-${theme}`);}
  const today=await page.evaluate(()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}),shift=n=>{const d=new Date(today+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10);};

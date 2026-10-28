@@ -1,4 +1,4 @@
-import {meetingField,navigate} from './browser-helpers.mjs';
+import {legacyReviewDefaults,meetingField,navigate} from './browser-helpers.mjs';
 // Managed auth responses are fixtures; live OAuth settings still need launch verification.
 import assert from 'node:assert/strict';
 import {mkdtemp,rm,mkdir,readFile} from 'node:fs/promises';
@@ -23,7 +23,7 @@ try{
   browser=await chromium.launch({headless:true,...(process.env.FLOW_CHROMIUM_PATH?{executablePath:process.env.FLOW_CHROMIUM_PATH}:{})});
   const page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.route('https://test-project.supabase.co/auth/v1/**',route=>route.fulfill({status:route.request().url().includes('/logout')?204:200,contentType:'application/json',body:route.request().url().includes('/logout')?'':JSON.stringify(first.user)}));
-  await page.goto(base);await page.getByRole('heading',{name:'Good conversations. Clear next steps.'}).waitFor();await page.getByRole('link',{name:'Sign in',exact:true}).first().click();await page.getByRole('button',{name:'Continue with GitHub'}).waitFor();assert.equal(await (await meetingField(page,'Meeting transcript')).count(),0);
+  await legacyReviewDefaults(page,[alice,bob]);await page.goto(base);await page.getByRole('heading',{name:'Good conversations. Clear next steps.'}).waitFor();await page.getByRole('link',{name:'Sign in',exact:true}).first().click();await page.getByRole('button',{name:'Continue with GitHub'}).waitFor();assert.equal(await (await meetingField(page,'Meeting transcript')).count(),0);
   await page.getByLabel('Color theme').selectOption('dark');await page.screenshot({path:path.join(screenshotDir,'sign-in-dark.png'),fullPage:true});
   await page.evaluate(value=>localStorage.setItem('sb-test-project-auth-token',JSON.stringify(value)),first);await page.reload();
   await page.getByText('alice@example.test',{exact:true}).waitFor();await page.getByText('START HERE · EXTRACT & REVIEW',{exact:true}).waitFor();assert.equal(new URL(page.url()).pathname,'/meetings');await page.getByRole('button',{name:'Try an example',exact:true}).click();await page.getByRole('button',{name:'Analyze transcript'}).click();await page.getByRole('heading',{name:/Review action proposals/}).waitFor();

@@ -1,3 +1,4 @@
+import {legacyReviewDefaults} from './browser-helpers.mjs';
 import assert from 'node:assert/strict';
 import {mkdtemp,mkdir,rm,writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
@@ -14,7 +15,7 @@ try{
  const json=async response=>{assert.ok(response.ok,await response.clone().text());return response.json();},get=url=>fetch(base+url).then(json),post=(url,body)=>fetch(base+url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(json);
  browser=await chromium.launch({headless:true,...(process.env.FLOW_CHROMIUM_PATH?{executablePath:process.env.FLOW_CHROMIUM_PATH}:{})});const context=await browser.newContext({viewport:{width:1440,height:1000}}),page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
  const text='Maya: I’ll review release-notes.md tomorrow.\nAda will investigate why the worker won’t start by Friday.\nPlease prepare the agenda next week.';
- await page.goto(base+'/meetings');await page.getByLabel('Meeting transcript',{exact:true}).fill(text);await page.getByLabel('Meeting date',{exact:true}).fill('2026-10-20');await page.getByRole('button',{name:'Analyze transcript',exact:true}).click();await page.getByRole('heading',{name:/Review action proposals/}).waitFor();
+ await legacyReviewDefaults(page,[]);await page.goto(base+'/meetings');await page.getByLabel('Meeting transcript',{exact:true}).fill(text);await page.getByLabel('Meeting date',{exact:true}).fill('2026-10-20');await page.getByRole('button',{name:'Analyze transcript',exact:true}).click();await page.getByRole('heading',{name:/Review action proposals/}).waitFor();
  const runId=new URL(page.url()).pathname.split('/').at(-1),run=await get('/api/runs/'+runId);assert.equal(run.proposals.length,3);assert.deepEqual(run.proposals.map(p=>[p.owner,p.deadline]),[['Maya','2026-10-21'],['Ada','2026-10-23'],['Unknown','Unknown']]);
  await page.locator('.review-checklist>summary').focus();await page.keyboard.press('Enter');assert.ok((await page.locator('.review-checklist').innerText()).includes('A proposal without a flag still needs your review.'));assert.ok((await page.locator('.review-checklist').innerText()).includes('2026-10-20'));
  await page.getByLabel('Review layout',{exact:true}).selectOption('detailed');await page.getByRole('button',{name:'Locate passage 1 for task 1',exact:true}).click();await page.waitForFunction(()=>document.activeElement?.id==='saved-source');assert.equal(await page.locator('#saved-source mark').textContent(),'Maya: I’ll review release-notes.md tomorrow.');await page.getByRole('button',{name:'Back to task',exact:true}).click();

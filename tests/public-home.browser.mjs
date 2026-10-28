@@ -7,7 +7,7 @@ import {chromium} from 'playwright';
 import AxeBuilder from '@axe-core/playwright';
 import {createApp} from '../server/index.mjs';
 import {loadConfig} from '../server/config.mjs';
-import {navigationButton,navigate} from './browser-helpers.mjs';
+import {legacyReviewDefaults,navigationButton,navigate} from './browser-helpers.mjs';
 const titleIs=(page,title)=>page.waitForFunction(expected=>document.title===expected,title);
 async function centeredHeader(page){
  const [brand,nav,actions]=await Promise.all(['.landing-header>.brand','.landing-header nav','.landing-header-actions'].map(selector=>page.locator(selector).boundingBox()));
@@ -38,7 +38,7 @@ try{
   if(url.pathname.endsWith('/otp')){otp={url:url.href,body:request.postDataJSON()};return route.fulfill({contentType:'application/json',body:'{}'});}
   return route.fulfill({contentType:'application/json',body:JSON.stringify(user)});
  });
- await page.goto(base);await page.getByRole('heading',{name:'Good conversations. Clear next steps.'}).waitFor();
+ await legacyReviewDefaults(page,[user.id]);await page.goto(base);await page.getByRole('heading',{name:'Good conversations. Clear next steps.'}).waitFor();
  await page.getByRole('link',{name:'Sign in',exact:true}).first().waitFor();await titleIs(page,'BriefActions');
  assert.deepEqual(privateRequests,[],'The public demo must not request private workspace data');
  assert.equal((await fetch(base+'/api/runs')).status,401,'Public HTML must not expose private API access');

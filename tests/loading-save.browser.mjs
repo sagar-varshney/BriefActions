@@ -5,7 +5,7 @@ import path from 'node:path';
 import {chromium} from 'playwright';
 import AxeBuilder from '@axe-core/playwright';
 import {createApp} from '../server/index.mjs';
-import {navigate} from './browser-helpers.mjs';
+import {legacyReviewDefaults,navigate} from './browser-helpers.mjs';
 
 const folder=await mkdtemp(path.join(tmpdir(),'briefactions-loading-save-')),shots=process.env.FLOW_SCREENSHOTS||path.join(folder,'screenshots');await mkdir(shots,{recursive:true});
 const server=createApp({historyPath:path.join(folder,'history.sqlite3')});let browser;const releases=[],checks=[];
@@ -23,7 +23,7 @@ try{
  let expectedChunkFailure=false,simulateChunkFailure=false;
  page.on('requestfailed',request=>{if(simulateChunkFailure&&new URL(request.url()).pathname===asset('WorkspaceApp'))expectedChunkFailure=true;});
  page.on('pageerror',error=>{if(simulateChunkFailure&&/Failed to fetch dynamically imported module|Importing a module script failed/.test(error.message))expectedChunkFailure=true;else errors.push(error.message);});page.on('request',request=>requests.push(new URL(request.url()).pathname));
- await page.goto(base+'/');await page.getByRole('region',{name:'Try a conversation. See the plan.',exact:true}).waitFor();await page.waitForLoadState('networkidle');
+ await legacyReviewDefaults(page,[]);await page.goto(base+'/');await page.getByRole('region',{name:'Try a conversation. See the plan.',exact:true}).waitFor();await page.waitForLoadState('networkidle');
  for(const name of ['WorkspaceApp','AnnotationReviewer','BenchmarkPage'])assert.ok(!requests.includes(asset(name)),name+' is not downloaded by the landing page');
  assert.deepEqual(requests.filter(url=>url.startsWith('/api/')&&url!=='/api/auth-config'),[],'The public page does not load private data');
  await page.goto(base+'/meetings/'+run.id);await page.getByRole('heading',{name:/Review action proposals/}).waitFor();
