@@ -17,7 +17,7 @@ React / Vite → Node HTTP API → Python bridge → extraction and history
 | --- | --- |
 | `web/src/main.jsx`, `web/src/AuthShell.jsx` | Public entry, sign-in, account scope, and deferred workspace loading |
 | `web/src/WorkspaceApp.jsx`, `web/src/styles.css` | Private workspace, themes, and responsive UI |
-| `web/src/WorkspaceShell.jsx`, `web/src/workspace-shell.css` | Collapsible sidebar, slim toolbar, mobile navigation, modal keyboard handling, and account-scoped browser layout preference |
+| `web/src/WorkspaceShell.jsx`, `web/src/workspace-shell.css` | Compact top navigation, full-width desktop workspace, mobile navigation, and modal keyboard handling |
 | `web/src/DeferredSection.jsx`, `web/src/BenchmarkPage.jsx`, `web/src/AnnotationReviewer.jsx` | On-demand research screens and explicit chunk-load recovery |
 | `server/` | HTTP routes, authentication, request limits, worker lifecycle, and built asset serving |
 | `web_bridge.py`, `export_bridge.py` | JSON worker protocol and streaming workspace export |
@@ -529,7 +529,7 @@ on a product default. The fixture preference is seeded only once per origin so i
 does not undo account-erasure tests or later user layout choices.
 
 The workspace shell has a dedicated `tests/workspace-shell.browser.mjs` check.
-It exercises expanded/collapsed desktop navigation, remembered collapse, research
+It exercises horizontal desktop navigation, retired sidebar-preference compatibility, research
 disclosure, mobile More, Tab/Shift+Tab containment, nested Escape, focus return,
 preserved review choices, and light/dark accessibility from 320 to 1600 pixels,
 including the 960/961-pixel layout boundary and short landscape screens. Native

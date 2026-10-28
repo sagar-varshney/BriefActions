@@ -8,7 +8,7 @@ export async function legacyReviewDefaults(target,accounts=[]){
 export async function navigationButton(page,name){
  const button=page.getByRole('button',{name,exact:true});
  await page.locator('.workspace-header').waitFor();
- await page.waitForFunction(()=>matchMedia('(max-width:960px)').matches?!!document.querySelector('.workspace-mobile-navigation'):!!document.querySelector('.workspace-sidebar'));
+ await page.waitForFunction(()=>matchMedia('(max-width:960px)').matches?!!document.querySelector('.workspace-mobile-navigation'):!!document.querySelector('.workspace-top-navigation'));
  if(await button.isVisible())return button;
  const more=page.getByRole('button',{name:'More navigation',exact:true});
  if(await more.isVisible())await more.click();

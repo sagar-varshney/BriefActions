@@ -21,12 +21,11 @@ import {UsersIcon} from '@phosphor-icons/react/dist/csr/Users';
 import {WarningCircleIcon} from '@phosphor-icons/react/dist/csr/WarningCircle';
 import {XIcon} from '@phosphor-icons/react/dist/csr/X';
 import {QuestionIcon} from '@phosphor-icons/react/dist/csr/Question';
-import {SidebarSimpleIcon} from '@phosphor-icons/react/dist/csr/SidebarSimple';
 import {ListIcon} from '@phosphor-icons/react/dist/csr/List';
 import {GearSixIcon} from '@phosphor-icons/react/dist/csr/GearSix';
 import {SignOutIcon} from '@phosphor-icons/react/dist/csr/SignOut';
 
-const icons={arrow:ArrowRightIcon,external:ArrowUpRightIcon,calendar:CalendarBlankIcon,chevron:CaretDownIcon,chart:ChartBarIcon,check:CheckIcon,history:ClockCounterClockwiseIcon,copy:CopyIcon,download:DownloadSimpleIcon,unchanged:EqualsIcon,extract:FileTextIcon,flow:LightningIcon,changed:PencilSimpleIcon,added:PlusIcon,quote:QuotesIcon,day:SunIcon,spinner:SpinnerGapIcon,owner:UserIcon,owners:UsersIcon,attention:WarningCircleIcon,cancelled:XIcon,help:QuestionIcon,sidebarOpen:SidebarSimpleIcon,sidebarClose:SidebarSimpleIcon,menu:ListIcon,signout:SignOutIcon,settings:GearSixIcon};
+const icons={arrow:ArrowRightIcon,external:ArrowUpRightIcon,calendar:CalendarBlankIcon,chevron:CaretDownIcon,chart:ChartBarIcon,check:CheckIcon,history:ClockCounterClockwiseIcon,copy:CopyIcon,download:DownloadSimpleIcon,unchanged:EqualsIcon,extract:FileTextIcon,flow:LightningIcon,changed:PencilSimpleIcon,added:PlusIcon,quote:QuotesIcon,day:SunIcon,spinner:SpinnerGapIcon,owner:UserIcon,owners:UsersIcon,attention:WarningCircleIcon,cancelled:XIcon,help:QuestionIcon,menu:ListIcon,signout:SignOutIcon,settings:GearSixIcon};
 
 export default function Icon({name,size=20,className=''}){
  const Symbol=icons[name];

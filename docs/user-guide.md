@@ -11,11 +11,9 @@ or task link returns to that item after sign-in. Local development instead shows
 The public homepage always uses its own mix of light and dark sections.
 
 Desktop navigation follows this order: **Extract & review → My day → All tasks → Tasks by owner → Calendar → Meeting history**.
-The sidebar groups everyday work above your meeting library and Research tools.
-Use **Collapse navigation** to leave an icon rail, or **Expand navigation** to
-restore the labels. This choice is remembered in this browser for your account
-when browser storage is available. Opening Research tools expands a collapsed
-sidebar so its links remain readable.
+Everyday work and Research tools appear in a horizontal navigation row at the top.
+The row above holds the brand, account controls, Theme, and Help. The workspace
+uses the full width; there is no side navigation or collapse control.
 
 On phones and narrower tablets, use the bottom bar for **Review**, **My day**,
 **Tasks**, and **Calendar**. **More** opens the remaining sections, account controls,
@@ -25,7 +23,7 @@ The slim top toolbar keeps the current section, Theme, and Help close to hand.
 Start in **Extract & review**: add a transcript, check proposed actions, then confirm
 your plan. Its **Start here** label, three-step progress bar, sample, and optional
 walkthrough help you get started. Use **My day** to choose your next step once work
-is saved. **Data & account** sits at the foot of the desktop sidebar and inside
+is saved. **Data & account** sits in the desktop toolbar and inside
 More on smaller screens. Signed-in users can also sign out there.
 The optional **Research tools** menu stays collapsed until you open it; you do not
 need a machine-learning background to turn a meeting into tasks. Open **Help** anywhere
