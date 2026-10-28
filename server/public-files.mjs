@@ -24,5 +24,6 @@ export async function publicFile(root,pathname) {
   if(!info?.isFile())return {status:503};
   const actual=await realpath(filename).catch(()=>null);
   if(!actual || !actual.startsWith(base+path.sep))return {status:404};
+  if(path.relative(base,actual).split(path.sep).some(segment=>segment.startsWith('.')) || !Object.hasOwn(PUBLIC_TYPES,path.extname(actual)))return {status:404};
   return {filename:actual};
 }

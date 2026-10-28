@@ -27,7 +27,9 @@ test('Public file allowlist rejects hidden files, source maps, backups, malforme
   await symlink(path.join(folder,'outside.js'),path.join(dist,'assets','outside.js'));
   await symlink(folder,path.join(dist,'assets','nested'));
   await symlink(path.join(dist,'assets','app-12345678.js'),path.join(dist,'assets','inside.js'));
-  for(const pathname of ['/.env','/%2eenv','/.vite/manifest.json','/assets/app.js.map','/private.sqlite3','/private.sql','/assets/outside.js','/assets/nested/outside.js','/../outside.js','/assets/missing.js'])assert.equal((await publicFile(dist,pathname)).status,404,pathname);
+  await symlink(path.join(dist,'.env'),path.join(dist,'assets','hidden-alias.js'));
+  await symlink(path.join(dist,'private.sqlite3'),path.join(dist,'assets','database-alias.js'));
+  for(const pathname of ['/.env','/%2eenv','/.vite/manifest.json','/assets/app.js.map','/private.sqlite3','/private.sql','/assets/outside.js','/assets/nested/outside.js','/assets/hidden-alias.js','/assets/database-alias.js','/../outside.js','/assets/missing.js'])assert.equal((await publicFile(dist,pathname)).status,404,pathname);
   for(const pathname of ['/bad%ZZ','/bad%00.js','/assets%5coutside.js'])assert.equal((await publicFile(dist,pathname)).status,400,pathname);
   assert.match((await publicFile(dist,'/meetings/'+('a'.repeat(32)))).filename,/index\.html$/);
   assert.match((await publicFile(dist,'/assets/app-12345678.js')).filename,/app-12345678\.js$/);
