@@ -1,4 +1,4 @@
-import {meetingField,navigate} from './browser-helpers.mjs';
+import {legacyReviewDefaults,meetingField,navigate} from './browser-helpers.mjs';
 import assert from 'node:assert/strict';
 import {mkdtemp,mkdir,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
@@ -15,7 +15,7 @@ try{
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const base=`http://127.0.0.1:${server.address().port}`;
  browser=await chromium.launch({headless:true,...(process.env.FLOW_CHROMIUM_PATH?{executablePath:process.env.FLOW_CHROMIUM_PATH}:{})});
  const context=await browser.newContext(),page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
- await page.goto(base+'/meetings');await page.getByRole('button',{name:'Try an example',exact:true}).waitFor();
+ await legacyReviewDefaults(page,[]);await page.goto(base+'/meetings');await page.getByRole('button',{name:'Try an example',exact:true}).waitFor();
  const input='Maya will send the café report tomorrow.';
  await (await meetingField(page,'Meeting transcript')).fill(input);await (await meetingField(page,'Meeting date')).fill('2026-10-13');await (await meetingField(page,'Meeting name')).fill('Sprint café');await page.getByLabel('Maximum groups').selectOption('2');
  await page.reload();await page.getByRole('status').filter({hasText:'Restored transcript draft'}).waitFor();

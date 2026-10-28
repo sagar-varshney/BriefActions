@@ -1,4 +1,4 @@
-import {navigate} from './browser-helpers.mjs';
+import {legacyReviewDefaults,navigate} from './browser-helpers.mjs';
 import assert from 'node:assert/strict';
 import {mkdtemp,mkdir,rm,writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
@@ -16,7 +16,7 @@ try{
  const original=await seed();await post(`/api/runs/${original.id}/progress`,{proposal_id:original.final_tasks[0].proposal_id,status:'in_progress',version:0,request_id:'a'.repeat(32)});
  browser=await chromium.launch({headless:true,...(process.env.FLOW_CHROMIUM_PATH?{executablePath:process.env.FLOW_CHROMIUM_PATH}:{})});
  const context=await browser.newContext({viewport:{width:1440,height:1000}}),page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
- await page.goto(base+'/meetings/'+original.id);await page.getByRole('heading',{name:'Your confirmed plan',exact:true}).waitFor();
+ await legacyReviewDefaults(page,[]);await page.goto(base+'/meetings/'+original.id);await page.getByRole('heading',{name:'Your confirmed plan',exact:true}).waitFor();
  await page.locator('.followup-panel>summary').click();
  const followup='Maya: Move the report to Monday.\nJon: Cancel the notes.\nAda: I will review the budget tomorrow.';
  await page.getByLabel('Follow-up transcript',{exact:true}).fill(followup);await page.getByLabel('Follow-up meeting date',{exact:true}).fill('2026-10-17');

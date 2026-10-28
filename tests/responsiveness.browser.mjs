@@ -5,7 +5,7 @@ import path from 'node:path';
 import {chromium} from 'playwright';
 import AxeBuilder from '@axe-core/playwright';
 import {createApp} from '../server/index.mjs';
-import {meetingField} from './browser-helpers.mjs';
+import {legacyReviewDefaults,meetingField} from './browser-helpers.mjs';
 const deferred=()=>{let resolve;return {promise:new Promise(r=>{resolve=r;}),resolve:()=>resolve()};};
 const folder=await mkdtemp(path.join(tmpdir(),'briefactions-responsive-')),analysis=deferred(),entered=deferred(),saving=deferred(),saveEntered=deferred();
 const server=createApp({historyPath:path.join(folder,'history.sqlite3')});let browser;
@@ -13,7 +13,7 @@ try{
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const base=`http://127.0.0.1:${server.address().port}`;
  browser=await chromium.launch({headless:true,...(process.env.FLOW_CHROMIUM_PATH?{executablePath:process.env.FLOW_CHROMIUM_PATH}:{})});
  const context=await browser.newContext(),page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
- await page.goto(base+'/meetings');await (await meetingField(page,'Meeting transcript')).fill('Maya will send the report tomorrow.');await (await meetingField(page,'Meeting date')).fill('2026-10-22');
+ await legacyReviewDefaults(page,[]);await page.goto(base+'/meetings');await (await meetingField(page,'Meeting transcript')).fill('Maya will send the report tomorrow.');await (await meetingField(page,'Meeting date')).fill('2026-10-22');
  await page.route('**/api/runs',async route=>{if(route.request().method()!=='POST')return route.continue();entered.resolve();await analysis.promise;return route.continue();});
  await page.getByRole('button',{name:'Analyze transcript',exact:true}).click();await entered.promise;
  assert.ok(await page.getByRole('button',{name:'Calendar',exact:true}).isEnabled());assert.ok(await page.getByRole('button',{name:'Data & account',exact:true}).isDisabled());

@@ -1,7 +1,14 @@
+// Legacy card-layout suites choose their original layouts explicitly. The focused
+// review suite uses a fresh account/browser with the new product default.
+export async function legacyReviewDefaults(target,accounts=[]){
+ await target.addInitScript(accounts=>{
+  try{if(sessionStorage.getItem('flow.test.legacyReviewInitialized'))return;const layout=matchMedia('(max-width:760px)').matches?'focus':'detailed';for(const key of ['flow.reviewLayout',...accounts.map(id=>`flow.account.${id}.flow.reviewLayout`)])if(localStorage.getItem(key)===null)localStorage.setItem(key,layout);sessionStorage.setItem('flow.test.legacyReviewInitialized','true');}catch{}
+ },accounts);
+}
 export async function navigationButton(page,name){
  const button=page.getByRole('button',{name,exact:true});
- if(await button.isVisible())return button;
  await page.locator('.workspace-header').waitFor();
+ await page.waitForFunction(()=>matchMedia('(max-width:960px)').matches?!!document.querySelector('.workspace-mobile-navigation'):!!document.querySelector('.workspace-sidebar'));
  if(await button.isVisible())return button;
  const more=page.getByRole('button',{name:'More navigation',exact:true});
  if(await more.isVisible())await more.click();

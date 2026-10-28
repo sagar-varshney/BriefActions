@@ -514,6 +514,20 @@ fail the job, and the browser/container checks are never skipped to publish.
 
 ## Release rehearsal and screenshots
 
+`ReviewProposals.jsx` also offers the default guided workspace, with account-scoped
+layout and per-meeting active-task preferences. `ReviewSelectionDialog.jsx` provides
+an explicit final selection check; confirmation still uses the existing validated
+review endpoint. No acceptance is inferred from selecting or navigating a task.
+
+`tests/focused-review.browser.mjs` exercises the new default with fresh storage:
+queue/mobile picker navigation, selection and editing, reload position, Unicode
+source highlighting and focus return, existing-layout compatibility, summary
+keyboard containment, empty plans, confirmation failure/retry, and both themes at
+320–1600px. Existing browser suites explicitly select their previous card/focus
+layouts via `legacyReviewDefaults`, preserving that coverage rather than relying
+on a product default. The fixture preference is seeded only once per origin so it
+does not undo account-erasure tests or later user layout choices.
+
 The workspace shell has a dedicated `tests/workspace-shell.browser.mjs` check.
 It exercises expanded/collapsed desktop navigation, remembered collapse, research
 disclosure, mobile More, Tab/Shift+Tab containment, nested Escape, focus return,

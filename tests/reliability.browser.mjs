@@ -1,4 +1,4 @@
-import {meetingField,navigate} from './browser-helpers.mjs';
+import {legacyReviewDefaults,meetingField,navigate} from './browser-helpers.mjs';
 import assert from 'node:assert/strict';
 import {mkdtemp,mkdir,rm,readFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
@@ -14,7 +14,7 @@ try{
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const base=`http://127.0.0.1:${server.address().port}`;
   browser=await chromium.launch({headless:true,...(process.env.FLOW_CHROMIUM_PATH?{executablePath:process.env.FLOW_CHROMIUM_PATH}:{})});
   const page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
-  await page.goto(base+'/meetings');await page.getByRole('button',{name:'Analyze transcript',exact:true}).waitFor();
+  await legacyReviewDefaults(page,[]);await page.goto(base+'/meetings');await page.getByRole('button',{name:'Analyze transcript',exact:true}).waitFor();
   await (await meetingField(page,'Meeting transcript')).fill('Maya will send the private report tomorrow.');
   await (await meetingField(page,'Meeting date')).fill('2026-09-15');
   let droppedId;

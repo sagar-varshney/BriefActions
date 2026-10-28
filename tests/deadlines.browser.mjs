@@ -5,7 +5,7 @@ import path from 'node:path';
 import {chromium} from 'playwright';
 import AxeBuilder from '@axe-core/playwright';
 import {createApp} from '../server/index.mjs';
-import {navigate} from './browser-helpers.mjs';
+import {legacyReviewDefaults,navigate} from './browser-helpers.mjs';
 
 const folder=await mkdtemp(path.join(tmpdir(),'briefactions-deadlines-browser-')),shots=process.env.FLOW_SCREENSHOTS||path.join(folder,'screenshots');await mkdir(shots,{recursive:true});
 const server=createApp({historyPath:path.join(folder,'history.sqlite3')});let browser;
@@ -14,7 +14,7 @@ try{
  const post=async(url,body)=>{const r=await fetch(base+url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});assert.ok(r.ok,await r.clone().text());return r.json();};
  browser=await chromium.launch({headless:true,...(process.env.FLOW_CHROMIUM_PATH?{executablePath:process.env.FLOW_CHROMIUM_PATH}:{})});
  const context=await browser.newContext({viewport:{width:1440,height:1000},permissions:['clipboard-read','clipboard-write']}),page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
- await page.goto(base+'/meetings');await page.getByRole('button',{name:'Analyze transcript',exact:true}).waitFor();
+ await legacyReviewDefaults(page,[]);await page.goto(base+'/meetings');await page.getByRole('button',{name:'Analyze transcript',exact:true}).waitFor();
  const today=await page.evaluate(()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}),shift=n=>{const d=new Date(today+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10);};
  let run=await post('/api/runs',{title:'Deadline planning 📋',transcript:`Maya will send the report by ${shift(1)}.\nJon will review the notes.`,reference_date:today});
  run=await post(`/api/runs/${run.id}/finalize`,{decisions:run.proposals.map(p=>({...p,accept:true}))});const task=run.final_tasks[0],card=()=>page.locator(`#confirmed-task-${task.proposal_id}`);

@@ -53,6 +53,46 @@ missing owners and dates, tasks found or missed, independent review, and locked
 example sets. They do not run a model, import examples, change scores, or create
 tasks. Technical scores remain available in their existing disclosures.
 
+## Review suggested tasks
+
+New review sessions default to **Guided workspace** unless this browser already
+remembers another layout for your account. On wide screens, choose a task from
+the list, edit it in the middle, and read the highlighted original conversation
+beside it. At narrower desktop widths, the full transcript sits below the editor.
+Phones and tablets use **Go to task** instead of the list.
+
+**Keep & next** includes the task and moves forward. **Skip & next** leaves it out
+and moves forward. On the final task these buttons read **Keep task** and **Skip
+task**. Previous/Next navigation alone does not change a selection. The list says
+**Not kept** for every unselected task, including tasks you have not checked; it
+does not claim they have been reviewed. Position and kept counts are separate.
+
+Edits and choices use the existing autosave. The active task is remembered in this
+browser for your account when storage is available. **Needs attention** filters
+missing or conflicting details; an unflagged task still needs your judgment.
+Open **What to check** for an explanation, or keep Unknown when the conversation
+does not establish an owner or exact deadline.
+
+**Locate passage** opens and focuses the full original conversation. **Back to
+task** returns to that exact control. Selecting another task highlights its first
+supporting passage without moving focus into the transcript. Corrections never
+rewrite the source words or their Unicode character offsets.
+
+Choose **Review selection** to inspect every kept task, including selections
+outside the current filter. **Back to review** or Escape closes the summary without
+confirming. Only **Confirm selected tasks** (or **Confirm empty plan**) saves the
+final plan. Invalid fields return you to their task; a server failure keeps the
+review available for retry. Unknown owners and deadlines remain allowed.
+
+**Add a missed action** opens the new unchecked task in the editor after it is saved;
+you still choose whether to keep it.
+
+**Meeting overview** holds meeting actions, series membership, and summary counts.
+**Review options** holds filters, bulk selection, help, and the existing Compact
+rows, Detailed cards, and Focus one task layouts. Choosing another layout keeps
+your edits and selections. Transcript-width controls remain available in those
+layouts through **Layout options**.
+
 ## While a request is running
 
 Loading messages name the current action, such as analyzing a transcript, opening

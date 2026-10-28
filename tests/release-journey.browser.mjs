@@ -8,7 +8,7 @@ import {chromium} from 'playwright';
 import AxeBuilder from '@axe-core/playwright';
 import {createApp} from '../server/index.mjs';
 import {loadConfig} from '../server/config.mjs';
-import {meetingField,navigate,scrollWorkspace} from './browser-helpers.mjs';
+import {legacyReviewDefaults,meetingField,navigate,scrollWorkspace} from './browser-helpers.mjs';
 
 const refresh=process.argv.includes('--refresh-screenshots');
 const folder=await mkdtemp(path.join(tmpdir(),'briefactions-release-'));
@@ -32,15 +32,22 @@ async function scan(label){
  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),label+' horizontal overflow');
 }
 async function screenshot(name){
- const original=page.viewportSize(),mobile=original.width===320;
- // Show task fields and calendar entries at desktop size. Mobile uses the actual
- // framed viewport, scrolled to the review instead of an artificial full page.
+ const original=page.viewportSize(),mobile=original.width===320,review=/^review-/.test(name);
+ let previous;
+ if(review){
+  const layout=page.getByLabel('Review layout',{exact:true});previous=await layout.inputValue();
+  await layout.selectOption('workspace');await page.locator('.guided-review-workspace').waitFor();
+  await page.locator('.save-feedback').getByText('Saved',{exact:true}).waitFor();
+ }
+ // Capture real guided review at desktop size and the actual mobile scroll frame.
  if(!mobile&&/^(review|calendar)-/.test(name))await page.setViewportSize({width:original.width,height:1500});
  await scrollWorkspace(page);await page.evaluate(()=>document.fonts.ready);
- if(mobile){await page.locator('.save-feedback').getByText('Saved',{exact:true}).waitFor();await page.locator('.proposal-card').first().evaluate(el=>el.scrollIntoView({block:'start',behavior:'instant'}));}
+ if(mobile)await page.locator('.proposal-card').first().evaluate(el=>el.scrollIntoView({block:'start',behavior:'instant'}));
  await page.screenshot({path:path.join(shots,name),animations:'disabled'});
+ if(review){await page.locator('.guided-review-options>summary').click();await page.getByLabel('Review layout',{exact:true}).selectOption(previous);}
  if(!mobile)await page.setViewportSize(original);
 }
+
 try{
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const base=`http://127.0.0.1:${server.address().port}`;
  browser=await chromium.launch({headless:true,...(process.env.FLOW_CHROMIUM_PATH?{executablePath:process.env.FLOW_CHROMIUM_PATH}:{})});
@@ -52,7 +59,7 @@ try{
   if(route.request().url().includes('/token')){expiredRefreshes++;return route.fulfill({status:400,json:{code:'refresh_token_not_found',msg:'Invalid Refresh Token: fixture expired'}});}
   return route.fulfill({status:200,json:session.user});
  });
- await page.goto(base+'/');await page.getByRole('heading',{name:'Good conversations. Clear next steps.',exact:true}).waitFor();await screenshot('homepage.png');
+ await legacyReviewDefaults(page,[account]);await page.goto(base+'/');await page.getByRole('heading',{name:'Good conversations. Clear next steps.',exact:true}).waitFor();await screenshot('homepage.png');
  await page.getByRole('link',{name:'Sign in',exact:true}).first().click();await page.getByRole('button',{name:'Continue with GitHub',exact:true}).waitFor();
  await page.getByLabel('Color theme').selectOption('light');await scan('sign-in-light');await screenshot('sign-in-light.png');
  await page.evaluate(value=>localStorage.setItem('sb-test-project-auth-token',JSON.stringify(value)),session);await page.reload();

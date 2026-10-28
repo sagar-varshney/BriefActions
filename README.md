@@ -77,6 +77,15 @@ reject it before confirming; extraction can miss or misread commitments.
 | **Calendar** | Distinguish meeting dates from task deadlines with labels and icons. Inspect selected-day counts, use the mobile agenda, and find undated tasks separately. |
 | **Meeting history** | Find saved conversations, inspect previous decisions, and group recurring meetings into a series. |
 
+### Review one task at a time
+
+The default **Guided workspace** puts a task list beside one editor and the original
+conversation on wide screens. On mobile, use **Go to task**, **Keep & next**, and
+**Skip & next**. Missing details can stay **Unknown**. Edits and selections save
+automatically; this browser also remembers your active task when storage is available.
+Choose **Review selection** to check the full set before explicitly confirming.
+Existing card layouts remain available under **Review options**.
+
 ### Keep plans up to date
 
 - **Review follow-up conversations.** Compare proposed additions, changes, and

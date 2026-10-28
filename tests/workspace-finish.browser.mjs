@@ -5,7 +5,7 @@ import path from 'node:path';
 import {chromium} from 'playwright';
 import AxeBuilder from '@axe-core/playwright';
 import {createApp} from '../server/index.mjs';
-import {navigate,meetingField} from './browser-helpers.mjs';
+import {legacyReviewDefaults,navigate,meetingField} from './browser-helpers.mjs';
 
 const folder=await mkdtemp(path.join(tmpdir(),'briefactions-finish-'));
 const shots=process.env.FLOW_SCREENSHOTS || path.join(folder,'screenshots');await mkdir(shots,{recursive:true});
@@ -21,7 +21,7 @@ try{
  browser=await chromium.launch({headless:true,...(process.env.FLOW_CHROMIUM_PATH?{executablePath:process.env.FLOW_CHROMIUM_PATH}:{})});
  const context=await browser.newContext({viewport:{width:1440,height:1000}}),page=await context.newPage(),errors=[];
  page.on('pageerror',error=>errors.push(error.message));
- await page.goto(base+'/history');await page.getByRole('heading',{name:'No saved meetings yet.',exact:true}).waitFor();
+ await legacyReviewDefaults(page,[]);await page.goto(base+'/history');await page.getByRole('heading',{name:'No saved meetings yet.',exact:true}).waitFor();
  for(const width of [320,1440])for(const theme of ['light','dark']){
   await page.setViewportSize({width,height:1000});await page.getByLabel('Color theme').selectOption(theme);await scan(page,`finish-empty-history-${width}-${theme}`);
  }

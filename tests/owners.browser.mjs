@@ -1,4 +1,4 @@
-import {scrollWorkspace} from './browser-helpers.mjs';
+import {legacyReviewDefaults,scrollWorkspace} from './browser-helpers.mjs';
 import assert from 'node:assert/strict';
 import {mkdtemp,mkdir,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
@@ -13,7 +13,7 @@ try{
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const base=`http://127.0.0.1:${server.address().port}`;
  const post=async(url,body)=>{const r=await fetch(base+url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});assert.ok(r.ok,await r.clone().text());return r.json();};
  browser=await chromium.launch({headless:true,...(process.env.FLOW_CHROMIUM_PATH?{executablePath:process.env.FLOW_CHROMIUM_PATH}:{})});const context=await browser.newContext({viewport:{width:1440,height:1000}}),page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
- await page.goto(base+'/owners');await page.getByRole('heading',{name:'No owner groups in this view',exact:true}).waitFor();assert.equal(await page.title(),'Tasks by owner · BriefActions');assert.equal((await (await fetch(base+'/api/runs')).json()).length,0);
+ await legacyReviewDefaults(page,[]);await page.goto(base+'/owners');await page.getByRole('heading',{name:'No owner groups in this view',exact:true}).waitFor();assert.equal(await page.title(),'Tasks by owner · BriefActions');assert.equal((await (await fetch(base+'/api/runs')).json()).length,0);
  const today=await page.evaluate(()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}),shift=n=>{const d=new Date(today+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10);};
  const create=async(title,text,owners)=>{let run=await post('/api/runs',{title,transcript:text,reference_date:today});return post(`/api/runs/${run.id}/finalize`,{decisions:run.proposals.map((p,i)=>({...p,owner:owners?.[i] || p.owner,accept:true}))});};
  const run=await create('Owner planning 📋',`Maya will send the report by ${shift(-1)}.\nMaya will review the budget by ${today}.\nMaya will check risks by ${shift(2)}.\nMayank will draft the brief by ${shift(-1)}.\nJon will review the notes.\nPlease prepare the agenda.`);

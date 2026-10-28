@@ -1,4 +1,4 @@
-import {meetingField,scrollWorkspace} from './browser-helpers.mjs';
+import {legacyReviewDefaults,meetingField,scrollWorkspace} from './browser-helpers.mjs';
 import assert from 'node:assert/strict';
 import {mkdtemp,mkdir,rm,writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
@@ -16,7 +16,7 @@ async function scan(page,label){const r=await new AxeBuilder({page}).withTags(['
 try{
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));await new Promise(resolve=>authServer.listen(0,'127.0.0.1',resolve));const base=`http://127.0.0.1:${server.address().port}`,authBase=`http://127.0.0.1:${authServer.address().port}`;
  browser=await chromium.launch({headless:true,...(process.env.FLOW_CHROMIUM_PATH?{executablePath:process.env.FLOW_CHROMIUM_PATH}:{})});const context=await browser.newContext({viewport:{width:1440,height:1000}}),page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
- await page.goto(base+'/meetings');await page.getByRole('button',{name:'Try an example',exact:true}).waitFor();
+ await legacyReviewDefaults(page,[]);await page.goto(base+'/meetings');await page.getByRole('button',{name:'Try an example',exact:true}).waitFor();
  await page.getByLabel('Color theme').selectOption('light');await page.screenshot({path:path.join(shots,'flow-welcome-desktop.png'),fullPage:true});
  const longInput='Bob: Okay 📝.\n'+Array.from({length:35},(_,i)=>`Bob: Context note ${i}; no decision recorded.`).join('\n')+'\nMaya will send the report tomorrow.';
  await (await meetingField(page,'Meeting transcript')).fill(longInput);await (await meetingField(page,'Meeting date')).fill('2026-10-14');await page.getByRole('button',{name:'Analyze transcript',exact:true}).click();await page.getByRole('heading',{name:/Review action proposals/}).waitFor();

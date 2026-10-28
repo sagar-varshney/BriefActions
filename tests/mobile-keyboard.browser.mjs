@@ -5,7 +5,7 @@ import path from 'node:path';
 import {chromium} from 'playwright';
 import AxeBuilder from '@axe-core/playwright';
 import {createApp} from '../server/index.mjs';
-import {navigate,scrollWorkspace} from './browser-helpers.mjs';
+import {legacyReviewDefaults,navigate,scrollWorkspace} from './browser-helpers.mjs';
 
 const folder=await mkdtemp(path.join(tmpdir(),'briefactions-mobile-keyboard-')),shots=process.env.FLOW_SCREENSHOTS||path.join(folder,'screenshots');await mkdir(shots,{recursive:true});
 const server=createApp({historyPath:path.join(folder,'history.sqlite3')});let browser;const checks=[],releases=[];
@@ -20,7 +20,7 @@ try{
  const original='Maya will send the report tomorrow.\nJon will review the budget.\nPlease prepare the notes by 2026-10-24.';
  const response=await fetch(base+'/api/runs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:'Invented keyboard review',transcript:original,reference_date:'2026-10-22'})});assert.equal(response.status,201);const run=await response.json();
  browser=await chromium.launch({headless:true,...(process.env.FLOW_CHROMIUM_PATH?{executablePath:process.env.FLOW_CHROMIUM_PATH}:{})});const context=await browser.newContext({viewport:{width:1440,height:800}}),page=await context.newPage(),errors=[];page.on('pageerror',error=>errors.push(error.message));
- await page.goto(base+'/meetings/'+run.id);await page.getByRole('heading',{name:/Review action proposals/}).waitFor();
+ await legacyReviewDefaults(page,[]);await page.goto(base+'/meetings/'+run.id);await page.getByRole('heading',{name:/Review action proposals/}).waitFor();
  await page.keyboard.press('Tab');assert.ok(await page.getByRole('link',{name:'Skip to workspace',exact:true}).evaluate(el=>el===document.activeElement));await page.keyboard.press('Enter');await page.waitForFunction(()=>document.activeElement?.id==='workspace-main');
  await page.getByLabel('Review layout',{exact:true}).selectOption('focus');
  for(const [width,height] of [[1440,800],[1180,640],[768,640],[844,390],[320,640]]){

@@ -1,4 +1,4 @@
-import {scrollWorkspace} from './browser-helpers.mjs';
+import {legacyReviewDefaults,scrollWorkspace} from './browser-helpers.mjs';
 import assert from 'node:assert/strict';
 import {mkdtemp,mkdir,rm,readFile,writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
@@ -20,7 +20,7 @@ try{
  const confirm=run=>post(`/api/runs/${run.id}/finalize`,{decisions:run.proposals.map(p=>({...p,accept:true}))});
  browser=await chromium.launch({headless:true,...(process.env.FLOW_CHROMIUM_PATH?{executablePath:process.env.FLOW_CHROMIUM_PATH}:{})});
  const context=await browser.newContext({viewport:{width:1440,height:1000},permissions:['clipboard-read','clipboard-write']}),page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
- await page.goto(base+'/tasks');await page.getByRole('heading',{name:'No tasks in this view',exact:true}).waitFor();
+ await legacyReviewDefaults(page,[]);await page.goto(base+'/tasks');await page.getByRole('heading',{name:'No tasks in this view',exact:true}).waitFor();
  const launch=await confirm(await create('Launch planning',`Maya will send the report by ${shift(-1)}.\nAda will review the budget by ${today}.\nJon will draft the notes by ${shift(1)}.\nPlease prepare the agenda.`));assert.equal(launch.final_tasks.length,4);
  let customer=await create('Customer planning',`Nora will check capacity by ${shift(8)}.\nLee will send invoices by ${today}.`);
  const passage=customer.proposals[0].evidence[0];customer=await post(`/api/runs/${customer.id}/manual-actions`,{request_id:'a'.repeat(32),item:{task:'Review follow-up notes',owner:'Uma',deadline:'Unknown',evidence:[passage]}});customer=await confirm(customer);

@@ -6,7 +6,7 @@ import {chromium} from 'playwright';
 import AxeBuilder from '@axe-core/playwright';
 import {createApp} from '../server/index.mjs';
 import {loadConfig} from '../server/config.mjs';
-import {navigate,navigationButton,scrollWorkspace} from './browser-helpers.mjs';
+import {legacyReviewDefaults,navigate,navigationButton,scrollWorkspace} from './browser-helpers.mjs';
 
 const folder=await mkdtemp(path.join(tmpdir(),'briefactions-shell-')),shots=process.env.FLOW_SCREENSHOTS||path.join(folder,'screenshots');await mkdir(shots,{recursive:true});
 const server=createApp({config:loadConfig({}),historyPath:path.join(folder,'history.sqlite3')});
@@ -21,7 +21,7 @@ try{
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const base=`http://127.0.0.1:${server.address().port}`;
  browser=await chromium.launch({headless:true,...(process.env.FLOW_CHROMIUM_PATH?{executablePath:process.env.FLOW_CHROMIUM_PATH}:{})});
  const context=await browser.newContext({viewport:{width:1440,height:1000},reducedMotion:'reduce'});page=await context.newPage();page.setDefaultTimeout(15000);page.on('pageerror',error=>errors.push(error.message));
- await page.goto(base+'/meetings');await page.getByRole('button',{name:'Try an example',exact:true}).waitFor();
+ await legacyReviewDefaults(page,[]);await page.goto(base+'/meetings');await page.getByRole('button',{name:'Try an example',exact:true}).waitFor();
  const main=page.locator('#workspace-main'),header=page.locator('.workspace-header');
  assert.ok((await header.boundingBox()).height<=72,'Desktop toolbar stays slim');assert.equal((await main.boundingBox()).x,236);
  await page.keyboard.press('Tab');await page.keyboard.press('Enter');assert.equal(await page.evaluate(()=>document.activeElement.id),'workspace-main','Skip link bypasses the sidebar and toolbar');

@@ -5,7 +5,7 @@ import path from 'node:path';
 import {chromium} from 'playwright';
 import AxeBuilder from '@axe-core/playwright';
 import {createApp} from '../server/index.mjs';
-import {navigate,meetingField} from './browser-helpers.mjs';
+import {legacyReviewDefaults,navigate,meetingField} from './browser-helpers.mjs';
 
 const folder=await mkdtemp(path.join(tmpdir(),'briefactions-feedback-'));
 const shots=process.env.FLOW_SCREENSHOTS||path.join(folder,'screenshots');await mkdir(shots,{recursive:true});
@@ -28,7 +28,7 @@ try{
  browser=await chromium.launch({headless:true,...(process.env.FLOW_CHROMIUM_PATH?{executablePath:process.env.FLOW_CHROMIUM_PATH}:{})});
  const context=await browser.newContext({viewport:{width:1440,height:1000}}),page=await context.newPage(),errors=[],writes=[];
  page.on('pageerror',error=>errors.push(error.message));page.on('request',r=>{if(r.method()==='POST'&&new URL(r.url()).pathname.startsWith('/api/'))writes.push(new URL(r.url()).pathname);});
- await page.goto(base+'/meetings');await page.getByRole('button',{name:'Try an example',exact:true}).waitFor();
+ await legacyReviewDefaults(page,[]);await page.goto(base+'/meetings');await page.getByRole('button',{name:'Try an example',exact:true}).waitFor();
  await page.getByLabel('Meeting transcript',{exact:true}).fill('Maya will send the launch notes tomorrow.');await page.getByLabel('Meeting date',{exact:true}).fill('2026-10-22');
  const analysis=await hold(page,'**/api/runs');await page.getByRole('button',{name:'Analyze transcript',exact:true}).click();await analysis.entered;
  await page.getByRole('status').filter({hasText:'Analyzing your saved request…'}).waitFor();const analyze=page.getByRole('button',{name:'Analyzing…',exact:true});assert.ok(await analyze.isDisabled());await analyze.evaluate(el=>{el.click();el.click();});assert.equal(writes.filter(p=>p==='/api/runs').length,1);
