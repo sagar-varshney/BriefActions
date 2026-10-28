@@ -111,6 +111,29 @@ Render's [default environment variables](https://render.com/docs/environment-var
 and [Blueprint reference](https://render.com/docs/blueprint-spec#autodeploytrigger)
 document the assigned URL and CI-gated deploy settings.
 
+### CI passed, but the site is still old
+
+Green GitHub checks confirm that a commit passed verification; they do not prove
+that Render deployed it. Compare the intended `main` commit with the commit on
+the service's live deploy in Render's **Deploys** page.
+
+- With **After CI Checks Pass**, check the results for the new commit on `main`,
+  not only the pull-request branch. Render does not auto-deploy when no checks
+  are detected or any check fails.
+- Automatic deploys require a connected Git provider. Services linked using a
+  public Git repository URL require manual deployment. For a connected provider,
+  also inspect service events, build filters, and commit skip phrases.
+- If a manual deploy is required, first confirm that CI passed for the intended
+  `main` commit and that it is not already queued or deploying. Choose
+  **Manual Deploy → Deploy latest commit**
+  on the existing service. Keep the CI gate and current hosting plan in place.
+- Wait for that specific deploy to become **Live**, verify its commit, then run
+  the public smoke-check command above. Healthy responses from an older deploy
+  do not verify the new release. Check real sign-in separately.
+
+See Render's [automatic-deploy rules](https://render.com/docs/deploys#automatic-deploys)
+and [manual-deploy options](https://render.com/docs/deploys#manual-deploys).
+
 The production server refuses to run without authentication, persistent database
 configuration, and an HTTPS app origin. Do not force `FLOW_AUTH_MODE=local` on
 a public host. The local workspace remains available through `pnpm dev` without

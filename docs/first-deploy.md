@@ -75,6 +75,11 @@ and [redirect guidance](https://supabase.com/docs/guides/auth/redirect-urls).
 
 ## 4. Verify before sharing
 
+In Render's **Deploys** page, confirm that the intended commit is **Live** before
+checking the app. Passing GitHub CI does not prove that Render deployed that
+commit. If the site is still old, follow the
+[deployment troubleshooting steps](deployment.md#ci-passed-but-the-site-is-still-old).
+
 From this repository, with Node 24+, replace the hostname and run:
 
 ```sh
