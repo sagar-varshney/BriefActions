@@ -1,0 +1,24 @@
+# Hosted Python 3.13 dependency snapshot. Refresh and audit deliberately.
+# Keep declared ranges as constraints so incompatible direct updates fail.
+-r requirements.txt
+
+cffi==2.1.1
+cloudpickle==3.1.2
+cryptography==50.0.2
+iniconfig==2.3.1
+joblib==1.6.0
+narwhals==2.28.0
+numpy==2.5.4
+pandas==3.1.0
+pluggy==1.7.0
+psycopg==3.3.6
+psycopg-binary==3.3.6
+pycparser==3.12
+pygments==2.21.0
+pytest==9.2.0
+python-dateutil==3.0.0
+scikit-learn==1.9.1
+scipy==1.18.1
+six==1.17.0
+threadpoolctl==3.7.0
+tzdata==2026.6

@@ -236,6 +236,8 @@ The task shows the current deadline, originally confirmed date, and latest reaso
 **Activity** records every before/after date and reason. Calendar, My day, due-date
 filters, copied plans, Markdown, and CSV use the current deadline. Plan exports
 also include the original date and correction reason; raw history keeps all events.
+CSV exports prefix formula-shaped text with an apostrophe so spreadsheets treat
+it as text. This export protection does not change saved task text or evidence.
 If a date is Unknown, the task moves to Calendar’s **Unscheduled tasks** list.
 
 A failed save keeps the submitted correction in this browser. Use **Retry deadline

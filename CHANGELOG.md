@@ -1,5 +1,16 @@
 # Release notes
 
+## Unreleased — Security hardening
+
+- Protect spreadsheet exports from formula-shaped user text while preserving the
+  original evidence and history.
+- Reject sensitive build files, escaping symlinks, ambiguous JSON content types,
+  compressed bodies and oversized requests; strengthen browser security headers.
+- Gate application CI on redacted Git-history secret scanning and dependency
+  audits, run weekly scans, and pin the hosted Python dependency snapshot.
+- Add stored-XSS and security regressions, private vulnerability reporting and a
+  [documented security review](docs/security-review.md).
+
 ## 28 October 2026 — Guided review and top navigation
 
 - Desktop navigation runs across the top, leaving the full workspace width for

@@ -1,7 +1,6 @@
 import http from 'node:http';
 import { spawn } from 'node:child_process';
 import { existsSync, createReadStream } from 'node:fs';
-import { stat } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {loadConfig} from './config.mjs';
@@ -10,6 +9,7 @@ import {createTelemetry,requestId} from './telemetry.mjs';
 import {createStorageProbe} from './readiness.mjs';
 import {createEnginePool} from './engine-pool.mjs';
 import {createWorkQueue,operationLane} from './work-queue.mjs';
+import {publicFile,PUBLIC_TYPES} from './public-files.mjs';
 
 const ROOT = fileURLToPath(new URL('../', import.meta.url));
 const DIST = path.join(ROOT, 'dist');
@@ -69,7 +69,9 @@ function json(res, status, data) {
   res.end(JSON.stringify(data));
 }
 async function body(req) {
-  if (!req.headers['content-type']?.startsWith('application/json')) throw new HttpError(415, 'Use application/json.');
+  if (req.headers['content-type']?.split(';',1)[0].trim().toLowerCase()!=='application/json') throw new HttpError(415, 'Use application/json.');
+  if (req.headers['content-encoding'] && req.headers['content-encoding'].toLowerCase()!=='identity') throw new HttpError(415, 'Compressed request bodies are not supported.');
+  if (Number(req.headers['content-length'])>MAX_BODY) throw new HttpError(413, 'Request is too large.');
   let size = 0, chunks = [];
   for await (const chunk of req) {
     size += chunk.length;
@@ -82,7 +84,6 @@ async function body(req) {
     return value;
   } catch { throw new HttpError(400, 'Request must be a JSON object.'); }
 }
-const TYPES = {'.html':'text/html', '.js':'text/javascript', '.css':'text/css', '.svg':'image/svg+xml', '.png':'image/png', '.ico':'image/x-icon', '.woff2':'font/woff2', '.txt':'text/plain'};
 export function createApp({historyPath, config=loadConfig(), maxWorkers=config.maxWorkers ?? 2, verifyAccount=accountVerifier(config), deleteAccount=accountDeleter(config), execute=null, checkHealth=null, telemetry=createTelemetry({enabled:config.telemetry}), queueTimeout=15_000, healthTtl=10_000, healthNow=()=>Date.now(), maxAuthChecks=8} = {}) {
   historyPath ||= config.historyPath;
   if(!Number.isInteger(maxWorkers)||maxWorkers<1||maxWorkers>4)throw new Error('Invalid worker limit.');
@@ -126,7 +127,7 @@ export function createApp({historyPath, config=loadConfig(), maxWorkers=config.m
   // Closing sockets does not finish async handlers: disconnected clients can leave
   // accepted writes running. Drain them before shutdown or test storage cleanup.
   const requests=new Set();
-  const server=http.createServer((req,res)=>{
+  const server=http.createServer({headersTimeout:15_000,requestTimeout:60_000,connectionsCheckingInterval:1_000,maxHeaderSize:16_384,keepAliveTimeout:5_000},(req,res)=>{
     const pending=handleRequest(req,res);requests.add(pending);
     pending.then(()=>requests.delete(pending),()=>{requests.delete(pending);res.destroy();});
   });
@@ -138,8 +139,9 @@ export function createApp({historyPath, config=loadConfig(), maxWorkers=config.m
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Referrer-Policy','no-referrer');
     res.setHeader('X-Frame-Options','DENY');
+    res.setHeader('Permissions-Policy','camera=(), microphone=(), geolocation=()');
     res.setHeader('Cache-Control','no-store');
-    res.setHeader('Content-Security-Policy',`default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' ${config.authMode==='supabase'?new URL(config.supabaseUrl).origin:''}; frame-ancestors 'none'; base-uri 'self'; form-action 'self'`);
+    res.setHeader('Content-Security-Policy',`default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' ${config.authMode==='supabase'?new URL(config.supabaseUrl).origin:''}; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'`);
     if(config.production)res.setHeader('Strict-Transport-Security','max-age=31536000');
     try {
       const url = new URL(req.url, 'http://localhost'),pathname=url.pathname;
@@ -332,16 +334,11 @@ export function createApp({historyPath, config=loadConfig(), maxWorkers=config.m
         return json(res, 200, await call({operation:'benchmark',report_id:match[1]}));
       if (pathname.startsWith('/api/')) throw new HttpError(404, 'API route not found.');
       if (req.method !== 'GET' && req.method !== 'HEAD') throw new HttpError(405, 'Method not allowed.');
-      let file = path.resolve(DIST, '.' + decodeURIComponent(pathname));
-      if (!file.startsWith(DIST + path.sep)) file = path.join(DIST, 'index.html');
-      let info = await stat(file).catch(() => null);
-      if (!info?.isFile()) {
-        if (path.extname(pathname)) throw new HttpError(404, 'File not found.');
-        file = path.join(DIST, 'index.html');
-        info = await stat(file).catch(() => null);
-      }
-      if (!info?.isFile()) throw new HttpError(503, config.production?'Workspace is temporarily unavailable. Please try again.':'Build the React app first with pnpm build, or use pnpm dev.', 'web.assets_unavailable');
-      res.writeHead(200, {'Content-Type':TYPES[path.extname(file)] || 'application/octet-stream','Cache-Control':/^\/assets\/[^/]+-[A-Za-z0-9_-]{8}\.(js|css|woff2|png|svg)$/.test(pathname)?'public, max-age=31536000, immutable':'no-cache'});
+      const asset=await publicFile(DIST,pathname),file=asset.filename;
+      if(asset.status===400)throw new HttpError(400,'Invalid file path.');
+      if(asset.status===404)throw new HttpError(404,'File not found.');
+      if(!file)throw new HttpError(503, config.production?'Workspace is temporarily unavailable. Please try again.':'Build the React app first with pnpm build, or use pnpm dev.', 'web.assets_unavailable');
+      res.writeHead(200, {'Content-Type':PUBLIC_TYPES[path.extname(file)] || 'application/octet-stream','Cache-Control':/^\/assets\/[^/]+-[A-Za-z0-9_-]{8}\.(js|css|woff2|png|svg)$/.test(pathname)?'public, max-age=31536000, immutable':'no-cache'});
       if (req.method === 'HEAD') return res.end();
       createReadStream(file).on('error', () => res.destroy()).pipe(res);
     } catch (error) {
