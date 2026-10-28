@@ -17,6 +17,7 @@ React / Vite → Node HTTP API → Python bridge → extraction and history
 | --- | --- |
 | `web/src/main.jsx`, `web/src/AuthShell.jsx` | Public entry, sign-in, account scope, and deferred workspace loading |
 | `web/src/WorkspaceApp.jsx`, `web/src/styles.css` | Private workspace, themes, and responsive UI |
+| `web/src/WorkspaceShell.jsx`, `web/src/workspace-shell.css` | Collapsible sidebar, slim toolbar, mobile navigation, modal keyboard handling, and account-scoped browser layout preference |
 | `web/src/DeferredSection.jsx`, `web/src/BenchmarkPage.jsx`, `web/src/AnnotationReviewer.jsx` | On-demand research screens and explicit chunk-load recovery |
 | `server/` | HTTP routes, authentication, request limits, worker lifecycle, and built asset serving |
 | `web_bridge.py`, `export_bridge.py` | JSON worker protocol and streaming workspace export |
@@ -512,6 +513,16 @@ minute installation limit bound infrastructure waits; missing dependencies still
 fail the job, and the browser/container checks are never skipped to publish.
 
 ## Release rehearsal and screenshots
+
+The workspace shell has a dedicated `tests/workspace-shell.browser.mjs` check.
+It exercises expanded/collapsed desktop navigation, remembered collapse, research
+disclosure, mobile More, Tab/Shift+Tab containment, nested Escape, focus return,
+preserved review choices, and light/dark accessibility from 320 to 1600 pixels,
+including the 960/961-pixel layout boundary and short landscape screens. Native
+dialog focus handling is supplemented with explicit boundary wrapping. Choosing
+a destination closes navigation before the existing route-heading focus runs.
+Review confirmation, extraction, authentication, and server routes remain owned
+by their existing components.
 
 `tests/release-journey.browser.mjs` follows one invented meeting from a fresh
 account through extraction, evidence inspection, correction/selection, an expired

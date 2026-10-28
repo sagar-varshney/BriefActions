@@ -6,7 +6,7 @@ import {chromium} from 'playwright';
 import AxeBuilder from '@axe-core/playwright';
 import {createApp} from '../server/index.mjs';
 import {localToday} from '../web/src/reviewTools.js';
-import {navigate,meetingField,openLayoutOptions} from './browser-helpers.mjs';
+import {navigationButton,navigate,meetingField,openLayoutOptions} from './browser-helpers.mjs';
 const folder=await mkdtemp(path.join(tmpdir(),'flow-review-workspace-')),shots=process.env.FLOW_SCREENSHOTS || path.join(folder,'screenshots');await mkdir(shots,{recursive:true});
 const server=createApp({historyPath:path.join(folder,'history.sqlite3')});let browser;const checks=[];
 async function scan(page,label){const result=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21a','wcag21aa','wcag22aa']).analyze();checks.push({label,violations:result.violations});assert.deepEqual(result.violations,[],label);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),label+' overflow');}
@@ -20,11 +20,12 @@ try{
  await page.getByRole('button',{name:'Research tools',exact:true}).click();await page.keyboard.press('Escape');assert.equal(await page.getByRole('button',{name:'Research tools',exact:true}).getAttribute('aria-expanded'),'false');
  await navigate(page,'Label & review examples');await page.getByRole('heading',{name:'Label & review examples.',exact:true}).waitFor();
  for(const width of [320,390,768,1024,1440]){await page.setViewportSize({width,height:1000});for(const theme of ['light','dark']){
-  await page.getByLabel('Color theme').selectOption(theme);const trigger=page.getByRole('button',{name:'Research tools',exact:true});await trigger.focus();await page.keyboard.press('Enter');
+  await page.getByLabel('Color theme').selectOption(theme);const trigger=await navigationButton(page,'Research tools');await trigger.focus();await page.keyboard.press('Enter');
   const menu=page.locator('#research-links'),bounds=await menu.boundingBox(),rows=menu.getByRole('button');assert.ok(bounds.x>=0&&bounds.x+bounds.width<=width,'Research menu stays inside viewport');assert.equal(await rows.count(),2);
   const boxes=await rows.evaluateAll(items=>items.map(el=>{const r=el.getBoundingClientRect();return {x:r.x,width:r.width,height:r.height,overflow:el.scrollWidth>el.clientWidth};}));assert.equal(boxes[0].x,boxes[1].x);assert.equal(boxes[0].width,boxes[1].width);assert.ok(boxes.every(row=>row.height>=44&&!row.overflow),'Menu rows must fit their labels and touch targets');
   await scan(page,`research-menu-${width}-${theme}`);await page.screenshot({path:path.join(shots,`research-menu-${width}-${theme}.png`),clip:{x:0,y:0,width,height:Math.min(600,Math.ceil(bounds.y+bounds.height+24))}});
   await page.keyboard.press('Tab');assert.ok(await rows.first().evaluate(el=>el===document.activeElement));await page.keyboard.press('Escape');assert.equal(await trigger.getAttribute('aria-expanded'),'false');assert.ok(await trigger.evaluate(el=>el===document.activeElement));
+  if(await page.getByRole('button',{name:'Close navigation',exact:true}).isVisible())await page.getByRole('button',{name:'Close navigation',exact:true}).click();
  }}
  await page.setViewportSize({width:1440,height:1000});await navigate(page,'Extract & review');
  const today=localToday(),shift=days=>{const d=new Date(today+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+days);return d.toISOString().slice(0,10);},yesterday=shift(-1),tomorrow=shift(1);
@@ -44,7 +45,7 @@ try{
  const left=await page.getByRole('region',{name:'Transcript workspace',exact:true}).boundingBox(),right=await page.getByRole('region',{name:'Extraction result',exact:true}).boundingBox();assert.ok(left.width>right.width,'Slider changes the real column widths');
  await page.reload();await page.getByRole('heading',{name:/Review action proposals/}).waitFor();assert.equal(await page.getByLabel('Review layout',{exact:true}).inputValue(),'compact');assert.equal(await page.getByRole('checkbox',{checked:true}).count(),4);assert.equal(await page.locator('.extraction-grid').getAttribute('data-source-width'),'55');
  await openLayoutOptions(page);await page.getByRole('button',{name:'Reset layout',exact:true}).click();await page.locator('.layout-options>summary').click();
- for(const theme of ['light','dark']){await page.getByLabel('Color theme').selectOption(theme);await scan(page,'compact-'+theme);await page.getByRole('heading',{name:/Review action proposals/}).evaluate(el=>scrollTo({top:scrollY+el.getBoundingClientRect().top-120,behavior:'instant'}));await page.screenshot({path:path.join(shots,`upgrades-review-${theme}.png`)});}
+ for(const theme of ['light','dark']){await page.getByLabel('Color theme').selectOption(theme);await scan(page,'compact-'+theme);await page.getByRole('heading',{name:/Review action proposals/}).evaluate(el=>{const main=document.getElementById('workspace-main');if(getComputedStyle(main).overflowY==='auto')main.scrollTo({top:main.scrollTop+el.getBoundingClientRect().top-main.getBoundingClientRect().top-16,behavior:'instant'});else scrollTo({top:scrollY+el.getBoundingClientRect().top-120,behavior:'instant'});});await page.screenshot({path:path.join(shots,`upgrades-review-${theme}.png`)});}
  await navigate(page,'Compare extraction methods');assert.equal(new URL(page.url()).pathname,'/research/evaluation');await page.reload();await page.getByRole('heading',{name:'Compare extraction methods.',exact:true}).waitFor();await page.goBack();await page.getByRole('heading',{name:/Review action proposals/}).waitFor();assert.equal(new URL(page.url()).pathname,savedURL);
  await page.goForward();await page.getByRole('heading',{name:'Compare extraction methods.',exact:true}).waitFor();await page.goBack();await page.getByRole('heading',{name:/Review action proposals/}).waitFor();
  await navigate(page,'Meeting history');assert.equal(new URL(page.url()).pathname,'/history');await page.reload();await page.getByRole('heading',{name:'Your meeting history.',exact:true}).waitFor();await page.getByRole('button',{name:'Open meeting',exact:true}).click();await page.getByRole('heading',{name:/Review action proposals/}).waitFor();assert.equal(new URL(page.url()).pathname,savedURL);

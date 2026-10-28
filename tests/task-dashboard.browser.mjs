@@ -1,3 +1,4 @@
+import {scrollWorkspace} from './browser-helpers.mjs';
 import assert from 'node:assert/strict';
 import {mkdtemp,mkdir,rm,readFile,writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
@@ -77,7 +78,7 @@ try{
  for(const theme of ['light','dark']){await page.getByLabel('Color theme').selectOption(theme);await scan(page,`review-reasons-${theme}`);await page.screenshot({path:path.join(shots,`review-reasons-${theme}.png`)});}
  await page.getByLabel('Deadline 2',{exact:true}).fill(shift(1));assert.equal(await page.getByRole('region',{name:'What to check for task 1',exact:true}).count(),0);
  await page.getByRole('button',{name:'All tasks',exact:true}).click();await page.getByLabel('Search tasks',{exact:true}).fill('');await view('All tasks').click();await page.getByRole('status').filter({hasText:'6 tasks'}).waitFor();
- for(const width of [1440,1180,768,390,320]){await page.setViewportSize({width,height:1000});for(const theme of ['light','dark']){await page.getByLabel('Color theme').selectOption(theme);await scan(page,`task-dashboard-${width}-${theme}`);await page.evaluate(()=>scrollTo(0,0));if([1440,320].includes(width))await page.screenshot({path:path.join(shots,`task-dashboard-${width}-${theme}.png`),fullPage:width===320});}}
+ for(const width of [1440,1180,768,390,320]){await page.setViewportSize({width,height:1000});for(const theme of ['light','dark']){await page.getByLabel('Color theme').selectOption(theme);await scan(page,`task-dashboard-${width}-${theme}`);await scrollWorkspace(page);if([1440,320].includes(width))await page.screenshot({path:path.join(shots,`task-dashboard-${width}-${theme}.png`),fullPage:width===320});}}
  // Missing clipboard support also offers a keyboard-accessible dashboard fallback.
  await page.evaluate(()=>Object.defineProperty(navigator,'clipboard',{configurable:true,value:undefined}));
  await agendaCard.getByRole('button',{name:`Copy task: ${agenda.task}`,exact:true}).click();const dashboardPreview=agendaCard.getByLabel('Task text to copy',{exact:true});await dashboardPreview.waitFor();assert.equal(await dashboardPreview.inputValue(),taskText(agenda));assert.ok(await dashboardPreview.evaluate(el=>el===document.activeElement&&el.selectionEnd-el.selectionStart===el.value.length));

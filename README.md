@@ -95,6 +95,9 @@ using. Calendar, history, and My day refresh when the extraction finishes.
 
 Light, Dark, and System themes are available on sign-in and workspace screens.
 The interface supports keyboard navigation and adapts to desktop and mobile screens.
+Desktop navigation uses a collapsible sidebar and a slim toolbar. On smaller
+screens, the bottom bar keeps Review, My day, Tasks, and Calendar close to hand;
+More opens meeting history, Research tools, and account controls.
 
 ## Your data and saved work
 

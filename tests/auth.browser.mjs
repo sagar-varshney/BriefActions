@@ -1,4 +1,4 @@
-import {meetingField} from './browser-helpers.mjs';
+import {meetingField,navigate} from './browser-helpers.mjs';
 // Managed auth responses are fixtures; live OAuth settings still need launch verification.
 import assert from 'node:assert/strict';
 import {mkdtemp,rm,mkdir,readFile} from 'node:fs/promises';
@@ -41,17 +41,17 @@ try{
   assert.equal(await page.evaluate(()=>sessionStorage.getItem('flow.authReturn')),`/meetings/${active}?task=${taskId}`);
   await page.evaluate(value=>localStorage.setItem('sb-test-project-auth-token',JSON.stringify(value)),first);await page.goto(base+'/auth/callback');await page.getByRole('heading',{name:'Your confirmed plan',exact:true}).waitFor();assert.equal(new URL(page.url()).search,`?task=${taskId}`);await page.waitForFunction(()=>document.activeElement?.id?.startsWith('confirmed-task-'));
   await (await meetingField(page,'Meeting transcript')).fill('Alice-only unsubmitted browser draft.');
-  await page.getByRole('button',{name:'Sign out',exact:true}).click();await page.getByRole('button',{name:'Continue with GitHub'}).waitFor();assert.equal(await page.getByRole('heading',{name:'Your confirmed plan'}).count(),0);
+  await navigate(page,'Sign out');await page.getByRole('button',{name:'Continue with GitHub'}).waitFor();assert.equal(await page.getByRole('heading',{name:'Your confirmed plan'}).count(),0);
   // Same browser, different account: the previous run and drafts remain inaccessible.
   await page.evaluate(value=>localStorage.setItem('sb-test-project-auth-token',JSON.stringify(value)),second);await page.reload();
   await page.getByText('bob@example.test',{exact:true}).waitFor();await page.getByText('START HERE · EXTRACT & REVIEW',{exact:true}).waitFor();assert.equal(new URL(page.url()).pathname,'/meetings');assert.equal(await (await meetingField(page,'Meeting transcript')).inputValue(),'');assert.equal(await page.getByRole('heading',{name:'Your confirmed plan'}).count(),0);
-  await page.getByRole('button',{name:'Meeting history',exact:true}).click();await page.getByRole('heading',{name:'No saved meetings yet.'}).waitFor();
+  await navigate(page,'Meeting history');await page.getByRole('heading',{name:'No saved meetings yet.'}).waitFor();
   await page.getByRole('button',{name:'Extract & review',exact:true}).click();await page.setViewportSize({width:390,height:844});
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await page.screenshot({path:path.join(screenshotDir,'mobile-account-dark.png'),fullPage:true});
   await page.getByLabel('Color theme').selectOption('light');await page.screenshot({path:path.join(screenshotDir,'mobile-account-light.png'),fullPage:true});
   await page.getByRole('button',{name:'Try an example',exact:true}).click();await page.getByRole('button',{name:'Analyze transcript',exact:true}).click();await page.getByRole('heading',{name:/Review action proposals/}).waitFor();
   await page.evaluate(id=>localStorage.setItem(`flow.account.${id}.flow.draft.fake`,'private unfinished text'),bob);
-  await page.getByRole('button',{name:'Data & account',exact:true}).click();await page.getByRole('button',{name:'Delete my account',exact:true}).waitFor();
+  await navigate(page,'Data & account');await page.getByRole('button',{name:'Delete my account',exact:true}).waitFor();
   await page.getByRole('button',{name:'Delete my account',exact:true}).click();await page.getByLabel('Deletion confirmation').fill('DELETE MY ACCOUNT');
   await page.getByRole('dialog').getByRole('button',{name:'Delete my account',exact:true}).click();
   await page.getByRole('dialog').getByRole('alert').filter({hasText:'Sign-in account deletion is pending'}).waitFor();
