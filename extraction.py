@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import re
+import unicodedata
 from dataclasses import dataclass, field
 from datetime import date, timedelta
 
@@ -61,16 +62,49 @@ MONTHS = {name.lower(): i for i, name in enumerate(("January", "February", "Marc
 MONTHS.update({k[:3]: v for k, v in list(MONTHS.items())})
 WEEKDAYS = {name.lower(): i for i, name in enumerate(("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"))}
 CANCEL = re.compile(r"^(?:Actually,?\s+)?(?:cancel|drop)\s+(.+?)[.!?]*$", re.I)
+REVISION_DATE = r"(?:(?:(?:this|next) )?(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)|tomorrow|today|next week|20\d{2}-\d{2}-\d{2})"
+DATE_ALTERNATIVE_JOIN = r"(?:\s+or(?:\s+(?:by|on))?\s+|\s*/\s*)"
 REVISE = re.compile(
     r"^(?:Actually,?\s+)?(?:make|move|reschedule)\s+(.+?)\s+(?:to\s+|by\s+|on\s+)?"
-    r"((?:(?:this|next) )?(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)|tomorrow|today|next week|20\d{2}-\d{2}-\d{2})"
+    rf"({REVISION_DATE}(?:{DATE_ALTERNATIVE_JOIN}{REVISION_DATE})*)"
     r"(?:\s+instead)?[.!?]*$", re.I)
+DATE_VALUE = re.compile(
+    r"\b(?:20\d{2}[-/]\d{1,2}[-/]\d{1,2}|"
+    r"(?:(?:this|next) )?(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)|"
+    r"today|tomorrow|end of week|next week|in \d+ days?|"
+    rf"(?:{'|'.join(sorted(MONTHS, key=len, reverse=True))}) \d{{1,2}}(?:st|nd|rd|th)?(?:,? 20\d{{2}})?)\b", re.I)
+QUOTED_TEXT = re.compile(r'''(?<!\w)(?:"[^"\r\n]*"|“[^”\r\n]*”|'[^'\r\n]*'|‘[^’\r\n]*’)''')
+CONDITION = re.compile(r"\b(?:if|unless|provided that|as long as|only when)\s+", re.I)
+CONDITION_OBJECT = re.compile(r"(?:statements?|clauses?|expressions?|conditions?|branches?|blocks?|functions?|keywords?)\b", re.I)
+CONDITION_PREDICATE = re.compile(r"\s+(?:is|are|was|were|will|can|could|should|must|does|do|did|has|have|changes?|fails?|passes?|succeeds?|improves?|allows?|exists?|returns?)\b", re.I)
 
 
 def non_commitment(body: str) -> bool:
     action = re.search(rf"\b{VERBS}\b", body, re.I)
     # Only inspect the lead-in to the action, not the thing being acted on.
     return bool(NON_COMMITMENT.search(body[:action.start()] if action else body))
+
+
+def conditional_commitment(body: str) -> bool:
+    # Quoted conditions and technical objects describe work, rather than making
+    # its completion conditional. An embedded question directly after the action
+    # ("investigate if ...") is also part of the committed task.
+    visible = QUOTED_TEXT.sub(lambda match: ' ' * len(match.group()), body)
+    action = re.search(rf"\b{VERBS}\b", visible, re.I)
+    if not action:
+        return False
+    for marker in CONDITION.finditer(visible):
+        subject = CONDITION_OBJECT.match(visible, marker.end())
+        if subject and not CONDITION_PREDICATE.match(visible, subject.end()):
+            continue
+        if marker.start() <= action.end():
+            if re.fullmatch(r"\s*(?:(?:task|todo|action item)\s*:\s*)?", visible[:marker.start()], re.I):
+                return True
+            continue
+        object_words = set(re.findall(r"\w+", visible[action.end():marker.start()].casefold()))
+        if object_words - {'a', 'an', 'the', 'my', 'our', 'your', 'their'}:
+            return True
+    return False
 
 
 def add_days(reference_date: date, days: int) -> date | None:
@@ -80,11 +114,27 @@ def add_days(reference_date: date, days: int) -> date | None:
         return None
 
 
-def parse_deadline(body: str, reference_date: date) -> date | None:
+def deadline_marker(body: str):
     # A date must be in a due-date clause, not background narrative.
     temporal = r"(?:20\d{2}[-/]|today\b|tomorrow\b|(?:(?:this|next) )?(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)\b|end of week\b|in \d+ days?\b|Jan(?:uary)?\b|Feb(?:ruary)?\b|Mar(?:ch)?\b|Apr(?:il)?\b|May\b|Jun(?:e)?\b|Jul(?:y)?\b|Aug(?:ust)?\b|Sep(?:tember)?\b|Oct(?:ober)?\b|Nov(?:ember)?\b|Dec(?:ember)?\b)"
-    marker = re.search(rf"\b(?:by|before|due(?: on)?|deadline\s*[:=]?|on|at)\s+({temporal}.*)|\b(today|tomorrow|this Friday|end of week|in \d+ days?)\b", body, re.I)
+    return re.search(rf"\b(?:by|before|due(?: on)?|deadline\s*[:=]?|on|at)\s+({temporal}.*)|\b(today|tomorrow|this Friday|end of week|in \d+ days?)\b", body, re.I)
+
+
+def has_ambiguous_deadline(body: str) -> bool:
+    marker = deadline_marker(body)
     if not marker:
+        return False
+    value = body[marker.start(1 if marker.group(1) else 2):]
+    dates = list(DATE_VALUE.finditer(value))
+    return any(re.fullmatch(DATE_ALTERNATIVE_JOIN, value[left.end():right.start()], re.I)
+               for left, right in zip(dates, dates[1:]))
+
+
+def parse_deadline(body: str, reference_date: date) -> date | None:
+    marker = deadline_marker(body)
+    if not marker:
+        return None
+    if has_ambiguous_deadline(body):
         return None
     value = (marker.group(1) or marker.group(2)).strip().rstrip(".!?").lower()
     iso = re.match(r"(20\d{2})[-/](\d{1,2})[-/](\d{1,2})\b", value)
@@ -134,14 +184,31 @@ def priority(body: str, deadline: date | None, reference_date: date) -> str:
 
 
 def normalize_task(task: str) -> str:
-    return " ".join(token for token in re.findall(r"[a-z0-9]+", task.lower()) if token not in {"a", "an", "the"})
+    tokens, word = [], []
+    # Include combining marks and meaningful symbols as well as Unicode letters
+    # and numbers. Punctuation still separates ordinary ASCII words/filenames.
+    for char in unicodedata.normalize('NFC', task).casefold() + ' ':
+        kind = unicodedata.category(char)[0]
+        if kind in {'L', 'N', 'M'}:
+            word.append(char)
+            continue
+        if word:
+            tokens.append(''.join(word))
+            word = []
+        if kind == 'S':
+            tokens.append(char)
+    return ' '.join(token for token in tokens if token not in {'a', 'an', 'the'})
+
+
+def same_speaker(speaker: str | None, owner: str) -> bool:
+    return bool(speaker and owner.casefold() != UNKNOWN.casefold() and speaker.casefold() == owner.casefold())
 
 
 def task_reference_matches(target: str, task: str, owner: str, speaker: str | None) -> bool:
     personal = re.match(r"my\s+", target, re.I)
     if personal:
         # A possessive identifies the speaker's work, never another owner's task.
-        if not speaker or speaker != owner:
+        if not same_speaker(speaker, owner):
             return False
         target = target[personal.end():]
     tokens = set(normalize_task(target).split()) - {'task', 'deadline'}
@@ -153,7 +220,7 @@ def deduplicate(items: list[ActionItem]) -> list[ActionItem]:
     for item in items:
         duplicate = next((old for old in merged if
             normalize_task(old.task) == normalize_task(item.task)
-            and (old.owner == item.owner or UNKNOWN in {old.owner, item.owner})
+            and (same_speaker(old.owner, item.owner) or UNKNOWN in {old.owner, item.owner})
             and (old.deadline == item.deadline or UNKNOWN in {old.deadline, item.deadline})), None)
         if duplicate:
             duplicate.evidence.extend(e for e in item.evidence if e not in duplicate.evidence)
@@ -169,6 +236,11 @@ def deduplicate(items: list[ActionItem]) -> list[ActionItem]:
     return merged
 
 
+def strip_task_timing(task: str) -> str:
+    task = re.sub(r"\s+\b(?:by|before|due(?: on)?|on)\s+(?:20\d{2}[-/]\d{1,2}[-/]\d{1,2}|[A-Z][a-z]+ \d{1,2}(?:st|nd|rd|th)?(?:,? 20\d{2})?|(?:(?:this|next) )?(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)|today|tomorrow|end of week)\b.*$", "", task, flags=re.I)
+    return re.sub(r"\s+(?:today|tomorrow|in \d+ days?)\b.*$", "", task, flags=re.I).strip(" .?!")
+
+
 def extract_with_changes(text: str, reference_date: date | None = None):
     reference_date = reference_date or date.today()
     items = []
@@ -176,13 +248,20 @@ def extract_with_changes(text: str, reference_date: date | None = None):
     previous = None
     for body, speaker, evidence in passages(text):
         body = body.strip()
+        if conditional_commitment(body):
+            previous = None
+            continue
         cancel = CANCEL.match(body)
         revise = REVISE.match(body)
         if cancel or revise:
+            last_support = previous.evidence[-1] if previous else None
             items = deduplicate(items)
+            # A revision can make two actions merge. Keep the immediate reference
+            # attached to the surviving action through its exact source span.
+            previous = next((p for p in items if last_support and last_support in p.evidence), None)
             target = (cancel or revise).group(1).strip(' .!?')
             if re.fullmatch(r"(?:that|it|that task|that deadline)",target,re.I):
-                candidates = [p for p in items if previous and p is previous and (not speaker or speaker==p.owner)]
+                candidates = [p for p in items if previous and p is previous and (not speaker or same_speaker(speaker,p.owner))]
             else:
                 candidates=[p for p in items if task_reference_matches(target,p.task,p.owner,speaker)]
             if len(candidates)==1:
@@ -244,8 +323,7 @@ def extract_with_changes(text: str, reference_date: date | None = None):
         deadline = parse_deadline(task, reference_date)
         # Keep vague timing in task text so the user can resolve it in review.
         task = re.sub(r"\s*[;,]\s*(?:owner|assigned to)\b.*$", "", task, flags=re.I)
-        task = re.sub(r"\s+\b(?:by|before|due(?: on)?|on)\s+(?:20\d{2}[-/]\d{1,2}[-/]\d{1,2}|[A-Z][a-z]+ \d{1,2}(?:st|nd|rd|th)?(?:,? 20\d{2})?|(?:(?:this|next) )?(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)|today|tomorrow|end of week)\b.*$", "", task, flags=re.I)
-        task = re.sub(r"\s+(?:today|tomorrow|in \d+ days?)\b.*$", "", task, flags=re.I).strip(" .?!")
+        task = task.strip(' .?!') if has_ambiguous_deadline(task) else strip_task_timing(task)
         items.append(ActionItem(task=task, owner=owner, deadline=deadline.isoformat() if deadline else UNKNOWN, priority=priority(body, deadline, reference_date), evidence=[evidence]))
         items=deduplicate(items)
         previous=items[-1] if items[-1].evidence[-1]==evidence else next((p for p in items if evidence in p.evidence),None)
