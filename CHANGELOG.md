@@ -1,5 +1,14 @@
 # Release notes
 
+## 30 October 2026 — Deadline revision wording
+
+- Recognize deadline corrections such as “Move my risk assessment deadline to
+  Monday instead” in extraction and reviewed follow-up comparisons.
+- Resolve “my” only to the identified speaker's tasks; leave ambiguous references
+  for review. Preserve the original commitment and correction as exact evidence.
+- Keep Calendar updates behind explicit plan confirmation and add regression
+  coverage for ownership, vague/invalid dates, audit history and calendar changes.
+
 ## 29 October 2026 — Navigation and control alignment
 
 - Center desktop workspace navigation and align meeting-series fields and actions.

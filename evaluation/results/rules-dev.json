@@ -4,13 +4,13 @@
     "gold": 28,
     "matched": 28,
     "owner_correct": 28,
-    "deadline_correct": 27,
+    "deadline_correct": 28,
     "owner_known_correct": 23,
     "owner_known_total": 23,
-    "deadline_known_correct": 17,
+    "deadline_known_correct": 18,
     "deadline_known_total": 18,
     "evidence_valid": 28,
-    "supported": 27,
+    "supported": 28,
     "failures": 0
   },
   "metrics": {
@@ -18,13 +18,13 @@
     "task_recall": 1.0,
     "task_f1": 1.0,
     "owner_accuracy_on_matched": 1.0,
-    "deadline_accuracy_on_matched": 0.9642857142857143,
+    "deadline_accuracy_on_matched": 1.0,
     "known_owner_end_to_end": 1.0,
-    "known_deadline_end_to_end": 0.9444444444444444,
+    "known_deadline_end_to_end": 1.0,
     "evidence_validity": 1.0,
-    "gold_support_proxy": 0.9642857142857143,
-    "latency_p50_ms": 0.029709015507251024,
-    "latency_p95_ms": 1.308792008785531,
+    "gold_support_proxy": 1.0,
+    "latency_p50_ms": 0.04270899808034301,
+    "latency_p95_ms": 1.433292003639508,
     "cost_usd": 0.0,
     "failure_rate": 0.0
   },
@@ -368,8 +368,8 @@
           "prediction": 0,
           "gold_id": "dev-26-a1",
           "owner_correct": true,
-          "deadline_correct": false,
-          "gold_support_proxy": false
+          "deadline_correct": true,
+          "gold_support_proxy": true
         }
       ],
       "false_positives": [],
@@ -433,6 +433,8 @@
     }
   ],
   "schema_version": 1,
+  "created_at": "2026-10-29T20:10:41.376528+00:00",
+  "evaluator_sha256": "b618d7dcab9afd791d816694e3cb456bbddd2051457a1b45c8f593ead7c34585",
   "label": "rules",
   "extractor": "rules",
   "dataset_sha256": "fb26079ef163952b3b2fb4483702551b408b9d0d24a000e648a6b3fd68dad378",
@@ -440,7 +442,7 @@
   "splits": [
     "dev"
   ],
-  "extractor_sha256": "1ea7cb275cba20fc9d0a13229ebb352965a10ccafad9c8878fed623d735b5538",
+  "extractor_sha256": "d791968b94dea086e4235805fd3bd624608c1f1d9c64b9ee74653b448dc2b60d",
   "prompt_version": null,
   "prompt_sha256": null,
   "pricing": {
@@ -470,7 +472,7 @@
         }
       ],
       "cost_usd": 0.0,
-      "latency_ms": 1.9497500034049153,
+      "latency_ms": 3.187959002389107,
       "id": "dev-01"
     },
     {
@@ -495,7 +497,7 @@
         }
       ],
       "cost_usd": 0.0,
-      "latency_ms": 0.06770799518562853,
+      "latency_ms": 0.08737500320421532,
       "id": "dev-02"
     },
     {
@@ -520,7 +522,7 @@
         }
       ],
       "cost_usd": 0.0,
-      "latency_ms": 0.031333009246736765,
+      "latency_ms": 0.041250001231674105,
       "id": "dev-03"
     },
     {
@@ -545,7 +547,7 @@
         }
       ],
       "cost_usd": 0.0,
-      "latency_ms": 1.308792008785531,
+      "latency_ms": 1.433292003639508,
       "id": "dev-04"
     },
     {
@@ -575,25 +577,25 @@
         }
       ],
       "cost_usd": 0.0,
-      "latency_ms": 0.04991699825040996,
+      "latency_ms": 0.07370799721684307,
       "id": "dev-05"
     },
     {
       "items": [],
       "cost_usd": 0.0,
-      "latency_ms": 0.02345800749026239,
+      "latency_ms": 0.04266700125299394,
       "id": "dev-06"
     },
     {
       "items": [],
       "cost_usd": 0.0,
-      "latency_ms": 0.00999998883344233,
+      "latency_ms": 0.06458300049416721,
       "id": "dev-07"
     },
     {
       "items": [],
       "cost_usd": 0.0,
-      "latency_ms": 0.009874987881630659,
+      "latency_ms": 0.02704199869185686,
       "id": "dev-08"
     },
     {
@@ -618,7 +620,7 @@
         }
       ],
       "cost_usd": 0.0,
-      "latency_ms": 0.025334011297672987,
+      "latency_ms": 0.034791999496519566,
       "id": "dev-09"
     },
     {
@@ -643,7 +645,7 @@
         }
       ],
       "cost_usd": 0.0,
-      "latency_ms": 0.10791700333356857,
+      "latency_ms": 0.12116599828004837,
       "id": "dev-10"
     },
     {
@@ -668,7 +670,7 @@
         }
       ],
       "cost_usd": 0.0,
-      "latency_ms": 0.029290997190400958,
+      "latency_ms": 0.03833300434052944,
       "id": "dev-11"
     },
     {
@@ -693,7 +695,7 @@
         }
       ],
       "cost_usd": 0.0,
-      "latency_ms": 0.023832981241866946,
+      "latency_ms": 0.03333300264785066,
       "id": "dev-12"
     },
     {
@@ -718,7 +720,7 @@
         }
       ],
       "cost_usd": 0.0,
-      "latency_ms": 0.026374997105449438,
+      "latency_ms": 0.035875003959517926,
       "id": "dev-13"
     },
     {
@@ -743,7 +745,7 @@
         }
       ],
       "cost_usd": 0.0,
-      "latency_ms": 0.02270800177939236,
+      "latency_ms": 0.030542003514710814,
       "id": "dev-14"
     },
     {
@@ -786,7 +788,7 @@
         }
       ],
       "cost_usd": 0.0,
-      "latency_ms": 0.04541702219285071,
+      "latency_ms": 0.06495799607364461,
       "id": "dev-15"
     },
     {
@@ -811,7 +813,7 @@
         }
       ],
       "cost_usd": 0.0,
-      "latency_ms": 0.02662499900907278,
+      "latency_ms": 0.03499999729683623,
       "id": "dev-16"
     },
     {
@@ -836,7 +838,7 @@
         }
       ],
       "cost_usd": 0.0,
-      "latency_ms": 0.027207977836951613,
+      "latency_ms": 0.03891700180247426,
       "id": "dev-17"
     },
     {
@@ -861,7 +863,7 @@
         }
       ],
       "cost_usd": 0.0,
-      "latency_ms": 0.025625020498409867,
+      "latency_ms": 0.03216700133634731,
       "id": "dev-18"
     },
     {
@@ -909,7 +911,7 @@
         }
       ],
       "cost_usd": 0.0,
-      "latency_ms": 0.07329200161620975,
+      "latency_ms": 0.10154099436476827,
       "id": "dev-19"
     },
     {
@@ -934,7 +936,7 @@
         }
       ],
       "cost_usd": 0.0,
-      "latency_ms": 0.028709007892757654,
+      "latency_ms": 0.04270899808034301,
       "id": "dev-20"
     },
     {
@@ -959,7 +961,7 @@
         }
       ],
       "cost_usd": 0.0,
-      "latency_ms": 0.0356250093318522,
+      "latency_ms": 0.04937500489177182,
       "id": "dev-21"
     },
     {
@@ -984,7 +986,7 @@
         }
       ],
       "cost_usd": 0.0,
-      "latency_ms": 0.026959023671224713,
+      "latency_ms": 0.03491700044833124,
       "id": "dev-22"
     },
     {
@@ -1009,7 +1011,7 @@
         }
       ],
       "cost_usd": 0.0,
-      "latency_ms": 0.029709015507251024,
+      "latency_ms": 0.04283399903215468,
       "id": "dev-23"
     },
     {
@@ -1034,13 +1036,13 @@
         }
       ],
       "cost_usd": 0.0,
-      "latency_ms": 0.026915979105979204,
+      "latency_ms": 0.04066599649377167,
       "id": "dev-24"
     },
     {
       "items": [],
       "cost_usd": 0.0,
-      "latency_ms": 0.018291990272700787,
+      "latency_ms": 0.03233300230931491,
       "id": "dev-25"
     },
     {
@@ -1048,16 +1050,21 @@
         {
           "task": "submit the risk assessment",
           "owner": "Bela",
-          "deadline": "2026-09-18",
+          "deadline": "2026-09-21",
           "priority": "Medium",
           "evidence": [
             {
               "text": "Bela will submit the risk assessment by Friday.",
               "start": 0,
               "end": 47
+            },
+            {
+              "text": "Bela: Move my risk assessment deadline to Monday instead.",
+              "start": 48,
+              "end": 105
             }
           ],
-          "proposal_id": "dd1bd1994b587260",
+          "proposal_id": "ebd4626e3d3be2d2",
           "category": "",
           "confidence": 0.0,
           "cluster": 0,
@@ -1065,7 +1072,7 @@
         }
       ],
       "cost_usd": 0.0,
-      "latency_ms": 0.03362499410286546,
+      "latency_ms": 0.08783299563219771,
       "id": "dev-26"
     },
     {
@@ -1090,7 +1097,7 @@
         }
       ],
       "cost_usd": 0.0,
-      "latency_ms": 0.03212501178495586,
+      "latency_ms": 0.05824999971082434,
       "id": "dev-27"
     },
     {
@@ -1115,7 +1122,7 @@
         }
       ],
       "cost_usd": 0.0,
-      "latency_ms": 0.029750022804364562,
+      "latency_ms": 0.04229199839755893,
       "id": "dev-28"
     },
     {
@@ -1140,7 +1147,7 @@
         }
       ],
       "cost_usd": 0.0,
-      "latency_ms": 0.03270900924690068,
+      "latency_ms": 0.05420800152933225,
       "id": "dev-29"
     },
     {
@@ -1170,10 +1177,8 @@
         }
       ],
       "cost_usd": 0.0,
-      "latency_ms": 0.043042004108428955,
+      "latency_ms": 0.060083002608735114,
       "id": "dev-30"
     }
-  ],
-  "created_at": "2026-10-10T10:56:49.218484+00:00",
-  "evaluator_sha256": "b618d7dcab9afd791d816694e3cb456bbddd2051457a1b45c8f593ead7c34585"
+  ]
 }
