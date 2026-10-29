@@ -13,10 +13,17 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  security:
+    uses: ./.github/workflows/security.yml
+
   quality:
     name: Python, API, build, browser, and benchmark checks
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    needs: security
+    # A skipped required check can be treated as passing. Run the gate even if
+    # a security job fails, and explicitly fail before the application checks.
+    if: ${{ always() }}
     services:
       postgres:
         image: postgres:17
@@ -42,8 +49,15 @@ jobs:
       OMP_NUM_THREADS: '1'
       FLOW_SCREENSHOTS: ${{ github.workspace }}/artifacts/screenshots
     steps:
+      - name: Require successful security checks
+        env:
+          SECURITY_RESULT: ${{ needs.security.result }}
+        run: test "$SECURITY_RESULT" = success
+
       - name: Check out source
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
 
       - name: Set up Python
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
@@ -53,6 +67,7 @@ jobs:
           cache-dependency-path: |
             requirements.txt
             requirements-backup.txt
+            requirements-hosted.txt
 
       - name: Set up Node.js
         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
@@ -63,7 +78,7 @@ jobs:
       - name: Install dependencies
         run: |
           mkdir -p artifacts
-          python -m pip install -r requirements.txt
+          python -m pip install -r requirements-hosted.txt
           npm install --global pnpm@11.25.0
           pnpm install --frozen-lockfile
 

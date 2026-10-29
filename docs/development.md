@@ -4,6 +4,10 @@ For installation, see [Run locally](../README.md#run-locally). For everyday use,
 see the [user guide](user-guide.md). This reference describes the active React,
 Node, and Python application.
 
+For the audited hosted dependency snapshot and security regression commands, see
+the [security review](security-review.md). Docker and CI use Python 3.13 with
+`requirements-hosted.txt`; `requirements.txt` retains the development constraints.
+
 ## Architecture
 
 ```text

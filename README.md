@@ -182,6 +182,7 @@ See the [evaluation methodology](evaluation/README.md) for datasets, results, an
 | Guide | What it covers |
 | --- | --- |
 | [User guide](docs/user-guide.md) | Everyday workflows, walkthroughs, task tracking, and exports |
+| [Security](SECURITY.md) | Private vulnerability reporting and the documented security review |
 | [Development](docs/development.md) | Architecture, settings, API routes, and test commands |
 | [Performance](docs/performance.md) | Worker queues, connection reuse, measurements, and limits |
 | [Deployment](docs/deployment.md) | Hosting your own instance, authentication, and database setup |
