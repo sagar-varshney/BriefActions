@@ -1,5 +1,11 @@
 # Release notes
 
+## 29 October 2026 — Navigation and control alignment
+
+- Center desktop workspace navigation and align meeting-series fields and actions.
+- Give select controls and disclosure chevrons consistent spacing in both themes,
+  retaining native keyboard behavior and system indicators in forced-color mode.
+
 ## 29 October 2026 — Task details and security checks
 
 - Inspect a confirmed task in a side panel from All tasks, My day, Calendar, and
