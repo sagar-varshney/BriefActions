@@ -86,6 +86,17 @@ automatically; this browser also remembers your active task when storage is avai
 Choose **Review selection** to check the full set before explicitly confirming.
 Existing card layouts remain available under **Review options**.
 
+### Check task details without losing your place
+
+Open a task from All tasks, My day, Calendar, or Tasks by owner to inspect it in a
+side panel. Update progress, correct a deadline with a reason, read the supporting
+conversation, and inspect that task's history. Close the panel to return to your
+view, or choose **Open full meeting** for the complete plan and its private link.
+
+![Inspect a task and its source without leaving the calendar](docs/screenshots/task-details-light.png)
+
+*Invented example.* [Dark mode](docs/screenshots/task-details-dark.png) · [Mobile](docs/screenshots/task-details-mobile-light.png)
+
 ### Keep plans up to date
 
 - **Review follow-up conversations.** Compare proposed additions, changes, and
@@ -171,6 +182,7 @@ See the [evaluation methodology](evaluation/README.md) for datasets, results, an
 | Guide | What it covers |
 | --- | --- |
 | [User guide](docs/user-guide.md) | Everyday workflows, walkthroughs, task tracking, and exports |
+| [Security](SECURITY.md) | Private vulnerability reporting and the documented security review |
 | [Development](docs/development.md) | Architecture, settings, API routes, and test commands |
 | [Performance](docs/performance.md) | Worker queues, connection reuse, measurements, and limits |
 | [Deployment](docs/deployment.md) | Hosting your own instance, authentication, and database setup |

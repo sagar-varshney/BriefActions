@@ -1,4 +1,4 @@
-import {legacyReviewDefaults,scrollWorkspace} from './browser-helpers.mjs';
+import {openFullMeeting,legacyReviewDefaults,scrollWorkspace} from './browser-helpers.mjs';
 import assert from 'node:assert/strict';
 import {mkdtemp,mkdir,rm,writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
@@ -36,7 +36,7 @@ try{
  await page.getByLabel('Calendar task status',{exact:true}).selectOption('');await ready();await detail.getByText('14 scheduled items',{exact:true}).waitFor();assert.deepEqual(await detail.locator('.calendar-day-summary strong').allTextContents(),['0','14']);
  const completed=detail.locator('.calendar-entry').filter({has:page.locator('.calendar-entry-heading>span:last-child').filter({hasText:/^Done$/})});assert.equal(await completed.count(),1);assert.equal(await completed.locator('.calendar-overdue-label').count(),0,'Completed work is not overdue');
  const first=detail.locator('.calendar-entry').first(),name=await first.locator('h3').textContent(),task=run.final_tasks.find(item=>item.task===name);
- await first.getByRole('button',{name:'Open task & evidence',exact:true}).click();await page.waitForFunction(id=>document.activeElement?.id===`confirmed-task-${id}`,task.proposal_id);
+ await first.getByRole('button',{name:'Open task & evidence',exact:true}).click();await openFullMeeting(page);await page.waitForFunction(id=>document.activeElement?.id===`confirmed-task-${id}`,task.proposal_id);
  await page.locator(`#confirmed-task-${task.proposal_id}`).getByRole('button',{name:/^Locate passage/}).click();await page.waitForFunction(()=>document.activeElement?.id==='saved-source');assert.equal(await page.locator('#saved-source mark').textContent(),task.evidence[0].text);
  await page.goBack();await ready();assert.equal(await page.getByLabel('Selected calendar date',{exact:true}).inputValue(),'2026-10-21');assert.equal(await page.getByLabel('Calendar task status',{exact:true}).inputValue(),'');
  await page.getByLabel('Show calendar events',{exact:true}).selectOption('meetings');await ready();assert.ok(await page.getByLabel('Calendar task status',{exact:true}).isDisabled());assert.equal(await unscheduled.count(),0);

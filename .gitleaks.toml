@@ -1,0 +1,10 @@
+title = "BriefActions secret detection"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "supabase-server-secret"
+description = "Server-only Supabase secret key"
+regex = '''\bsb_secret_[A-Za-z0-9_-]{20,}'''
+keywords = ["sb_secret_"]

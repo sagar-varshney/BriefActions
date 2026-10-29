@@ -5,7 +5,7 @@ import path from 'node:path';
 import {chromium} from 'playwright';
 import AxeBuilder from '@axe-core/playwright';
 import {createApp} from '../server/index.mjs';
-import {legacyReviewDefaults,navigate} from './browser-helpers.mjs';
+import {openFullMeeting,legacyReviewDefaults,navigate} from './browser-helpers.mjs';
 
 const folder=await mkdtemp(path.join(tmpdir(),'briefactions-deadlines-browser-')),shots=process.env.FLOW_SCREENSHOTS||path.join(folder,'screenshots');await mkdir(shots,{recursive:true});
 const server=createApp({historyPath:path.join(folder,'history.sqlite3')});let browser;
@@ -30,7 +30,7 @@ try{
  await card().getByRole('button',{name:/^Locate passage/}).click();await page.waitForFunction(()=>document.activeElement?.id==='saved-source');assert.equal(await page.locator('#saved-source mark').textContent(),task.evidence[0].text);
  await navigate(page,'My day');await page.getByRole('status').filter({hasText:'Overview ready for'}).waitFor();assert.ok((await page.locator('.daily-list').innerText()).includes(task.task));
  await navigate(page,'Calendar');await page.getByLabel('Calendar month',{exact:true}).fill(shift(2).slice(0,7));await page.getByLabel('Selected calendar date',{exact:true}).fill(shift(2));await page.locator('.calendar-detail').getByRole('heading',{name:task.task,exact:true}).waitFor();
- await page.locator('.calendar-detail').getByRole('button',{name:'Open task & evidence',exact:true}).click();await page.getByRole('heading',{name:'Your confirmed plan',exact:true}).waitFor();
+ await page.locator('.calendar-detail').getByRole('button',{name:'Open task & evidence',exact:true}).click();await openFullMeeting(page);await page.getByRole('heading',{name:'Your confirmed plan',exact:true}).waitFor();
  // A committed write with a lost response survives reload and retries exactly once.
  await page.route('**/api/runs/*/deadline',async route=>{await route.fetch();await route.abort('failed');});await edit();await fill(shift(3),'Confirmed after customer call.');await page.getByRole('button',{name:'Save deadline correction',exact:true}).click();await page.getByRole('button',{name:'Retry deadline correction',exact:true}).waitFor();await page.reload();await page.getByRole('button',{name:'Retry deadline correction',exact:true}).waitFor();await page.unroute('**/api/runs/*/deadline');await page.getByRole('button',{name:'Retry deadline correction',exact:true}).click();await page.getByRole('status').filter({hasText:'Deadline corrected. Calendar'}).waitFor();
  let current=await (await fetch(base+`/api/runs/${run.id}`)).json();assert.equal(current.events.filter(e=>e.kind==='task_deadline').length,2);assert.equal(current.current_tasks[0].deadline,shift(3));assert.equal(current.final_tasks[0].deadline,task.deadline);

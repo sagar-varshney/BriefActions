@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 import re
 import sys
+from csv_export import spreadsheet_cell
 from contextvars import ContextVar
 from performance_metrics import collect, timed
 
@@ -282,14 +283,15 @@ def handle(request):
             raise ApiError('Confirm the plan before exporting tasks.',409)
         output = io.StringIO()
         fields = ['proposal_id','task','owner','deadline','source','supporting_transcript_passages','confirmed_deadline','deadline_correction_reason']
-        writer = csv.DictWriter(output,fieldnames=fields)
+        writer = csv.DictWriter(output,fieldnames=fields,quoting=csv.QUOTE_ALL)
         writer.writeheader()
         for task in snapshot['current_tasks']:
             correction=task.get('deadline_correction',{})
-            writer.writerow({k:task[k] for k in fields[:4]} | {'source':task.get('source','extraction'),
+            row={k:task[k] for k in fields[:4]} | {'source':task.get('source','extraction'),
                 'supporting_transcript_passages':'\n\n'.join(e['text'] for e in task['evidence']),
                 'confirmed_deadline':correction.get('confirmed_deadline',task['deadline']),
-                'deadline_correction_reason':correction.get('reason','')})
+                'deadline_correction_reason':correction.get('reason','')}
+            writer.writerow({key:spreadsheet_cell(value) for key,value in row.items()})
         return output.getvalue()
     if op == 'benchmarks':
         reports = []

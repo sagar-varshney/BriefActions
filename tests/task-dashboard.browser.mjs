@@ -1,4 +1,4 @@
-import {legacyReviewDefaults,scrollWorkspace} from './browser-helpers.mjs';
+import {openFullMeeting,legacyReviewDefaults,scrollWorkspace} from './browser-helpers.mjs';
 import assert from 'node:assert/strict';
 import {mkdtemp,mkdir,rm,readFile,writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
@@ -53,7 +53,7 @@ try{
  await search.press('Escape');await cleared;await page.getByRole('status').filter({hasText:'1 task ·'}).waitFor();assert.equal(await search.inputValue(),'');assert.equal(await page.getByLabel('Task status',{exact:true}).inputValue(),'open');assert.equal(await view('Upcoming').getAttribute('aria-pressed'),'true');assert.ok(await search.evaluate(el=>el===document.activeElement),'Clearing search keeps keyboard focus');
  await search.fill('Launch');await page.getByRole('status').filter({hasText:'1 task ·'}).waitFor();
  const target=launch.final_tasks.find(task=>task.owner==='Jon'),taskURL=`/meetings/${launch.id}?task=${target.proposal_id}`;
- await page.getByRole('button',{name:/^Open task & evidence/}).click();await page.waitForFunction(id=>document.activeElement?.id===`confirmed-task-${id}`,target.proposal_id);assert.equal(new URL(page.url()).pathname+new URL(page.url()).search,taskURL);
+ await page.getByRole('button',{name:/^Open task & evidence/}).click();await openFullMeeting(page);await page.waitForFunction(id=>document.activeElement?.id===`confirmed-task-${id}`,target.proposal_id);assert.equal(new URL(page.url()).pathname+new URL(page.url()).search,taskURL);
  await page.getByRole('button',{name:'Locate passage 1 for confirmed task 3',exact:true}).click();await page.waitForFunction(()=>document.activeElement?.id==='saved-source');assert.equal(await page.locator('#saved-source mark').textContent(),target.evidence[0].text);
  await page.getByRole('button',{name:'Back to task',exact:true}).click();assert.ok(await page.getByRole('button',{name:'Locate passage 1 for confirmed task 3',exact:true}).evaluate(el=>el===document.activeElement));
  await page.goBack();await page.getByRole('heading',{name:'All tasks',exact:true}).waitFor();assert.equal(await page.getByLabel('Search tasks',{exact:true}).inputValue(),'Launch');assert.equal(await view('Upcoming').getAttribute('aria-pressed'),'true');

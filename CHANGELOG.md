@@ -1,5 +1,23 @@
 # Release notes
 
+## 29 October 2026 — Task details and security checks
+
+- Inspect a confirmed task in a side panel from All tasks, My day, Calendar, and
+  Tasks by owner. Keep the originating view's filters, date, and pagination.
+- Reuse progress and deadline corrections with their existing recovery behavior,
+  inspect original evidence and task-specific history, and explicitly open the
+  full meeting when needed. Unsaved deadline edits require a deliberate discard.
+- Protect spreadsheet exports from formula-shaped user text while preserving the
+  original evidence and history.
+- Reject sensitive build files, escaping symlinks, ambiguous JSON content types,
+  compressed bodies and oversized requests; strengthen browser security headers.
+- Gate application CI on redacted Git-history secret scanning and dependency
+  audits, run weekly scans, and pin the hosted Python dependency snapshot.
+- Add stored-XSS and security regressions, private vulnerability reporting and a
+  [documented security review](docs/security-review.md).
+- Clarify how to verify the live Render commit and use the manual deployment
+  fallback after CI passes.
+
 ## 28 October 2026 — Guided review and top navigation
 
 - Desktop navigation runs across the top, leaving the full workspace width for
