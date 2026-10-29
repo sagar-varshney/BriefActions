@@ -3,8 +3,9 @@
 Scope: the publicly deployed React/Node/Python architecture, repository history,
 build and dependency configuration, and read-only Supabase security metadata.
 Application tests use invented transcripts and isolated databases. No private
-production transcripts were read or modified. These changes remain unreleased
-until their pull request is merged and the resulting deployment is verified.
+production transcripts were read or modified. This document records the release's
+implementation and checks. Verify the deployed source commit before treating a
+successful check run as evidence that these changes are live.
 
 ## Findings and changes
 
