@@ -4,6 +4,12 @@ The [28-case development audit](audit-v1/README.md) adds targeted regression
 coverage and retained before/after reports. It has no held-out split and does not
 replace or rescore the reserved starter/revision corpora described below.
 
+The [30 October expanded regression contracts](../tests/fixtures/README.md)
+retain 74 additional synthetic probes from the subsequent exploratory audit.
+Python and API tests cover all cases; extra history and browser tests protect
+Unicode task identity, merged references, uncertain dates, conditional work and
+speaker case matching. These are development checks, not a new held-out score.
+
 Version 1 contains **60 synthetic transcripts** and **57 gold action items**:
 30 development transcripts / 28 items and 30 held-out transcripts / 29 items.
 Codex authored the transcripts and specified the annotations directly; labels

@@ -8,7 +8,9 @@ import re
 from pathlib import Path
 
 from data_controls import DataError, identifier
-from extraction import CANCEL, REVISE, UNKNOWN, extract_action_items, normalize_task, parse_deadline, passages, task_reference_matches
+from extraction import (CANCEL, REVISE, UNKNOWN, conditional_commitment, extract_action_items,
+                        has_ambiguous_deadline, normalize_task, parse_deadline, passages,
+                        same_speaker, strip_task_timing, task_reference_matches)
 from task_progress import project as progress
 from task_deadlines import project as deadlines, effective_tasks
 
@@ -37,11 +39,14 @@ def compare(tasks, followup, reference, offset):
     warnings, previous = [], None
     for body, speaker, span in passages(followup):
         support = {'text': span.text, 'start': offset + span.start, 'end': offset + span.end}
+        if conditional_commitment(body):
+            previous = None
+            continue
         cancel, revise = CANCEL.match(body.strip()), REVISE.match(body.strip())
         if cancel or revise:
             target = (cancel or revise).group(1).strip(' .!?')
             if re.fullmatch(r'(?:that|it|that task|that deadline)', target, re.I):
-                candidates = [previous] if previous and previous['after'] and (not speaker or speaker == previous['after']['owner']) else []
+                candidates = [previous] if previous and previous['after'] and (not speaker or same_speaker(speaker,previous['after']['owner'])) else []
             else:
                 candidates = [s for s in slots if s['after'] and task_reference_matches(target,s['after']['task'],s['after']['owner'],speaker)]
             if len(candidates) != 1:
@@ -64,7 +69,9 @@ def compare(tasks, followup, reference, offset):
         found = extract_action_items(f'{speaker}: {statement}' if speaker else statement, reference)
         for item in found:
             after = {key: asdict(item)[key] for key in ('proposal_id', *FIELDS)} | {'evidence': [support]}
-            candidates = [s for s in slots if (s['after'] or s['before']) and normalize_task((s['after'] or s['before'])['task']) == normalize_task(after['task'])]
+            ambiguous_date = has_ambiguous_deadline(statement)
+            matching_task = lambda task: normalize_task(strip_task_timing(task) if ambiguous_date else task)
+            candidates = [s for s in slots if (s['after'] or s['before']) and matching_task((s['after'] or s['before'])['task']) == matching_task(after['task'])]
             if len(candidates) == 1:
                 slot = candidates[0]
                 old = slot['after']
@@ -72,7 +79,7 @@ def compare(tasks, followup, reference, offset):
                 if old:
                     for key in ('owner', 'deadline'):
                         explicit_invalid_date=key=='deadline' and re.search(r'\b(?:by|before|due(?: on)?|on)\s+20\d{2}[-/]\d{1,2}[-/]\d{1,2}',statement,re.I)
-                        if after[key] == UNKNOWN and not explicit_invalid_date:
+                        if after[key] == UNKNOWN and not explicit_invalid_date and not (key=='deadline' and ambiguous_date):
                             after[key] = old[key]
                     after['evidence'] = old['evidence'] + [support]
                 slot['after'] = after

@@ -1,5 +1,18 @@
 # Release notes
 
+## 30 October 2026 — Extraction audit corrections
+
+- Keep immediate task references valid after duplicate actions merge, so a later
+  cancellation or correction applies to the surviving action.
+- Distinguish Unicode task names, combining marks and symbols during deduplication.
+  Preserve confirmed task IDs, evidence and progress in older saved plans.
+- Leave alternative dates Unknown and retain their wording for review, including
+  follow-up changes that replace a previously exact deadline.
+- Exclude conditional commitments while retaining technical and quoted task
+  objects. Match case-only speaker variations without crossing owner boundaries.
+- Retain all 74 exploratory audit cases as Python/API regressions, with additional
+  checks for source history and explicit approval before Calendar updates.
+
 ## 30 October 2026 — Deadline revision wording
 
 - Recognize deadline corrections such as “Move my risk assessment deadline to
