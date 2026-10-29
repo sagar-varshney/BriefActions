@@ -20,6 +20,24 @@ try{
  await page.getByRole('button',{name:'Add next conversation',exact:true}).click();await page.getByRole('textbox',{name:'Meeting transcript',exact:true}).waitFor();assert.equal(await page.getByLabel('Meeting name',{exact:true}).inputValue(),'Weekly product 📋');await page.locator('.input-series>summary').click();assert.equal(await page.getByLabel('Meeting series (optional)',{exact:true}).inputValue(),sid);
  const today=await page.evaluate(()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}),shift=n=>{const d=new Date(today+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10);};
  await page.getByRole('textbox',{name:'Meeting transcript',exact:true}).fill('Maya will send the report tomorrow.\nPlease prepare the agenda.');await page.getByLabel('Meeting date',{exact:true}).fill(today);await page.getByRole('button',{name:'Analyze transcript',exact:true}).click();await page.getByRole('heading',{name:/Review action proposals/}).waitFor();const runId=new URL(page.url()).pathname.split('/').at(-1);await page.getByLabel('Keep task 1',{exact:true}).check();await page.getByLabel('Keep task 2',{exact:true}).check();await page.getByRole('button',{name:'Confirm selected tasks',exact:true}).click();await page.getByRole('heading',{name:'Your confirmed plan',exact:true}).waitFor();let run=await get(`/api/runs/${runId}`);assert.equal(run.series_membership.series.id,sid);const original=structuredClone(run.final_tasks);
+ // The membership form shares disclosure/select styling with the wider app.
+ const membership=page.locator('.series-membership'),summary=membership.locator('summary').first();await summary.click();
+ for(const width of [1920,1440,768,390,320])for(const theme of ['light','dark']){
+  await page.setViewportSize({width,height:1000});await page.getByLabel('Color theme').selectOption(theme);await page.getByRole('button',{name:'Create or manage series',exact:true}).waitFor();
+  const geometry=await membership.evaluate(el=>{
+   const search=el.querySelector('input[type=search]'),select=el.querySelector('select'),manage=el.querySelector('.series-manage'),summary=el.querySelector('summary'),text=[...summary.childNodes].find(n=>n.nodeType===Node.TEXT_NODE&&n.textContent.trim()),range=document.createRange();range.selectNodeContents(text);
+   return {search:search.getBoundingClientRect().toJSON(),select:select.getBoundingClientRect().toJSON(),manage:manage.getBoundingClientRect().toJSON(),summary:summary.getBoundingClientRect().toJSON(),text:range.getBoundingClientRect().toJSON(),arrowSpace:parseFloat(getComputedStyle(select).paddingInlineEnd)};
+  });
+  assert.ok(Math.abs(geometry.manage.left-geometry.search.left)<=1,'Manage series starts at the field grid edge');
+  assert.ok(geometry.manage.width<geometry.search.width,'The management link does not stretch across a grid cell');
+  assert.ok(geometry.text.left-geometry.summary.left>=18,'Disclosure arrow has a clear gap before its label');
+  assert.ok(geometry.arrowSpace>=28,'Select text leaves room for its arrow and right inset');
+  if(width>760){assert.ok(Math.abs(geometry.search.top-geometry.select.top)<=1,'Series fields share a baseline');assert.ok(Math.abs(geometry.search.height-geometry.select.height)<=1,'Series controls have equal heights');}
+  else assert.ok(Math.abs(geometry.search.left-geometry.select.left)<=1,'Stacked series fields stay aligned');
+  await scan(page,`membership-${width}-${theme}`);
+  if(width===1440){await scrollWorkspace(page);await membership.screenshot({path:path.join(shots,`series-membership-aligned-${theme}.png`)});}
+ }
+ await page.setViewportSize({width:1440,height:1000});await page.getByLabel('Color theme').selectOption('light');await summary.focus();await page.keyboard.press('Enter');assert.equal(await membership.locator('details').first().getAttribute('open'),null);await page.keyboard.press('Enter');assert.ok(await membership.locator('details').first().evaluate(el=>el.open),'Styled disclosures still toggle by keyboard');await summary.click();
  await page.getByRole('button',{name:'Prepare next meeting',exact:true}).click();await ready();assert.equal((await get(`/api/series/${sid}/preparation?today=${today}`)).counts.open_tasks,2);
  await page.getByRole('button',{name:'Create agenda from current tasks',exact:true}).click();const notes=page.getByLabel('Agenda notes',{exact:true});assert.ok((await notes.inputValue()).includes('deadline: Unknown'));await notes.fill((await notes.inputValue())+'\nPersonal agenda topic: discuss the release checklist.');await page.getByRole('button',{name:'Save agenda',exact:true}).click();await page.getByText('Saved agenda version 1.',{exact:false}).waitFor();assert.equal((await get(`/api/series/${sid}/preparation?today=${today}`)).counts.changes,0);
  // Recover an unavailable save across reload, preserving the exact editable message.

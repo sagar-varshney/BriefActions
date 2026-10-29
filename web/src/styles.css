@@ -15,6 +15,7 @@
   --lilac:var(--muted); --lilac-soft:var(--surface-soft);
   --border:var(--line);
   --radius-control:4px; --radius-panel:6px;
+  --select-chevron:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='m4 6 4 4 4-4' stroke='%23595e65' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 }
 :root[data-theme=dark] {
   color-scheme:dark;
@@ -26,6 +27,7 @@
   --warning:#f2cf95; --warning-soft:#352b1b;
   --error:#ffb6b6; --error-soft:#3a2528;
   --green:#9cdebd; --green-soft:#19392c;
+  --select-chevron:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='m4 6 4 4 4-4' stroke='%23b8bfc8' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 }
 *{box-sizing:border-box} body{margin:0} button,input,select,textarea{font:inherit}
 button,a{touch-action:manipulation} button{cursor:pointer} button:disabled{opacity:.55;cursor:not-allowed}
@@ -35,10 +37,18 @@ h1{font-size:36px;line-height:1.2} h2{font-size:20px;line-height:1.35} h3{font-s
 p{color:var(--muted);font-size:15px;line-height:1.75} small{font-size:12px;color:var(--muted)}
 :where(button,a,input,select,textarea,summary,[tabindex]):focus-visible{outline:3px solid var(--accent);outline-offset:4px}
 input,select,textarea{color:var(--text);background:var(--surface);border:1px solid var(--control-border);border-radius:var(--radius-control);min-width:0;padding:10px 12px}
+/* Keep native select behavior, with a consistent arrow inset and text clearance. */
+select:not([multiple]):not([size]),select[size="1"]{appearance:none;background-image:var(--select-chevron);background-repeat:no-repeat;background-position:right 12px center;background-size:16px 16px;padding-inline-end:40px}
+@media(forced-colors:active){select:not([multiple]):not([size]),select[size="1"]{appearance:auto;background-image:none}}
 input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:2px}
 input::placeholder,textarea::placeholder{color:var(--muted);opacity:1}
 input[type=checkbox]{accent-color:var(--accent);width:18px;height:18px;flex-shrink:0;cursor:pointer}
 input[type=date]{color-scheme:inherit} textarea{resize:vertical} summary{cursor:pointer}
+/* Plain disclosures share a chevron; source/help summaries already have controls. */
+details:not(.context-help):not(.saved-source-panel)>summary{display:flex;align-items:center;gap:10px;list-style:none}
+details:not(.context-help):not(.saved-source-panel)>summary::-webkit-details-marker{display:none}
+details:not(.context-help):not(.saved-source-panel)>summary::before{content:"";flex:none;width:7px;height:7px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;margin-inline:2px 3px;transform:rotate(-45deg)}
+details[open]:not(.context-help):not(.saved-source-panel)>summary::before{transform:rotate(45deg)}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .skip-link{position:fixed;left:12px;top:12px;z-index:30;background:var(--surface);color:var(--text);padding:12px 18px;border:2px solid var(--accent);border-radius:2px}
 .skip-link:not(:focus){clip-path:inset(50%);width:1px;height:1px;overflow:hidden;padding:0;border:0;white-space:nowrap}
@@ -61,7 +71,7 @@ input[type=date]{color-scheme:inherit} textarea{resize:vertical} summary{cursor:
 .topbar-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;min-width:0;flex-wrap:wrap}
 .account-entry.active{color:var(--text);text-decoration:underline;text-decoration-color:var(--primary);text-underline-offset:6px}.workspace-entry .signin-toolbar{flex-wrap:wrap}.workspace-entry .signin-card{margin:60px auto;padding:28px;max-width:540px}.workspace-entry .notice p{margin-bottom:16px}
 .theme-control{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted)}
-.theme-control select{padding:6px 8px;min-height:44px;font-size:13px}
+.theme-control select{padding:6px 40px 6px 10px;min-height:44px;font-size:13px}
 .account-name{display:block;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;color:var(--muted)}
 main{min-width:0;width:100%}
 .topbar{max-width:1480px;margin:auto;display:flex;justify-content:space-between;gap:12px;padding:21px 28px 0;font-size:11px;color:var(--muted)}
@@ -503,7 +513,7 @@ main.signin-shell{
 .series-membership{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;margin:14px 0;padding:12px 16px;border:1px solid var(--line);background:var(--surface)}
 .series-membership>details{flex:1;min-width:0}.series-membership summary,.input-series>summary{cursor:pointer;font-size:13px;font-weight:650;min-height:28px;overflow-wrap:anywhere}
 .series-membership>details>p{margin:12px 0}.series-picker{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:end;margin:14px 0}.series-picker>p,.series-picker-pages{grid-column:1/-1}
-.series-picker-pages,.series-actions{display:flex;flex-wrap:wrap;gap:12px;align-items:center}.series-picker .field-label{min-width:0}.series-picker select{width:100%}
+.series-picker-pages,.series-actions{display:flex;flex-wrap:wrap;gap:12px;align-items:center}.series-picker .field-label{min-width:0}.series-picker input,.series-picker select{width:100%;min-height:46px;font-size:15px}.series-picker>.series-manage{grid-column:1/-1;justify-self:start;padding-inline:0;text-align:left}
 .input-series{margin:14px 0}.series-create{display:flex;flex-wrap:wrap;gap:16px;padding:22px;align-items:end;margin-bottom:24px}.series-create>.field-label{flex:1;min-width:180px}.series-create>p{flex-basis:100%}.series-search{max-width:620px;margin-bottom:12px}
 .series-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin:20px 0}.series-card{padding:24px;min-width:0}.series-card h2{overflow-wrap:anywhere}.series-card p{margin:12px 0 18px}
 .series-overview{padding:24px;margin:20px 0}.series-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:24px}.series-heading>div{min-width:0}.series-heading h2{overflow-wrap:anywhere;font-size:26px}.series-heading p{margin-top:10px}.series-heading>.button{flex-shrink:0}
@@ -512,7 +522,7 @@ main.signin-shell{
 .series-tabs{display:flex;flex-wrap:wrap;gap:10px;margin:22px 0 14px}.series-tabs button{display:flex;gap:12px;justify-content:space-between}.series-tabs button[aria-pressed=true]{border-color:var(--accent);background:var(--accent-soft)}
 .series-items{display:grid;gap:14px;margin:18px 0}.series-item{padding:22px;display:flex;justify-content:space-between;gap:22px;align-items:flex-start}.series-item>div{min-width:0}.series-item h3{margin:8px 0;overflow-wrap:anywhere}.series-item p{overflow-wrap:anywhere}.series-item>.button{flex-shrink:0}
 .agenda-editor{padding:24px;margin:26px 0}.agenda-editor>.field-label{margin:18px 0 8px}.agenda-editor>input,.agenda-editor>textarea{width:100%}.agenda-editor textarea{resize:vertical}.agenda-version{margin-top:14px}.agenda-version summary{min-height:32px;cursor:pointer}
-@media(max-width:760px){.series-membership,.series-heading,.series-item{flex-direction:column;align-items:stretch}.series-picker,.series-grid{grid-template-columns:minmax(0,1fr)}.series-counts{grid-template-columns:repeat(2,minmax(0,1fr))}.series-card,.series-overview,.series-item,.agenda-editor,.series-create{padding:18px}.series-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.series-tabs .button{white-space:normal}.series-actions>.button{flex:1;min-width:110px}.series-item>.button{align-self:flex-start}.series-create>.button{width:100%}}
+@media(max-width:760px){.series-membership,.series-heading,.series-item{flex-direction:column;align-items:stretch}.series-picker,.series-grid{grid-template-columns:minmax(0,1fr)}.series-picker input,.series-picker select{font-size:16px}.series-counts{grid-template-columns:repeat(2,minmax(0,1fr))}.series-card,.series-overview,.series-item,.agenda-editor,.series-create{padding:18px}.series-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.series-tabs .button{white-space:normal}.series-actions>.button{flex:1;min-width:110px}.series-item>.button{align-self:flex-start}.series-create>.button{width:100%}}
 
 @media(max-width:480px){.review-toolbar{display:grid;grid-template-columns:minmax(0,1fr)}.review-toolbar>.field-label{min-width:0}.review-bulk{gap:4px 12px;width:auto}}
 
