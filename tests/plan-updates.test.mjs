@@ -7,6 +7,36 @@ import {randomUUID} from 'node:crypto';
 import {createApp} from '../server/index.mjs';
 import {loadConfig} from '../server/config.mjs';
 
+test('Personal instead revisions retain source passages and reach Calendar only after confirmation',async()=>{
+ const folder=await mkdtemp(path.join(tmpdir(),'briefactions-deadline-instead-'));
+ const server=createApp({historyPath:path.join(folder,'history.sqlite3')});
+ await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const base=`http://127.0.0.1:${server.address().port}`;
+ const post=async(url,data)=>{const response=await fetch(base+url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});assert.ok(response.ok,`${url}: ${response.status}`);return response.json();};
+ const calendar=async day=>(await fetch(base+`/api/calendar?month=2026-09&day=${day}`)).json();
+ try{
+  const transcript='Bela will submit the risk assessment by Friday.\nBela: Move my risk assessment deadline to Monday instead.';
+  const run=await post('/api/runs',{transcript,reference_date:'2026-09-15'});
+  assert.equal(run.proposals.length,1);assert.equal(run.proposals[0].deadline,'2026-09-21');
+  assert.equal(run.proposals[0].evidence.length,2);
+  assert.equal(run.settings.conversation_changes[0].before,'2026-09-18');
+  assert.equal(run.settings.conversation_changes[0].after,'2026-09-21');
+  assert.equal((await calendar('2026-09-21')).scheduled.total,0);
+  await post(`/api/runs/${run.id}/finalize`,{decisions:run.proposals.map(p=>({...p,accept:true}))});
+  assert.equal((await calendar('2026-09-21')).scheduled.items[0].deadline,'2026-09-21');
+  const originalCSV=await (await fetch(base+`/api/runs/${run.id}/tasks.csv`)).text();
+  const followup=await post(`/api/runs/${run.id}/updates`,{transcript:'Bela: Move my risk assessment deadline to Tuesday instead.',reference_date:'2026-09-19',request_id:randomUUID().replaceAll('-','')});
+  const row=followup.settings.plan_update.rows[0];assert.equal(row.kind,'changed');assert.equal(row.after.deadline,'2026-09-22');
+  assert.equal((await calendar('2026-09-21')).scheduled.total,1);
+  assert.equal((await calendar('2026-09-22')).scheduled.total,0);
+  const final=await post(`/api/runs/${followup.id}/update-confirm`,{decisions:[{change_id:row.change_id,apply:true,...row.after}],version:0});
+  assert.equal(final.final_tasks[0].deadline,'2026-09-22');assert.equal(final.final_tasks[0].evidence.length,3);
+  for(const e of final.final_tasks[0].evidence)assert.equal(final.transcript.slice(e.start,e.end),e.text);
+  assert.equal((await calendar('2026-09-21')).scheduled.total,0);
+  assert.equal((await calendar('2026-09-22')).scheduled.items[0].run_id,followup.id);
+  assert.equal(await (await fetch(base+`/api/runs/${run.id}/tasks.csv`)).text(),originalCSV);
+ }finally{server.closeAllConnections();await server.shutdown();await rm(folder,{recursive:true,force:true});}
+});
+
 test('Private follow-up review is isolated, recoverable, and supersedes only after approval',async()=>{
  const folder=await mkdtemp(path.join(tmpdir(),'briefactions-plan-updates-')),alice=randomUUID(),bob=randomUUID();
  const config={...loadConfig(),authMode:'supabase',supabaseUrl:'https://test-project.supabase.co',databaseUrl:process.env.FLOW_TEST_DATABASE_URL};

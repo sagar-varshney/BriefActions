@@ -67,6 +67,34 @@ class PlanUpdateTests(unittest.TestCase):
         rows,_=compare(self.proposals,'Do not cancel the report.\nMaybe we should move the report.',date(2026,10,17),0)
         self.assertTrue(all(r['kind']=='unchanged' for r in rows))
 
+    def test_personal_instead_revision_requires_approval_and_keeps_original_evidence(self):
+        run=self.followup('Maya: Move my report deadline to Monday instead.')
+        row=run['settings']['plan_update']['rows'][0]
+        self.assertEqual((row['kind'],row['before']['deadline'],row['after']['deadline']),
+                         ('changed','2026-10-16','2026-10-19'))
+        self.assertEqual(run['settings']['plan_update']['warnings'],[])
+        validate_item(row['after'],run['transcript'])
+        self.assertEqual(len(row['after']['evidence']),2)
+        self.assertEqual(search(self.history,today='2026-10-17')['items'][0]['deadline'],'2026-10-16')
+        save_review(self.history,run['id'],self.decisions(run),0,confirm=True)
+        final=handle({'operation':'run','run_id':run['id']})
+        self.assertEqual(final['final_tasks'][0]['deadline'],'2026-10-19')
+        original=handle({'operation':'run','run_id':self.base})
+        self.assertEqual(original['final_tasks'][0]['deadline'],'2026-10-16')
+
+    def test_followup_personal_reference_does_not_change_another_owner(self):
+        for directive in ('Jon: Move my report deadline to Monday instead.',
+                          'Move my report deadline to Monday instead.'):
+            with self.subTest(directive=directive):
+                rows,warnings=compare(self.proposals,directive,date(2026,10,17),0)
+                self.assertTrue(all(r['kind']=='unchanged' for r in rows))
+                self.assertEqual(len(warnings),1)
+        tasks=[deepcopy(self.proposals[0]) for _ in range(2)]
+        tasks[1]['owner']='Ada';tasks[1]['proposal_id']='another-owner'
+        rows,warnings=compare(tasks,'Maya: Move my report deadline to Monday instead.',date(2026,10,17),0)
+        self.assertEqual([r['kind'] for r in rows],['changed','unchanged'])
+        self.assertEqual(warnings,[])
+
     def test_declared_changes_unknowns_and_same_speaker_immediate_reference(self):
         run=self.followup('Maya: I will send the report. Actually, make that Monday.\nPlease prepare the agenda.')
         rows=run['settings']['plan_update']['rows']

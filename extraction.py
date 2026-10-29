@@ -60,6 +60,11 @@ DISCUSSION = re.compile(r"^(?:if\b|should we\b|can we\b|we discussed\b|we review
 MONTHS = {name.lower(): i for i, name in enumerate(("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"), 1)}
 MONTHS.update({k[:3]: v for k, v in list(MONTHS.items())})
 WEEKDAYS = {name.lower(): i for i, name in enumerate(("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"))}
+CANCEL = re.compile(r"^(?:Actually,?\s+)?(?:cancel|drop)\s+(.+?)[.!?]*$", re.I)
+REVISE = re.compile(
+    r"^(?:Actually,?\s+)?(?:make|move|reschedule)\s+(.+?)\s+(?:to\s+|by\s+|on\s+)?"
+    r"((?:(?:this|next) )?(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)|tomorrow|today|next week|20\d{2}-\d{2}-\d{2})"
+    r"(?:\s+instead)?[.!?]*$", re.I)
 
 
 def non_commitment(body: str) -> bool:
@@ -132,6 +137,17 @@ def normalize_task(task: str) -> str:
     return " ".join(token for token in re.findall(r"[a-z0-9]+", task.lower()) if token not in {"a", "an", "the"})
 
 
+def task_reference_matches(target: str, task: str, owner: str, speaker: str | None) -> bool:
+    personal = re.match(r"my\s+", target, re.I)
+    if personal:
+        # A possessive identifies the speaker's work, never another owner's task.
+        if not speaker or speaker != owner:
+            return False
+        target = target[personal.end():]
+    tokens = set(normalize_task(target).split()) - {'task', 'deadline'}
+    return bool(tokens and tokens <= set(normalize_task(task).split()))
+
+
 def deduplicate(items: list[ActionItem]) -> list[ActionItem]:
     merged: list[ActionItem] = []
     for item in items:
@@ -160,16 +176,15 @@ def extract_with_changes(text: str, reference_date: date | None = None):
     previous = None
     for body, speaker, evidence in passages(text):
         body = body.strip()
-        cancel = re.match(r"^(?:Actually,?\s+)?(?:cancel|drop)\s+(.+?)[.!?]*$",body,re.I)
-        revise = re.match(r"^(?:Actually,?\s+)?(?:make|move|reschedule)\s+(.+?)\s+(?:to\s+|by\s+|on\s+)?((?:(?:this|next) )?(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)|tomorrow|today|next week|20\d{2}-\d{2}-\d{2})[.!?]*$",body,re.I)
+        cancel = CANCEL.match(body)
+        revise = REVISE.match(body)
         if cancel or revise:
             items = deduplicate(items)
             target = (cancel or revise).group(1).strip(' .!?')
             if re.fullmatch(r"(?:that|it|that task|that deadline)",target,re.I):
                 candidates = [p for p in items if previous and p is previous and (not speaker or speaker==p.owner)]
             else:
-                target_tokens=set(normalize_task(target).split())-{'task','deadline'}
-                candidates=[p for p in items if target_tokens and target_tokens<=set(normalize_task(p.task).split())]
+                candidates=[p for p in items if task_reference_matches(target,p.task,p.owner,speaker)]
             if len(candidates)==1:
                 item=candidates[0]
                 before=item.deadline

@@ -69,6 +69,15 @@ python3 evaluate.py --extractor rules --split test --output evaluation/results/r
 For scoring only, its missing labels are mapped to `Unknown` and the sentence it
 selected is attached as evidence. Its extraction behavior is otherwise unchanged.
 
+On 30 October 2026, `results/rules-dev.json` was refreshed after fixing the
+development case `dev-26` (“Move my … deadline to Monday instead”). The unchanged
+30-case development set now meets 1.0 on all nine CI quality metrics, strengthening
+the retained regression floors. Unit and API tests additionally require both
+supporting passages and explicit confirmation before calendar updates. Reserved
+test reports and model comparisons remain historical; they were not rerun or
+used to tune this fix. These synthetic development scores are not real-meeting
+accuracy estimates.
+
 Task matching uses a maximum-cardinality one-to-one assignment, then lexical
 similarity. Eligible pairs require at least 60% of gold content tokens and 45%
 of predicted content tokens to overlap; dates and a fixed filler-word list are

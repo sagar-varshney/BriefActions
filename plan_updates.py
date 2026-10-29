@@ -8,13 +8,11 @@ import re
 from pathlib import Path
 
 from data_controls import DataError, identifier
-from extraction import UNKNOWN, extract_action_items, normalize_task, parse_deadline, passages
+from extraction import CANCEL, REVISE, UNKNOWN, extract_action_items, normalize_task, parse_deadline, passages, task_reference_matches
 from task_progress import project as progress
 from task_deadlines import project as deadlines, effective_tasks
 
 FIELDS = ('task', 'owner', 'deadline')
-CANCEL = re.compile(r'^(?:Actually,?\s+)?(?:cancel|drop)\s+(.+?)[.!?]*$', re.I)
-REVISE = re.compile(r'^(?:Actually,?\s+)?(?:make|move|reschedule)\s+(.+?)\s+(?:to\s+|by\s+|on\s+)?((?:(?:this|next) )?(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)|tomorrow|today|next week|20\d{2}-\d{2}-\d{2})[.!?]*$', re.I)
 
 
 def events_in(conn, run_id):
@@ -45,8 +43,7 @@ def compare(tasks, followup, reference, offset):
             if re.fullmatch(r'(?:that|it|that task|that deadline)', target, re.I):
                 candidates = [previous] if previous and previous['after'] and (not speaker or speaker == previous['after']['owner']) else []
             else:
-                tokens = set(normalize_task(target).split()) - {'task', 'deadline'}
-                candidates = [s for s in slots if s['after'] and tokens and tokens <= set(normalize_task(s['after']['task']).split())]
+                candidates = [s for s in slots if s['after'] and task_reference_matches(target,s['after']['task'],s['after']['owner'],speaker)]
             if len(candidates) != 1:
                 warnings.append({'message': 'This reference did not identify one task. Existing tasks were kept; check the passage manually.', 'evidence': [support]})
                 previous = None
