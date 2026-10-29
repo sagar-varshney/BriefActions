@@ -22,6 +22,8 @@ import SourceTranscript from './SourceTranscript.jsx';
 import WorkspaceSummary from './WorkspaceSummary.jsx';
 import ReviewProposals,{initialReviewLayout} from './ReviewProposals.jsx';
 import TaskFollowThrough from './TaskFollowThrough.jsx';
+import Evidence from './Evidence.jsx';
+import TaskDetails from './TaskDetails.jsx';
 import ActivityTimeline,{ConversationChanges} from './ActivityTimeline.jsx';
 import WorkspaceLayout from './WorkspaceLayout.jsx';
 import HelpGuide from './HelpGuide.jsx';
@@ -44,9 +46,6 @@ function loadPending(){try{const value=JSON.parse(accountStorage.getItem('flow.p
 function reviewDrafts(proposals,decisions=[]){const byId=new Map(decisions.map(d=>[d.proposal_id,d]));return proposals.map(p=>byId.get(p.proposal_id)||{proposal_id:p.proposal_id,task:p.task,owner:p.owner,deadline:p.deadline,accept:false});}
 
 function focusPageHeading(){const heading=document.querySelector('main h1');heading?.focus({preventScroll:true});heading?.scrollIntoView({block:'start',behavior:'instant'});}
-function Evidence({passages = [],onInspect,label}) {
-  return <div className="evidence"><div className="eyebrow"><Icon name="quote" size={15}/> Supporting transcript</div>{passages.map((e,i)=><div key={i}><blockquote>{e.text}</blockquote><div className="evidence-footer"><span className="span-note">Characters {e.start}–{e.end} in the saved input</span>{onInspect&&<button type="button" className="text-button evidence-jump" aria-label={`Locate passage ${i+1} for ${label}`} onClick={event=>onInspect(e,event.currentTarget)}>Locate passage <Icon name="arrow" size={14}/></button>}</div></div>)}</div>;
-}
 function Download({href,children}) {
   const pending=useRef(false),[busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState('');
   async function download(){
@@ -69,21 +68,29 @@ const activityLabels={analysis:'Analyzing your transcript…',title:'Saving meet
 
 export default function WorkspaceApp({account,signOut,completeAccountDeletion,authError}) {
   const [historyStatus,setHistoryStatus]=useState('');
+  const [taskDetails,setTaskDetails]=useState(null),workspaceAlive=useRef(true),taskDetailsGuard=useRef(null);
+  useEffect(()=>{workspaceAlive.current=true;return()=>{workspaceAlive.current=false;};},[]);
   const [ownerFilters,setOwnerFilters]=useState(initialOwnerFilters);
   const [calendarFilters,setCalendarFilters]=useState(initialCalendar);
   const [helpTopic,setHelpTopic]=useState(null);
   const [meetingTips,setMeetingTips]=useState(()=>{try{return accountStorage.getItem('flow.meetingTips')==='show';}catch{return false;}});
   const [taskFilters,setTaskFilters]=useState(initialTaskFilters),[taskTarget,setTaskTarget]=useState(()=>readRoute().taskId || null);
   const [page,setPageState] = useState(()=>readRoute().page);
+  useEffect(()=>setTaskDetails(null),[page]);
   const [historySeries,setHistorySeries]=useState(()=>({open:!!readRoute().seriesView,id:readRoute().seriesId||null}));
   useDocumentTitle(page==='history'&&historySeries.open?(historySeries.id?'Prepare next meeting':'Meeting series'):pages.find(section=>section.id===page)?.name || 'Extract & review');
   const navigation=useRef(null),deferredNavigation=useRef(null),navigationEpoch=useRef(0),committedURL=useRef(routePath(readRoute()));
+  const panelPopRestore=useRef(false),panelPopResume=useRef(null),routeHistory=useRef(history.state?.flowWorkspaceHistory||{session:crypto.randomUUID(),index:0});
+  useEffect(()=>{history.replaceState({...history.state,flowWorkspaceHistory:routeHistory.current},'');},[]);
   const [sourceWidth,setSourceWidth]=useState(()=>{try{const width=Number(accountStorage.getItem('flow.workspaceWidth'));return Number.isInteger(width)&&width>=32&&width<=55?width:43;}catch{return 43;}});
   const [reviewLayout,setReviewLayout]=useState(initialReviewLayout);
   function resizeSource(width){setSourceWidth(width);try{accountStorage.setItem('flow.workspaceWidth',String(width));}catch{}}
-  function commitRoute(next,mode='push'){const url=routePath(next);if(mode!=='pop' && (location.pathname+location.search+location.hash!==url))history[mode==='replace'?'replaceState':'pushState']({},'',url);committedURL.current=url;setPageState(next.page);setTaskTarget(next.taskId || null);setHistorySeries({open:!!next.seriesView||!!next.seriesId,id:next.seriesId||null});}
+  function commitRoute(next,mode='push'){const url=routePath(next);if(mode!=='pop' && (location.pathname+location.search+location.hash!==url)){routeHistory.current={...routeHistory.current,index:routeHistory.current.index+(mode==='replace'?0:1)};history[mode==='replace'?'replaceState':'pushState']({flowWorkspaceHistory:routeHistory.current},'',url);}else if(mode==='pop'&&history.state?.flowWorkspaceHistory?.session===routeHistory.current.session)routeHistory.current=history.state.flowWorkspaceHistory;committedURL.current=url;setPageState(next.page);setTaskTarget(next.taskId || null);setHistorySeries({open:!!next.seriesView||!!next.seriesId,id:next.seriesId||null});}
   function setPage(next){if(next==='history')setHistoryStatus('');return navigate({page:next,runId:next==='extract'?run?.id:null});}
-  async function navigate(next,mode='push'){
+  async function navigate(next,mode='push',allowPanelClose=false){
+    const targetHistory=history.state?.flowWorkspaceHistory,returnSteps=mode==='pop'&&targetHistory?.session===routeHistory.current.session?routeHistory.current.index-targetHistory.index:0;
+    const resume=()=>{const move=()=>returnSteps?history.go(-returnSteps):void navigate(next,mode==='pop'?'replace':mode,true);if(panelPopRestore.current)panelPopResume.current=move;else move();};
+    if(taskDetails&&!allowPanelClose&&taskDetailsGuard.current&&!taskDetailsGuard.current(resume)){if(mode==='pop'){if(returnSteps){panelPopRestore.current=true;history.go(returnSteps);}else history.replaceState({...history.state,flowWorkspaceHistory:routeHistory.current},'',committedURL.current);}return;}
     if(restoring && mode==='pop'){deferredNavigation.current=next;return;}
     const browsing=analysisBusy.current && analysisBrowsePages.has(next.page) && !next.seriesView && !next.seriesId && !next.taskId && (!next.runId || next.runId===run?.id);
     if(closing && next.page!=='data' || busy && !browsing || restoring){if(mode==='pop')history.replaceState({},'',committedURL.current);return;}
@@ -93,13 +100,16 @@ export default function WorkspaceApp({account,signOut,completeAccountDeletion,au
     navigationEpoch.current++;setError('');commitRoute(next,mode);if(!next.taskId)afterNavigation(focusPageHeading);
   }
   navigation.current=navigate;
-  useEffect(()=>{const pop=()=>{if(authScreen()==='workspace')navigation.current?.(readRoute(),'pop');};window.addEventListener('popstate',pop);return()=>window.removeEventListener('popstate',pop);},[]);
+  useEffect(()=>{const pop=()=>{if(panelPopRestore.current&&location.pathname+location.search===committedURL.current){panelPopRestore.current=false;const resume=panelPopResume.current;panelPopResume.current=null;resume?.();return;}if(authScreen()==='workspace')navigation.current?.(readRoute(),'pop');};window.addEventListener('popstate',pop);return()=>window.removeEventListener('popstate',pop);},[]);
   const [closing,setClosing]=useState(false);
   const [restoring,setRestoring]=useState(true);
   useEffect(()=>{if(!restoring && deferredNavigation.current){const next=deferredNavigation.current;deferredNavigation.current=null;history.replaceState({},'',routePath(next));void navigation.current?.(next,'pop');}},[restoring]);
   const [pending,setPending]=useState(loadPending),[analysisStatus,setAnalysisStatus]=useState('');
   const analysisBusy=useRef(false);
   const [analysisResultId,setAnalysisResultId]=useState(null),[analysisRevision,setAnalysisRevision]=useState(0);
+  const readRevision=taskDetails?taskDetails.revision:analysisRevision;
+  function openItem(item){if(item.proposal_id)setTaskDetails({runId:item.run_id,taskId:item.proposal_id,revision:analysisRevision});else void openRun(item.run_id);}
+  function taskMutationSettled(value){if(!workspaceAlive.current)return;if(value)setRun(current=>current?.id===value.id?value:current);setAnalysisRevision(value=>value+1);}
   const [config,setConfig] = useState(null);
   const [transcript,setTranscript] = useState('');
   const [meetingDate,setMeetingDate] = useState('');
@@ -384,14 +394,15 @@ export default function WorkspaceApp({account,signOut,completeAccountDeletion,au
         </>}
         {page==='annotations'&&<AnnotationReviewer onReady={()=>setReadyPage('annotations')} api={api} downloadJson={downloadJson} onHelp={()=>setHelpTopic('annotations')}/>}
         {page==='data'&&<DataControls completeAccountDeletion={completeAccountDeletion} onClosing={()=>{clearTimeout(saveTimer.current);activeRun.current=null;setClosing(true);setRun(null);setDrafts([]);setTranscript('');setMeetingTitle('');setInputSaveStatus('');setReport(null);setPending(null);setAnalysisStatus('');}}/>}
-        {page==='owners'&&<OwnerOverview filters={ownerFilters} onFilters={setOwnerFilters} onTasks={filters=>{setTaskFilters({...initialTaskFilters,...filters});setPage('tasks');}} onOpen={item=>openRun(item.run_id,'push',item.proposal_id)} onStart={newMeeting} busy={busy || restoring || !!pending}/>}
-        {page==='tasks'&&<AllTasks filters={taskFilters} onFilters={setTaskFilters} onStart={newMeeting} onOpen={item=>openRun(item.run_id,'push',item.proposal_id)} busy={busy || restoring || !!pending}/>}
-        {page==='today'&&<MyDay refreshToken={analysisRevision} busy={busy || restoring || !!pending} onStart={newMeeting} onOpen={item=>openRun(item.run_id,'push',item.proposal_id)} onTasks={view=>{setTaskFilters({...initialTaskFilters,view});setPage('tasks');}} onReviews={()=>{setHistoryStatus('review');navigate({page:'history'});}} onCalendar={()=>setPage('calendar')}/>}
-        {page==='calendar'&&<Calendar refreshToken={analysisRevision} filters={calendarFilters} onFilters={setCalendarFilters} onStart={newMeeting} onTasks={()=>{setTaskFilters({...initialTaskFilters,status:''});setPage('tasks');}} onOpen={item=>openRun(item.run_id,'push',item.proposal_id)} busy={busy || restoring || !!pending}/>}
-        {page==='history'&&(historySeries.open?<MeetingSeries key={historySeries.id||'series-list'} seriesId={historySeries.id} client={draftClient} busy={busy||restoring||!!pending} onBack={()=>historySeries.id?openSeries():setPage('history')} onSelect={openSeries} onOpen={(id,task)=>openRun(id,'push',task)} onStart={meetingInSeries}/>:<MeetingHistory refreshToken={analysisRevision} key={historyStatus} initialStatus={historyStatus} onOpen={openRun} onStart={newMeeting} onSeries={()=>openSeries()} busy={busy || restoring || !!pending}/>)}
+        {page==='owners'&&<OwnerOverview refreshToken={readRevision} filters={ownerFilters} onFilters={setOwnerFilters} onTasks={filters=>{setTaskFilters({...initialTaskFilters,...filters});setPage('tasks');}} onOpen={openItem} onStart={newMeeting} busy={busy || restoring || !!pending}/>}
+        {page==='tasks'&&<AllTasks refreshToken={readRevision} filters={taskFilters} onFilters={setTaskFilters} onStart={newMeeting} onOpen={openItem} busy={busy || restoring || !!pending}/>}
+        {page==='today'&&<MyDay refreshToken={readRevision} busy={busy || restoring || !!pending} onStart={newMeeting} onOpen={openItem} onTasks={view=>{setTaskFilters({...initialTaskFilters,view});setPage('tasks');}} onReviews={()=>{setHistoryStatus('review');navigate({page:'history'});}} onCalendar={()=>setPage('calendar')}/>}
+        {page==='calendar'&&<Calendar refreshToken={readRevision} filters={calendarFilters} onFilters={setCalendarFilters} onStart={newMeeting} onTasks={()=>{setTaskFilters({...initialTaskFilters,status:''});setPage('tasks');}} onOpen={openItem} busy={busy || restoring || !!pending}/>}
+        {page==='history'&&(historySeries.open?<MeetingSeries key={historySeries.id||'series-list'} seriesId={historySeries.id} client={draftClient} busy={busy||restoring||!!pending} onBack={()=>historySeries.id?openSeries():setPage('history')} onSelect={openSeries} onOpen={(id,task)=>openRun(id,'push',task)} onStart={meetingInSeries}/>:<MeetingHistory refreshToken={readRevision} key={historyStatus} initialStatus={historyStatus} onOpen={openRun} onStart={newMeeting} onSeries={()=>openSeries()} busy={busy || restoring || !!pending}/>)}
         {page==='benchmark'&&<BenchmarkPage onReady={()=>setReadyPage('benchmark')} {...{bench,benchError,benchAttempt,setBenchError,setBenchAttempt,split,setSplit,reportId,inspect,reportPending,reportError,report,caseId,setCaseId,downloadJson,setHelpTopic,setPage}}/>}
         <footer className="page-footer">BriefActions <a href="/privacy">Privacy & your data</a><span>Evidence → Review → Action</span></footer>
       </div>
     </main>
+    {taskDetails&&!restoring&&<TaskDetails key={`${taskDetails.runId}-${taskDetails.taskId}`} {...taskDetails} onClose={()=>setTaskDetails(null)} onOpenMeeting={(id,task)=>{setTaskDetails(null);void openRun(id,'push',task);}} onMutationSettled={taskMutationSettled} closeGuard={taskDetailsGuard}/>}
   </WorkspaceShell>;
 }

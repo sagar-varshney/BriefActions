@@ -1,5 +1,6 @@
 import React,{useEffect,useState} from 'react';
 import {api} from './api.js';
+import useReadContext from './useReadContext.js';
 import LoadingState from './LoadingState.jsx';
 import {localToday,progressLabels} from './reviewTools.js';
 import {dateLabel} from './calendarDates.js';
@@ -15,12 +16,12 @@ const sections=[
 ];
 export default function MyDay({busy,onStart,onOpen,onTasks,onReviews,onCalendar,refreshToken=0}){
  const [today,setToday]=useState(localToday),[result,setResult]=useState(null),[loading,setLoading]=useState(true),[error,setError]=useState(''),[retry,setRetry]=useState(0),[loadedKey,setLoadedKey]=useState('');
- const requestKey=JSON.stringify([today,retry,refreshToken]),waiting=loading||loadedKey!==requestKey;
+ const requestKey=JSON.stringify([today,retry]),waiting=loadedKey!==requestKey,captureReadContext=useReadContext(result);
  useEffect(()=>{const check=()=>setToday(localToday()),focus=()=>{check();setRetry(value=>value+1);},timer=setInterval(check,60000);window.addEventListener('focus',focus);return()=>{clearInterval(timer);window.removeEventListener('focus',focus);};},[]);
- useEffect(()=>{let alive=true;setLoading(true);setError('');api('/today?'+new URLSearchParams({today})).then(value=>{if(alive)setResult(value);}).catch(e=>{if(alive)setError(e.message);}).finally(()=>{if(alive){setLoading(false);setLoadedKey(requestKey);}});return()=>{alive=false;};},[today,retry,refreshToken]);
+ useEffect(()=>{let alive=true;setLoading(true);setError('');api('/today?'+new URLSearchParams({today})).then(value=>{if(alive){if(loadedKey===requestKey)captureReadContext();setResult(value);}}).catch(e=>{if(alive)setError(e.message);}).finally(()=>{if(alive){setLoading(false);setLoadedKey(requestKey);}});return()=>{alive=false;};},[today,retry,refreshToken]);
  const show=id=>id==='reviews'?onReviews():onTasks(id),attention=result&&Object.values(result.sections).reduce((total,section)=>total+section.total,0),priority=result&&sections.find(section=>result.sections[section.id].total>0);
  return <section className="daily-workspace" aria-labelledby="daily-title">
-  <div className="page-intro daily-intro"><div><div className="eyebrow accent">A CLEAR PLACE TO START</div><h1 id="daily-title" tabIndex={-1}>My day</h1><p>{dateLabel(today)} · Your workspace’s next steps, together.</p></div><div className="daily-intro-actions"><button className="button secondary" type="button" disabled={waiting} aria-busy={waiting} onClick={()=>{setToday(localToday());setRetry(value=>value+1);}}>Refresh My day</button><button className="button primary" type="button" disabled={busy} onClick={onStart}>Add a conversation</button></div></div>
+  <div className="page-intro daily-intro"><div><div className="eyebrow accent">A CLEAR PLACE TO START</div><h1 id="daily-title" tabIndex={-1}>My day</h1><p>{dateLabel(today)} · Your workspace’s next steps, together.</p></div><div className="daily-intro-actions"><button className="button secondary" type="button" disabled={waiting||loading} aria-busy={waiting||loading} onClick={()=>{setToday(localToday());setRetry(value=>value+1);}}>Refresh My day</button><button className="button primary" type="button" disabled={busy} onClick={onStart}>Add a conversation</button></div></div>
   <p className="form-hint daily-scope">Counts cover all owners in your private workspace and exclude completed tasks. Today is {today}, using your device’s date.</p>
   {!waiting&&error?<div role="alert" className="notice error">{error}<button className="text-button" type="button" onClick={()=>setRetry(value=>value+1)}>Retry My day loading</button></div>:waiting?<LoadingState label="Loading your day…" requestKey={requestKey}/>:result&&<>
    {!result.meta.saved_meetings?<div className="panel daily-welcome"><div className="eyebrow accent">FROM CONVERSATION TO COMMITMENT</div><h2>Your day starts with a conversation.</h2><p>Add a transcript, review the suggested tasks, and confirm a plan. Your deadlines and unfinished reviews will appear here.</p><button className="button primary" disabled={busy} type="button" onClick={onStart}>Start your first meeting</button></div>:!attention&&<div className="notice daily-clear" role="status"><strong>{result.meta.open_tasks?'No dated work needs attention this week.':'All caught up.'}</strong><p>{result.meta.open_tasks?'Open tasks with later or unknown deadlines are available in All tasks and Calendar.':'You have no open tasks or saved reviews waiting for confirmation.'}</p></div>}

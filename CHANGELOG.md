@@ -1,5 +1,13 @@
 # Release notes
 
+## Unreleased
+
+- Inspect a confirmed task in a side panel from All tasks, My day, Calendar, and
+  Tasks by owner. Keep the originating view's filters, date, and pagination.
+- Reuse progress and deadline corrections with their existing recovery behavior,
+  inspect original evidence and task-specific history, and explicitly open the
+  full meeting when needed. Unsaved deadline edits require a deliberate discard.
+
 ## 28 October 2026 — Guided review and top navigation
 
 - Desktop navigation runs across the top, leaving the full workspace width for
