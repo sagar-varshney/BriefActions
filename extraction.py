@@ -76,6 +76,7 @@ DATE_VALUE = re.compile(
 QUOTED_TEXT = re.compile(r'''(?<!\w)(?:"[^"\r\n]*"|“[^”\r\n]*”|'[^'\r\n]*'|‘[^’\r\n]*’)''')
 CONDITION = re.compile(r"\b(?:if|unless|provided that|as long as|only when)\s+", re.I)
 CONDITION_OBJECT = re.compile(r"(?:statements?|clauses?|expressions?|conditions?|branches?|blocks?|functions?|keywords?)\b", re.I)
+CONDITION_PREDICATE = re.compile(r"\s+(?:is|are|was|were|will|can|could|should|must|does|do|did|has|have|changes?|fails?|passes?|succeeds?|improves?|allows?|exists?|returns?)\b", re.I)
 
 
 def non_commitment(body: str) -> bool:
@@ -93,7 +94,8 @@ def conditional_commitment(body: str) -> bool:
     if not action:
         return False
     for marker in CONDITION.finditer(visible):
-        if CONDITION_OBJECT.match(visible, marker.end()):
+        subject = CONDITION_OBJECT.match(visible, marker.end())
+        if subject and not CONDITION_PREDICATE.match(visible, subject.end()):
             continue
         if marker.start() <= action.end():
             if re.fullmatch(r"\s*(?:(?:task|todo|action item)\s*:\s*)?", visible[:marker.start()], re.I):

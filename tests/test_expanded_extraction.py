@@ -107,14 +107,15 @@ class ExpandedExtractionTests(unittest.TestCase):
         validate_item(asdict(items[0]), text)
 
     def test_conditional_work_is_excluded_but_technical_and_quoted_objects_remain(self):
-        for ending in ('if the budget is approved', 'unless the client cancels', 'if needed'):
+        for ending in ('if the budget is approved', 'unless the client cancels', 'if needed',
+                       'if conditions change', 'if function fails', 'if statement is unapproved'):
             with self.subTest(condition=ending):
                 text = f'Maya will send the report tomorrow {ending}.'
                 self.assertEqual(extract_with_changes(text, REF)[0], [])
         for text in ('Task: If approved, Maya will send the report tomorrow.',
                      'Todo: Unless the client cancels, Maya will send the report tomorrow.'):
             self.assertEqual(extract_with_changes(text, REF)[0], [])
-        for task in ('review the if statement', 'review the new if expression',
+        for task in ('review the if statement', 'review the new if expression', 'review the new if function',
                      'investigate if the worker is ready', "document the phrase 'if the budget is approved'"):
             with self.subTest(task=task):
                 items, _ = extract_with_changes(f'Maya will {task} tomorrow.', REF)
