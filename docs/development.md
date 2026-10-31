@@ -204,7 +204,7 @@ new request and is cleared on unmount. Pending live feedback sits outside the
 busy editor region so assistive technology can announce it. Searches keep their
 previous response hidden until the current filter/refresh request completes.
 
-Run both development quality gates without changing retained results:
+Run all three development quality gates without changing retained results:
 
 ```bash
 python evaluate.py --extractor rules --split dev --output artifacts/rules-dev.json
@@ -214,6 +214,11 @@ python evaluate.py --extractor rules --dataset evaluation/revision-v1/dev.jsonl 
 python scripts/check_benchmark.py artifacts/revision-dev.json \
   --dataset evaluation/revision-v1/dev.jsonl \
   --baseline evaluation/results/revision-v1/rules-dev.json
+python evaluate.py --extractor rules --dataset evaluation/audit-v1/dev.jsonl \
+  --split dev --output artifacts/audit-dev.json
+python scripts/check_benchmark.py artifacts/audit-dev.json \
+  --dataset evaluation/audit-v1/dev.jsonl \
+  --baseline evaluation/audit-v1/results/after.json
 ```
 
 Real-Postgres tests require an isolated disposable database configured through
@@ -236,7 +241,7 @@ Node.js 24, and pnpm 11.25.0. It checks:
 
 - Python extraction, evidence, date, history, annotation, and evaluation contracts.
 - Real Postgres account isolation, erasure permissions, and encrypted backup/restore.
-- Both development extraction baselines, including corpus/scorer fingerprints and zero failures.
+- All three development extraction baselines, including corpus/scorer fingerprints and zero failures.
 - Node API workflows, authentication, data controls, and interrupted-request recovery.
 - The React build and desktop/mobile browser suites, including keyboard and axe accessibility checks in both themes.
 - The production Docker image and its 512 MiB / 0.1 CPU resource profile.
