@@ -181,6 +181,7 @@ See the [evaluation methodology](evaluation/README.md) for datasets, results, an
 
 | Guide | What it covers |
 | --- | --- |
+| [Contributing](CONTRIBUTING.md) | Reporting reproducible problems, preparing focused fixes, and checking a pull request |
 | [User guide](docs/user-guide.md) | Everyday workflows, walkthroughs, task tracking, and exports |
 | [Security](SECURITY.md) | Private vulnerability reporting and the documented security review |
 | [Development](docs/development.md) | Architecture, settings, API routes, and test commands |
