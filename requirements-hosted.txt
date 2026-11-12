@@ -12,7 +12,7 @@ numpy==2.5.4
 pandas==3.1.0
 pluggy==1.7.0
 psycopg==3.3.6
-psycopg-binary==3.3.6
+psycopg-binary==3.3.8
 pycparser==3.12
 pygments==2.21.0
 pytest==9.2.0
